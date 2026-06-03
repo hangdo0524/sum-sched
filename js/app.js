@@ -1,6 +1,15 @@
 /**
- * Summer Schedule App - Main Entry Point
+ * Schedule App - Main Entry Point
+ * With Authentication and Multi-Calendar Support
  */
+
+import {
+  initAuth,
+  getCurrentUser as getAuthUser,
+  getUserProfile,
+  isAdmin,
+  logOut
+} from './auth.js';
 
 import {
   getSubjects,
@@ -88,6 +97,26 @@ window.resetApp = function() {
 };
 
 async function init() {
+  // Initialize authentication
+  initAuth(onAuthStateChange);
+}
+
+function onAuthStateChange(authUser, profile) {
+  if (!authUser) {
+    // Not logged in - redirect to login page
+    window.location.href = 'login.html';
+    return;
+  }
+
+  // User is logged in - initialize app
+  console.log('✅ Authenticated:', authUser.email);
+  initApp(authUser, profile);
+}
+
+async function initApp(authUser, profile) {
+  // Update user profile display
+  updateUserProfileDisplay(authUser, profile);
+
   // Always start with current week
   currentDate = new Date();
   currentWeekStart = getWeekStart(currentDate);
@@ -102,7 +131,7 @@ async function init() {
 
   // Initialize user (creates default users if needed, loads from Firebase)
   const user = getCurrentUser();
-  await setCurrentUser(user.id); // This loads from Firebase and subscribes to updates
+  await setCurrentUser(user.id);
   refreshUserSelector();
 
   // Render initial views
@@ -118,6 +147,59 @@ async function init() {
   setupSessionModal();
   setupModals();
   setupUserSelector();
+  setupUserProfile();
+
+  // Show admin section if user is admin
+  if (isAdmin()) {
+    const adminSection = document.getElementById('admin-section');
+    if (adminSection) adminSection.style.display = 'block';
+  }
+}
+
+function updateUserProfileDisplay(authUser, profile) {
+  const avatarEl = document.getElementById('user-avatar');
+  const nameEl = document.getElementById('user-name');
+  const emailEl = document.getElementById('user-email');
+
+  if (avatarEl && authUser.photoURL) {
+    avatarEl.src = authUser.photoURL;
+    avatarEl.alt = authUser.displayName || 'Avatar';
+  }
+
+  if (nameEl) {
+    nameEl.textContent = profile?.displayName || authUser.displayName || authUser.email.split('@')[0];
+  }
+
+  if (emailEl) {
+    emailEl.textContent = authUser.email;
+  }
+}
+
+function setupUserProfile() {
+  const btn = document.getElementById('btn-user-profile');
+  const dropdown = document.getElementById('user-dropdown');
+  const logoutBtn = document.getElementById('btn-logout');
+
+  if (btn && dropdown) {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdown.classList.toggle('user-dropdown--open');
+    });
+
+    document.addEventListener('click', () => {
+      dropdown.classList.remove('user-dropdown--open');
+    });
+  }
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      if (confirm('Đăng xuất khỏi tài khoản?')) {
+        await logOut();
+        window.location.href = 'login.html';
+      }
+    });
+  }
+}
 }
 
 function refreshSchedule() {
