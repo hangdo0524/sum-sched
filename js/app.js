@@ -99,6 +99,16 @@ window.resetApp = function() {
 };
 
 async function init() {
+  // Check if we should skip auth (for testing/demo)
+  const urlParams = new URLSearchParams(window.location.search);
+  const skipAuth = urlParams.get('demo') === 'true';
+
+  if (skipAuth) {
+    console.log('⚠️ Demo mode - skipping authentication');
+    initApp(null, null);
+    return;
+  }
+
   // Initialize authentication
   initAuth(onAuthStateChange);
 }
@@ -106,6 +116,7 @@ async function init() {
 function onAuthStateChange(authUser, profile) {
   if (!authUser) {
     // Not logged in - redirect to login page
+    console.log('Not authenticated, redirecting to login...');
     window.location.href = 'login.html';
     return;
   }
@@ -167,6 +178,13 @@ function updateUserProfileDisplay(authUser, profile) {
   const avatarEl = document.getElementById('user-avatar');
   const nameEl = document.getElementById('user-name');
   const emailEl = document.getElementById('user-email');
+
+  if (!authUser) {
+    // Demo mode
+    if (nameEl) nameEl.textContent = 'Demo User';
+    if (emailEl) emailEl.textContent = 'demo@example.com';
+    return;
+  }
 
   if (avatarEl && authUser.photoURL) {
     avatarEl.src = authUser.photoURL;
