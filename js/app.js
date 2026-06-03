@@ -23,7 +23,8 @@ import {
   getCurrentUser,
   setCurrentUser,
   autoLoadUserData,
-  userHasData
+  userHasData,
+  saveToGitHub
 } from './data.js';
 
 import {
@@ -283,39 +284,6 @@ function setupScheduleControls() {
     confirmSuggestions();
   });
 
-  // Export data
-  document.getElementById('btn-export-data').addEventListener('click', () => {
-    downloadDataAsFile();
-    alert('Đã tải xuống file dữ liệu!');
-  });
-
-  // Import data
-  document.getElementById('btn-import-data').addEventListener('click', () => {
-    document.getElementById('import-file-input').click();
-  });
-
-  document.getElementById('import-file-input').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const result = importData(event.target.result);
-      if (result.success) {
-        alert('Nhập dữ liệu thành công!\n' + result.message);
-        refreshSchedule();
-        refreshSubjects();
-        refreshReports();
-      } else {
-        alert('Lỗi nhập dữ liệu: ' + result.message);
-      }
-    };
-    reader.readAsText(file);
-
-    // Reset input so same file can be imported again
-    e.target.value = '';
-  });
-
   // Sync from server (force reload from file)
   document.getElementById('btn-sync-data').addEventListener('click', async () => {
     const user = getCurrentUser();
@@ -329,6 +297,27 @@ function setupScheduleControls() {
       } else {
         alert('Không tìm thấy file trên server.\nĐường dẫn: data/users/' + user.id + '.json');
       }
+    }
+  });
+
+  // Save to GitHub
+  document.getElementById('btn-save-to-github').addEventListener('click', async () => {
+    const user = getCurrentUser();
+    const btn = document.getElementById('btn-save-to-github');
+    const originalText = btn.innerHTML;
+
+    btn.innerHTML = '⏳ Đang lưu...';
+    btn.disabled = true;
+
+    const result = await saveToGitHub(user.id);
+
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+
+    if (result.success) {
+      alert('✅ ' + result.message);
+    } else {
+      alert('❌ Lỗi: ' + result.message);
     }
   });
 }

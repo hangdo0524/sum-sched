@@ -353,6 +353,88 @@ export function userHasData(userId) {
   return data && JSON.parse(data).length > 0;
 }
 
+// GitHub API configuration
+const GITHUB_CONFIG = {
+  owner: 'hangdo0524',
+  repo: 'sum-sched',
+  branch: 'main'
+};
+
+// Get/Set GitHub token
+export function getGitHubToken() {
+  return localStorage.getItem('sumSched_github_token');
+}
+
+export function setGitHubToken(token) {
+  localStorage.setItem('sumSched_github_token', token);
+}
+
+// Save data to GitHub
+export async function saveToGitHub(userId) {
+  const token = getGitHubToken();
+  if (!token) {
+    const newToken = prompt(
+      'Nhập GitHub Personal Access Token:\n\n' +
+      '1. Vào https://github.com/settings/tokens\n' +
+      '2. Generate new token (classic)\n' +
+      '3. Chọn scope: repo\n' +
+      '4. Copy token và paste vào đây:'
+    );
+    if (!newToken) return { success: false, message: 'Cần token để lưu' };
+    setGitHubToken(newToken);
+    return saveToGitHub(userId); // Retry with new token
+  }
+
+  const filePath = `data/users/${userId}.json`;
+  const content = exportData();
+  const apiUrl = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${filePath}`;
+
+  try {
+    // Get current file SHA (needed for update)
+    let sha = null;
+    const getResponse = await fetch(apiUrl, {
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+
+    if (getResponse.ok) {
+      const fileData = await getResponse.json();
+      sha = fileData.sha;
+    }
+
+    // Update/Create file
+    const putResponse = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: `Update ${userId} schedule data`,
+        content: btoa(unescape(encodeURIComponent(content))),
+        sha: sha,
+        branch: GITHUB_CONFIG.branch
+      })
+    });
+
+    if (putResponse.ok) {
+      return { success: true, message: 'Đã lưu lên GitHub!' };
+    } else {
+      const error = await putResponse.json();
+      if (putResponse.status === 401) {
+        setGitHubToken(null); // Clear invalid token
+        return { success: false, message: 'Token không hợp lệ. Vui lòng nhập lại.' };
+      }
+      return { success: false, message: error.message || 'Lỗi khi lưu' };
+    }
+  } catch (e) {
+    return { success: false, message: e.message };
+  }
+}
+
 // Sample Data (for demo)
 // Subject categories
 export const SUBJECT_CATEGORIES = {
@@ -524,5 +606,8 @@ export default {
   importData,
   downloadDataAsFile,
   autoLoadUserData,
-  userHasData
+  userHasData,
+  saveToGitHub,
+  getGitHubToken,
+  setGitHubToken
 };
