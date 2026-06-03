@@ -70,6 +70,8 @@ import {
   renderDetailedTable
 } from './reports.js';
 
+import { initDashboard, updateDashboard } from './dashboard.js';
+
 // State
 let currentDate = new Date();
 let currentWeekStart = getWeekStart(currentDate);
@@ -127,6 +129,7 @@ async function initApp(authUser, profile) {
     refreshSchedule();
     refreshSubjects();
     refreshReports();
+    updateDashboard();
   });
 
   // Initialize user (creates default users if needed, loads from Firebase)
@@ -139,6 +142,9 @@ async function initApp(authUser, profile) {
   refreshSubjects();
   refreshReports();
 
+  // Initialize dashboard with countdown
+  initDashboard();
+
   // Setup event listeners
   setupNavigation();
   setupScheduleControls();
@@ -148,6 +154,7 @@ async function initApp(authUser, profile) {
   setupModals();
   setupUserSelector();
   setupUserProfile();
+  setupCalendarSelector();
 
   // Show admin section if user is admin
   if (isAdmin()) {
@@ -200,6 +207,65 @@ function setupUserProfile() {
     });
   }
 }
+
+function setupCalendarSelector() {
+  const btn = document.getElementById('btn-calendar-selector');
+  const dropdown = document.getElementById('calendar-dropdown');
+  const addBtn = document.getElementById('btn-add-calendar');
+
+  if (btn && dropdown) {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdown.classList.toggle('calendar-dropdown--open');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!dropdown.contains(e.target)) {
+        dropdown.classList.remove('calendar-dropdown--open');
+      }
+    });
+  }
+
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      openCalendarModal();
+    });
+  }
+}
+
+function openCalendarModal(calendarId = null) {
+  const modal = document.getElementById('modal-calendar');
+  const titleEl = document.getElementById('modal-calendar-title');
+  const saveBtn = document.getElementById('btn-save-calendar');
+
+  if (!modal) return;
+
+  // Reset form
+  document.getElementById('calendar-name').value = '';
+  document.getElementById('calendar-type').value = 'summer';
+  document.getElementById('calendar-color').value = '#6366f1';
+  document.getElementById('calendar-start').value = '';
+  document.getElementById('calendar-end').value = '';
+
+  if (calendarId) {
+    // Edit mode - TODO: load calendar data
+    titleEl.textContent = 'Sửa lịch';
+    saveBtn.textContent = 'Lưu thay đổi';
+  } else {
+    // Create mode - set default dates
+    titleEl.textContent = 'Tạo lịch mới';
+    saveBtn.textContent = 'Tạo lịch';
+
+    // Set default dates based on calendar type
+    const today = new Date();
+    const year = today.getFullYear();
+
+    // Default to summer schedule
+    document.getElementById('calendar-start').value = `${year}-06-01`;
+    document.getElementById('calendar-end').value = `${year}-08-31`;
+  }
+
+  showModal('modal-calendar');
 }
 
 function refreshSchedule() {
