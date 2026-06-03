@@ -260,10 +260,18 @@ function showSuggestions() {
     byDate[s.date].items.push(s);
   });
 
+  // Sort: teacher slots first, then by time
+  Object.values(byDate).forEach(data => {
+    data.items.sort((a, b) => {
+      if (a.isTeacherSlot !== b.isTeacherSlot) return a.isTeacherSlot ? -1 : 1;
+      return a.startTime.localeCompare(b.startTime);
+    });
+  });
+
   container.innerHTML = Object.entries(byDate).map(([date, data]) => `
     <div class="suggest-day">${data.dayName}</div>
-    ${data.items.map((s, idx) => `
-      <div class="suggest-item ${s.selected ? 'suggest-item--selected' : ''}" data-id="${s.id}">
+    ${data.items.map((s) => `
+      <div class="suggest-item ${s.selected ? 'suggest-item--selected' : ''} ${s.isTeacherSlot ? 'suggest-item--teacher' : 'suggest-item--ai'}" data-id="${s.id}">
         <div class="suggest-item__check">
           <input type="checkbox" ${s.selected ? 'checked' : ''} data-suggestion-id="${s.id}">
         </div>

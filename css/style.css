@@ -350,30 +350,35 @@ body {
   max-width: 600px;
 }
 
-.suggest-principles {
-  background: var(--color-gray-50);
+.suggest-legend {
+  display: flex;
+  gap: var(--spacing-4);
   padding: var(--spacing-3);
+  background: var(--color-gray-50);
   border-radius: var(--radius-md);
   margin-bottom: var(--spacing-4);
 }
 
-.suggest-principles h4 {
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  margin-bottom: var(--spacing-2);
-  color: var(--color-gray-700);
-}
-
-.suggest-principles ul {
-  list-style: none;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+.legend-item {
+  display: flex;
+  align-items: center;
   gap: var(--spacing-2);
-}
-
-.suggest-principles li {
   font-size: var(--font-size-xs);
   color: var(--color-gray-600);
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.legend-dot--teacher {
+  background: var(--color-primary);
+}
+
+.legend-dot--ai {
+  background: var(--color-warning);
 }
 
 .suggest-list {
@@ -402,6 +407,14 @@ body {
 .suggest-item--selected {
   border-color: var(--color-primary);
   background: #f5f3ff;
+}
+
+.suggest-item--teacher {
+  border-left: 3px solid var(--color-primary);
+}
+
+.suggest-item--ai {
+  border-left: 3px solid var(--color-warning);
 }
 
 .suggest-item__check {

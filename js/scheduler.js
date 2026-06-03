@@ -241,16 +241,68 @@ export function generateSmartSuggestions(weekStartDate) {
   const weekDates = getWeekDates(weekStartDate);
   const suggestions = [];
 
-  // Get flexible subjects
-  const flexibleSubjects = subjects.filter(s =>
-    s.type === 'flexible' || s.type === 'semi-flexible' || s.type === 'hybrid'
+  // PART 1: Teacher's available slots (weekly-pick and fixed-plus)
+  const teacherSubjects = subjects.filter(s =>
+    s.type === 'weekly-pick' || s.type === 'fixed-plus'
   );
 
-  if (flexibleSubjects.length === 0) return suggestions;
+  teacherSubjects.forEach(subject => {
+    const config = subject.config || {};
+    const unselectedSlots = (subject.schedule || []).filter(slot => slot.selected === false);
 
-  // Track sessions per subject
+    unselectedSlots.forEach(slot => {
+      weekDates.forEach(dateStr => {
+        const dayOfWeek = getDayOfWeek(dateStr);
+        if (slot.day !== dayOfWeek) return;
+
+        const event = events.find(e => e.date === dateStr);
+        if (event && ['holiday', 'trip'].includes(event.type)) return;
+
+        // Check if already has a session at this time
+        const hasSession = existingSessions.some(
+          s => s.subjectId === subject.id && s.date === dateStr && s.startTime === slot.startTime
+        );
+        if (hasSession) return;
+
+        const endTime = slot.endTime || addHoursToTime(slot.startTime, subject.slotDuration || 1.5);
+        const duration = (timeToMinutes(endTime) - timeToMinutes(slot.startTime)) / 60;
+
+        let reason = '';
+        if (subject.type === 'weekly-pick') {
+          reason = `📆 Buổi thầy/cô có sẵn • Chọn ${config.targetSessions || 1} buổi/tuần`;
+        } else {
+          reason = `📅+ Buổi đi thêm tùy chọn (ngoài ${config.requiredSessions || 2} buổi cố định)`;
+        }
+
+        suggestions.push({
+          id: generateId(),
+          subjectId: subject.id,
+          subjectName: subject.name,
+          color: subject.color,
+          date: dateStr,
+          dayName: formatDateDisplay(dateStr),
+          startTime: slot.startTime,
+          endTime: endTime,
+          duration: duration,
+          reason: reason,
+          priority: 20, // Teacher slots have high priority
+          selected: false, // User must explicitly select
+          isTeacherSlot: true
+        });
+      });
+    });
+  });
+
+  // PART 2: Self-study subjects (AI suggestions)
+  const selfStudySubjects = subjects.filter(s =>
+    s.type === 'self-study' || s.type === 'flexible' || s.type === 'semi-flexible'
+  );
+
+  if (selfStudySubjects.length === 0 && suggestions.length === 0) return suggestions;
+
+  // Track sessions per subject for self-study
   const sessionCounts = {};
-  flexibleSubjects.forEach(s => sessionCounts[s.id] = 0);
+  selfStudySubjects.forEach(s => sessionCounts[s.id] = 0);
 
   // Count existing confirmed sessions
   existingSessions.forEach(s => {
@@ -276,7 +328,6 @@ export function generateSmartSuggestions(weekStartDate) {
       return categorizeSubject(subject?.name || '');
     });
 
-    // Smart selection based on balance
     const needsBrain = !todayCategories.includes('brain') && !todayCategories.includes('academic');
     const needsPhysical = !todayCategories.includes('physical');
     const needsArt = !todayCategories.includes('art');
@@ -284,26 +335,23 @@ export function generateSmartSuggestions(weekStartDate) {
     for (const slot of freeSlots) {
       if (slot.duration < 1) continue;
 
-      // Determine optimal time period
       const slotMinutes = timeToMinutes(slot.startTime);
       const isMorning = slotMinutes < timeToMinutes('12:00');
       const isAfternoon = slotMinutes >= timeToMinutes('14:00') && slotMinutes < timeToMinutes('17:00');
       const isEvening = slotMinutes >= timeToMinutes('19:00');
 
-      // Find best subject for this slot
-      for (const subject of flexibleSubjects) {
-        const config = subject.flexibleConfig || {};
-        const targetSessions = config.sessionsPerWeek || (subject.type === 'hybrid' ? 2 : 5);
+      for (const subject of selfStudySubjects) {
+        const config = subject.config || subject.flexibleConfig || {};
+        const targetSessions = config.sessionsPerWeek || 5;
         const duration = config.duration || subject.slotDuration || 2;
 
         if (sessionCounts[subject.id] >= targetSessions) continue;
         if (slot.duration < duration) continue;
 
-        // Check if already has a session today
         const hasSessionToday = existingSessions.some(
           s => s.subjectId === subject.id && s.date === dateStr
         ) || suggestions.some(
-          s => s.subjectId === subject.id && s.date === dateStr
+          s => s.subjectId === subject.id && s.date === dateStr && !s.isTeacherSlot
         );
         if (hasSessionToday) continue;
 
@@ -311,54 +359,29 @@ export function generateSmartSuggestions(weekStartDate) {
         let reason = '';
         let priority = 0;
 
-        // Smart reasoning
         if (isMorning) {
           if (category === 'brain' || category === 'academic') {
-            reason = '🌅 Buổi sáng tập trung cao → phù hợp môn học thuật';
+            reason = '🌅 Buổi sáng tập trung cao → học thuật';
             priority = 10;
-          } else if (category === 'physical') {
-            reason = '🌅 Buổi sáng mát mẻ → tốt cho vận động';
-            priority = 8;
           } else {
             reason = '🌅 Buổi sáng → học tập hiệu quả';
             priority = 5;
           }
         } else if (isAfternoon) {
           if (category === 'physical' && needsPhysical) {
-            reason = '☀️ Xen kẽ sau học buổi sáng → thể chất giúp thư giãn';
+            reason = '☀️ Chiều → thể chất giúp thư giãn';
             priority = 10;
-          } else if (category === 'art' && needsArt) {
-            reason = '🎨 Buổi chiều → sáng tạo, nghệ thuật';
-            priority = 9;
           } else {
             reason = '☀️ Buổi chiều → học nhẹ nhàng';
             priority = 5;
           }
         } else if (isEvening) {
-          if (category === 'art') {
-            reason = '🌙 Buổi tối thư giãn → phù hợp nghệ thuật';
-            priority = 8;
-          } else if (category === 'brain' || category === 'academic') {
-            reason = '🌙 Ôn lại bài buổi tối → củng cố kiến thức';
-            priority = 6;
-          } else {
-            reason = '🌙 Buổi tối → hoạt động nhẹ';
-            priority = 4;
-          }
+          reason = '🌙 Buổi tối → ôn bài';
+          priority = 6;
         }
 
-        // Bonus for balance
         if ((category === 'brain' || category === 'academic') && needsBrain) {
-          reason += ' • Cân bằng: chưa có môn học thuật hôm nay';
           priority += 3;
-        }
-        if (category === 'physical' && needsPhysical) {
-          reason += ' • Cân bằng: chưa có vận động hôm nay';
-          priority += 3;
-        }
-        if (category === 'art' && needsArt) {
-          reason += ' • Cân bằng: chưa có nghệ thuật hôm nay';
-          priority += 2;
         }
 
         suggestions.push({
@@ -371,9 +394,10 @@ export function generateSmartSuggestions(weekStartDate) {
           startTime: slot.startTime,
           endTime: addHoursToTime(slot.startTime, duration),
           duration: duration,
-          reason: reason,
+          reason: '🤖 ' + reason,
           priority: priority,
-          selected: true
+          selected: true,
+          isTeacherSlot: false
         });
 
         sessionCounts[subject.id]++;
