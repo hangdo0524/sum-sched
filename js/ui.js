@@ -98,18 +98,39 @@ export function renderSubjectList(subjects, container, filter = 'all') {
     li.className = 'subject-item';
     li.dataset.subjectId = subject.id;
 
-    const scheduleText = subject.type === 'fixed' && subject.schedule ?
-      subject.schedule.map(s => `${getDayName(s.day)} ${s.startTime}`).join(', ') :
-      'Linh hoạt';
+    let scheduleText = '';
+    let typeLabel = '';
+
+    switch (subject.type) {
+      case 'fixed':
+        typeLabel = '📅 Cố định';
+        scheduleText = subject.schedule?.map(s => `${getDayName(s.day)} ${s.startTime}-${s.endTime || ''}`).join(', ') || '';
+        break;
+      case 'semi-flexible':
+        typeLabel = '🕐 Bán linh hoạt';
+        const slots = subject.flexibleConfig?.timeSlots?.map(s =>
+          s === 'morning' ? 'Sáng' : s === 'afternoon' ? 'Chiều' : 'Tối'
+        ).join('/') || 'Sáng';
+        scheduleText = `${subject.flexibleConfig?.sessionsPerWeek || 3}x/tuần • ${slots} • ${subject.slotDuration || 1.5}h`;
+        break;
+      case 'flexible':
+        typeLabel = '🔄 Linh hoạt';
+        scheduleText = `${subject.flexibleConfig?.sessionsPerWeek || 5}x/tuần • ${subject.slotDuration || 2}h/buổi`;
+        break;
+      case 'hybrid':
+        typeLabel = '🔀 Kết hợp';
+        const fixedPart = subject.schedule?.map(s => `${getDayName(s.day)} ${s.startTime}`).join(', ') || '';
+        const flexPart = subject.flexibleConfig ? `+ ${subject.flexibleConfig.sessionsPerWeek}x linh hoạt` : '';
+        scheduleText = `${fixedPart} ${flexPart}`;
+        break;
+    }
 
     li.innerHTML = `
       <div class="subject-item__color" style="background-color: ${subject.color}"></div>
       <div class="subject-item__info">
         <div class="subject-item__name">${subject.name}</div>
         <div class="subject-item__meta">
-          ${subject.type === 'fixed' ? '📅 Cố định' : '🔄 Linh hoạt'} •
-          ${subject.slotDuration}h/buổi •
-          ${scheduleText}
+          ${typeLabel} • ${scheduleText}
         </div>
       </div>
       <div class="subject-item__actions">
@@ -138,7 +159,7 @@ function getDayName(day) {
 export function renderScheduleInputs(container, schedule = []) {
   container.innerHTML = '';
 
-  if (schedule.length === 0) {
+  if (!schedule || schedule.length === 0) {
     addScheduleRow(container);
   } else {
     schedule.forEach(slot => {
@@ -161,7 +182,10 @@ export function addScheduleRow(container, slot = null) {
       <option value="6" ${slot?.day === 6 ? 'selected' : ''}>T7</option>
       <option value="0" ${slot?.day === 0 ? 'selected' : ''}>CN</option>
     </select>
-    <input type="time" class="schedule-time-input" value="${slot?.startTime || '09:00'}">
+    <input type="time" class="schedule-start-input" value="${slot?.startTime || '09:00'}" title="Giờ bắt đầu">
+    <span class="schedule-separator">→</span>
+    <input type="time" class="schedule-end-input" value="${slot?.endTime || '10:30'}" title="Giờ kết thúc">
+    <span class="schedule-duration">${slot ? calculateDuration(slot.startTime, slot.endTime) : '1.5h'}</span>
     <button type="button" class="btn btn--icon btn-remove-schedule" aria-label="Xóa">
       <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
         <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/>
@@ -169,7 +193,27 @@ export function addScheduleRow(container, slot = null) {
     </button>
   `;
 
+  // Auto-calculate duration when time changes
+  const startInput = row.querySelector('.schedule-start-input');
+  const endInput = row.querySelector('.schedule-end-input');
+  const durationSpan = row.querySelector('.schedule-duration');
+
+  const updateDuration = () => {
+    durationSpan.textContent = calculateDuration(startInput.value, endInput.value);
+  };
+
+  startInput.addEventListener('change', updateDuration);
+  endInput.addEventListener('change', updateDuration);
+
   container.appendChild(row);
+}
+
+function calculateDuration(startTime, endTime) {
+  if (!startTime || !endTime) return '0h';
+  const [sh, sm] = startTime.split(':').map(Number);
+  const [eh, em] = endTime.split(':').map(Number);
+  const duration = (eh * 60 + em - sh * 60 - sm) / 60;
+  return duration > 0 ? `${duration}h` : '0h';
 }
 
 export function getScheduleFromInputs(container) {
@@ -178,10 +222,11 @@ export function getScheduleFromInputs(container) {
 
   rows.forEach(row => {
     const day = parseInt(row.querySelector('.schedule-day-select').value);
-    const startTime = row.querySelector('.schedule-time-input').value;
+    const startTime = row.querySelector('.schedule-start-input').value;
+    const endTime = row.querySelector('.schedule-end-input').value;
 
-    if (startTime) {
-      schedule.push({ day, startTime });
+    if (startTime && endTime) {
+      schedule.push({ day, startTime, endTime });
     }
   });
 

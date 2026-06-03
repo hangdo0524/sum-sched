@@ -192,12 +192,11 @@ export function loadSampleData() {
       id: 'subj_4',
       name: 'Tiếng Anh Online 1:1',
       type: 'fixed',
-      slotDuration: 1.5,
-      hasTeacher: true,
+      slotDuration: 1,
       color: '#3b82f6',
       schedule: [
-        { day: 2, startTime: '19:00' }, // T3
-        { day: 4, startTime: '19:00' }  // T5
+        { day: 2, startTime: '19:00', endTime: '20:00' },
+        { day: 4, startTime: '19:00', endTime: '20:00' }
       ]
     },
     {
@@ -205,36 +204,33 @@ export function loadSampleData() {
       name: 'Toán MathX',
       type: 'fixed',
       slotDuration: 1.5,
-      hasTeacher: true,
       color: '#8b5cf6',
       schedule: [
-        { day: 1, startTime: '09:00' }, // T2
-        { day: 3, startTime: '09:00' }, // T4
-        { day: 5, startTime: '09:00' }  // T6
+        { day: 1, startTime: '09:00', endTime: '10:30' },
+        { day: 3, startTime: '09:00', endTime: '10:30' },
+        { day: 5, startTime: '09:00', endTime: '10:30' }
       ]
     },
     {
       id: 'subj_6',
       name: 'Học Bơi',
       type: 'fixed',
-      slotDuration: 1.5,
-      hasTeacher: true,
+      slotDuration: 1,
       color: '#06b6d4',
       schedule: [
-        { day: 2, startTime: '17:00' }, // T3
-        { day: 4, startTime: '17:00' }, // T5
-        { day: 6, startTime: '08:00' }  // T7
+        { day: 2, startTime: '17:00', endTime: '18:00' },
+        { day: 4, startTime: '17:00', endTime: '18:00' },
+        { day: 6, startTime: '08:00', endTime: '09:00' }
       ]
     },
     {
       id: 'subj_7',
       name: 'Học Vẽ',
       type: 'fixed',
-      slotDuration: 1.5,
-      hasTeacher: true,
+      slotDuration: 2,
       color: '#ec4899',
       schedule: [
-        { day: 6, startTime: '14:00' }  // T7
+        { day: 6, startTime: '14:00', endTime: '16:00' }
       ]
     },
     {
@@ -242,11 +238,10 @@ export function loadSampleData() {
       name: 'Học Võ',
       type: 'fixed',
       slotDuration: 1.5,
-      hasTeacher: true,
       color: '#f97316',
       schedule: [
-        { day: 1, startTime: '17:00' }, // T2
-        { day: 3, startTime: '17:00' }  // T4
+        { day: 1, startTime: '17:00', endTime: '18:30' },
+        { day: 3, startTime: '17:00', endTime: '18:30' }
       ]
     }
   ];

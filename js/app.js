@@ -222,10 +222,27 @@ function setupSubjectForm() {
   const scheduleGroup = document.getElementById('schedule-group');
   const fixedSchedules = document.getElementById('fixed-schedules');
 
-  // Toggle schedule inputs based on type
+  // Toggle form sections based on type
   form.querySelectorAll('input[name="subject-type"]').forEach(radio => {
     radio.addEventListener('change', () => {
-      scheduleGroup.style.display = radio.value === 'fixed' ? 'block' : 'none';
+      const type = radio.value;
+      // Hide all optional groups first
+      scheduleGroup.style.display = 'none';
+      document.getElementById('semi-flexible-group').style.display = 'none';
+      document.getElementById('flexible-group').style.display = 'none';
+      document.getElementById('hybrid-flexible-group').style.display = 'none';
+
+      // Show relevant groups
+      if (type === 'fixed') {
+        scheduleGroup.style.display = 'block';
+      } else if (type === 'semi-flexible') {
+        document.getElementById('semi-flexible-group').style.display = 'block';
+      } else if (type === 'flexible') {
+        document.getElementById('flexible-group').style.display = 'block';
+      } else if (type === 'hybrid') {
+        scheduleGroup.style.display = 'block';
+        document.getElementById('hybrid-flexible-group').style.display = 'block';
+      }
     });
   });
 
@@ -249,7 +266,6 @@ function setupSubjectForm() {
     const id = document.getElementById('subject-id').value;
     const name = document.getElementById('subject-name').value.trim();
     const type = form.querySelector('input[name="subject-type"]:checked').value;
-    const hasTeacher = form.querySelector('input[name="has-teacher"]:checked').value === 'true';
     const color = document.getElementById('subject-color').value;
 
     if (!name) {
@@ -261,13 +277,42 @@ function setupSubjectForm() {
       id: id || undefined,
       name,
       type,
-      slotDuration: hasTeacher ? 1.5 : 2,
-      hasTeacher,
       color
     };
 
-    if (type === 'fixed') {
+    // Handle different schedule types
+    if (type === 'fixed' || type === 'hybrid') {
       subject.schedule = getScheduleFromInputs(fixedSchedules);
+      if (subject.schedule.length > 0) {
+        const totalDuration = subject.schedule.reduce((sum, slot) => {
+          const [sh, sm] = slot.startTime.split(':').map(Number);
+          const [eh, em] = slot.endTime.split(':').map(Number);
+          return sum + (eh * 60 + em - sh * 60 - sm) / 60;
+        }, 0);
+        subject.slotDuration = totalDuration / subject.schedule.length;
+      }
+    }
+
+    if (type === 'hybrid') {
+      subject.flexibleConfig = {
+        duration: parseFloat(document.getElementById('hybrid-duration').value) || 2,
+        sessionsPerWeek: parseInt(document.getElementById('hybrid-sessions-per-week').value) || 2
+      };
+    } else if (type === 'semi-flexible') {
+      const checkedSlots = Array.from(form.querySelectorAll('input[name="time-slots"]:checked'))
+        .map(cb => cb.value);
+      subject.flexibleConfig = {
+        timeSlots: checkedSlots.length ? checkedSlots : ['morning'],
+        duration: parseFloat(document.getElementById('semi-duration').value) || 1.5,
+        sessionsPerWeek: parseInt(document.getElementById('semi-sessions-per-week').value) || 3
+      };
+      subject.slotDuration = subject.flexibleConfig.duration;
+    } else if (type === 'flexible') {
+      subject.flexibleConfig = {
+        duration: parseFloat(document.getElementById('flexible-duration').value) || 2,
+        sessionsPerWeek: parseInt(document.getElementById('flexible-sessions-per-week').value) || 5
+      };
+      subject.slotDuration = subject.flexibleConfig.duration;
     }
 
     saveSubject(subject);
@@ -275,7 +320,8 @@ function setupSubjectForm() {
     refreshSubjects();
     refreshSchedule();
   });
-}
+
+  }
 
 function openSubjectModal(subjectId = null) {
   const form = document.getElementById('form-subject');
@@ -287,6 +333,16 @@ function openSubjectModal(subjectId = null) {
   document.getElementById('subject-id').value = '';
   document.getElementById('subject-color').value = '#4f46e5';
 
+  // Reset all form sections
+  const semiFlexGroup = document.getElementById('semi-flexible-group');
+  const flexGroup = document.getElementById('flexible-group');
+  const hybridFlexGroup = document.getElementById('hybrid-flexible-group');
+
+  scheduleGroup.style.display = 'none';
+  semiFlexGroup.style.display = 'none';
+  flexGroup.style.display = 'none';
+  hybridFlexGroup.style.display = 'none';
+
   if (subjectId) {
     const subject = getSubject(subjectId);
     if (subject) {
@@ -295,21 +351,43 @@ function openSubjectModal(subjectId = null) {
       document.getElementById('subject-name').value = subject.name;
       document.getElementById('subject-color').value = subject.color;
 
-      form.querySelector(`input[name="subject-type"][value="${subject.type}"]`).checked = true;
-      form.querySelector(`input[name="has-teacher"][value="${subject.hasTeacher}"]`).checked = true;
+      // Set type radio
+      const typeRadio = form.querySelector(`input[name="subject-type"][value="${subject.type}"]`);
+      if (typeRadio) typeRadio.checked = true;
 
-      scheduleGroup.style.display = subject.type === 'fixed' ? 'block' : 'none';
-
-      if (subject.type === 'fixed' && subject.schedule) {
+      // Show/populate relevant sections based on type
+      if (subject.type === 'fixed' || subject.type === 'hybrid') {
+        scheduleGroup.style.display = 'block';
         renderScheduleInputs(fixedSchedules, subject.schedule);
-      } else {
-        renderScheduleInputs(fixedSchedules);
+      }
+
+      if (subject.type === 'hybrid' && subject.flexibleConfig) {
+        hybridFlexGroup.style.display = 'block';
+        document.getElementById('hybrid-duration').value = subject.flexibleConfig.duration || 2;
+        document.getElementById('hybrid-sessions-per-week').value = subject.flexibleConfig.sessionsPerWeek || 2;
+      } else if (subject.type === 'semi-flexible' && subject.flexibleConfig) {
+        semiFlexGroup.style.display = 'block';
+        // Set time slots checkboxes
+        form.querySelectorAll('input[name="time-slots"]').forEach(cb => {
+          cb.checked = subject.flexibleConfig.timeSlots?.includes(cb.value);
+        });
+        document.getElementById('semi-duration').value = subject.flexibleConfig.duration || 1.5;
+        document.getElementById('semi-sessions-per-week').value = subject.flexibleConfig.sessionsPerWeek || 3;
+      } else if (subject.type === 'flexible' && subject.flexibleConfig) {
+        flexGroup.style.display = 'block';
+        document.getElementById('flexible-duration').value = subject.flexibleConfig.duration || 2;
+        document.getElementById('flexible-sessions-per-week').value = subject.flexibleConfig.sessionsPerWeek || 5;
       }
     }
   } else {
     title.textContent = 'Thêm môn học';
+    form.querySelector('input[name="subject-type"][value="fixed"]').checked = true;
     scheduleGroup.style.display = 'block';
     renderScheduleInputs(fixedSchedules);
+    // Reset checkboxes
+    form.querySelectorAll('input[name="time-slots"]').forEach(cb => {
+      cb.checked = cb.value === 'morning';
+    });
   }
 
   showModal('modal-subject');

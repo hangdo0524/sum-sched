@@ -76,15 +76,18 @@ function getFixedSessionsForDate(dateStr, subjects) {
   const dayOfWeek = getDayOfWeek(dateStr);
   const sessions = [];
 
-  subjects.filter(s => s.type === 'fixed' && s.schedule).forEach(subject => {
+  // Get fixed sessions from 'fixed' and 'hybrid' type subjects
+  subjects.filter(s => (s.type === 'fixed' || s.type === 'hybrid') && s.schedule).forEach(subject => {
     subject.schedule.forEach(slot => {
       if (slot.day === dayOfWeek) {
+        const endTime = slot.endTime || addHoursToTime(slot.startTime, subject.slotDuration || 1.5);
+        const duration = (timeToMinutes(endTime) - timeToMinutes(slot.startTime)) / 60;
         sessions.push({
           subjectId: subject.id,
           subjectName: subject.name,
           startTime: slot.startTime,
-          endTime: addHoursToTime(slot.startTime, subject.slotDuration),
-          duration: subject.slotDuration,
+          endTime: endTime,
+          duration: duration,
           color: subject.color,
           isFixed: true
         });
@@ -130,6 +133,12 @@ function findFreeSlots(fixedSessions, settings) {
   return slots;
 }
 
+const TIME_SLOTS = {
+  morning: { start: '08:00', end: '11:30' },
+  afternoon: { start: '14:00', end: '17:00' },
+  evening: { start: '19:00', end: '21:00' }
+};
+
 export function generateWeekSchedule(weekStartDate) {
   const subjects = getSubjects();
   const events = getEvents();
@@ -137,10 +146,15 @@ export function generateWeekSchedule(weekStartDate) {
   const settings = getSettings();
 
   const weekDates = getWeekDates(weekStartDate);
-  const flexibleSubjects = subjects.filter(s => s.type === 'flexible');
   const schedule = {};
 
-  let flexIndex = 0;
+  // Track sessions per subject per week for flexible scheduling
+  const flexibleSessionCounts = {};
+  subjects.forEach(s => {
+    if (s.type === 'flexible' || s.type === 'semi-flexible' || s.type === 'hybrid') {
+      flexibleSessionCounts[s.id] = 0;
+    }
+  });
 
   weekDates.forEach(dateStr => {
     schedule[dateStr] = {
@@ -156,13 +170,13 @@ export function generateWeekSchedule(weekStartDate) {
       return;
     }
 
-    // Get fixed sessions for this day
+    // Get fixed sessions for this day (from fixed and hybrid subjects)
     const fixedSessions = getFixedSessionsForDate(dateStr, subjects);
 
     // Add fixed sessions
     fixedSessions.forEach(session => {
       const existing = existingSessions.find(
-        s => s.subjectId === session.subjectId && s.date === dateStr
+        s => s.subjectId === session.subjectId && s.date === dateStr && s.startTime === session.startTime
       );
 
       schedule[dateStr].sessions.push({
@@ -180,39 +194,65 @@ export function generateWeekSchedule(weekStartDate) {
       });
     });
 
-    // Find free slots and fill with flexible subjects
+    // Find free slots
     const freeSlots = findFreeSlots(fixedSessions, settings);
 
+    // Get flexible subjects that still need sessions this week
+    const flexibleSubjects = subjects.filter(s => {
+      if (s.type === 'flexible' || s.type === 'semi-flexible') {
+        const target = s.flexibleConfig?.sessionsPerWeek || 3;
+        return flexibleSessionCounts[s.id] < target;
+      }
+      if (s.type === 'hybrid') {
+        const target = s.flexibleConfig?.sessionsPerWeek || 0;
+        return flexibleSessionCounts[s.id] < target;
+      }
+      return false;
+    });
+
+    // Fill free slots with flexible subjects
     freeSlots.forEach(slot => {
-      // Try to fit flexible subjects
-      for (let i = 0; i < flexibleSubjects.length && slot.duration >= 1.5; i++) {
-        const subjectIdx = (flexIndex + i) % flexibleSubjects.length;
-        const subject = flexibleSubjects[subjectIdx];
+      for (const subject of flexibleSubjects) {
+        const config = subject.flexibleConfig || {};
+        const duration = config.duration || subject.slotDuration || 2;
+        const targetSessions = config.sessionsPerWeek || 3;
 
-        if (slot.duration >= subject.slotDuration) {
-          const existing = existingSessions.find(
-            s => s.subjectId === subject.id && s.date === dateStr && s.startTime === slot.startTime
-          );
+        if (flexibleSessionCounts[subject.id] >= targetSessions) continue;
+        if (slot.duration < duration) continue;
 
-          schedule[dateStr].sessions.push({
-            id: existing?.id || generateId(),
-            subjectId: subject.id,
-            subjectName: subject.name,
-            date: dateStr,
-            startTime: slot.startTime,
-            endTime: addHoursToTime(slot.startTime, subject.slotDuration),
-            duration: subject.slotDuration,
-            color: subject.color,
-            status: existing?.status || 'pending',
-            notes: existing?.notes || '',
-            isFixed: false
+        // For semi-flexible: check if slot falls within preferred time slots
+        if (subject.type === 'semi-flexible' && config.timeSlots) {
+          const slotStartMin = timeToMinutes(slot.startTime);
+          const isInPreferredSlot = config.timeSlots.some(ts => {
+            const tsConfig = TIME_SLOTS[ts];
+            return slotStartMin >= timeToMinutes(tsConfig.start) &&
+                   slotStartMin < timeToMinutes(tsConfig.end);
           });
-
-          slot.startTime = addHoursToTime(slot.startTime, subject.slotDuration + 0.5);
-          slot.duration -= subject.slotDuration + 0.5;
-          flexIndex = (subjectIdx + 1) % flexibleSubjects.length;
-          break;
+          if (!isInPreferredSlot) continue;
         }
+
+        const existing = existingSessions.find(
+          s => s.subjectId === subject.id && s.date === dateStr && s.startTime === slot.startTime
+        );
+
+        schedule[dateStr].sessions.push({
+          id: existing?.id || generateId(),
+          subjectId: subject.id,
+          subjectName: subject.name,
+          date: dateStr,
+          startTime: slot.startTime,
+          endTime: addHoursToTime(slot.startTime, duration),
+          duration: duration,
+          color: subject.color,
+          status: existing?.status || 'pending',
+          notes: existing?.notes || '',
+          isFixed: false
+        });
+
+        slot.startTime = addHoursToTime(slot.startTime, duration + 0.5);
+        slot.duration -= duration + 0.5;
+        flexibleSessionCounts[subject.id]++;
+        break;
       }
     });
 
