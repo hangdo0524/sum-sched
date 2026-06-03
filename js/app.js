@@ -315,6 +315,22 @@ function setupScheduleControls() {
     // Reset input so same file can be imported again
     e.target.value = '';
   });
+
+  // Sync from server (force reload from file)
+  document.getElementById('btn-sync-data').addEventListener('click', async () => {
+    const user = getCurrentUser();
+    if (confirm(`Tải lại data của ${user.name} từ server?\n(Dữ liệu local sẽ bị ghi đè)`)) {
+      const result = await autoLoadUserData(user.id);
+      if (result.loaded) {
+        alert('Đồng bộ thành công!\n' + result.message);
+        refreshSchedule();
+        refreshSubjects();
+        refreshReports();
+      } else {
+        alert('Không tìm thấy file trên server.\nĐường dẫn: data/users/' + user.id + '.json');
+      }
+    }
+  });
 }
 
 function showSuggestions() {
