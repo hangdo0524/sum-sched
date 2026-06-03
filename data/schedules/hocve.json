@@ -1,0 +1,21 @@
+{
+  "subject": {
+    "id": "subj_7",
+    "name": "Học Vẽ",
+    "type": "weekly-pick",
+    "slotDuration": 1.5,
+    "color": "#ec4899",
+    "config": {
+      "requiredSessions": 0,
+      "targetSessions": 2
+    },
+    "schedule": [
+      { "day": 4, "startTime": "17:30", "endTime": "19:00", "selected": false, "note": "Thứ 5" },
+      { "day": 5, "startTime": "17:30", "endTime": "19:00", "selected": false, "note": "Thứ 6" },
+      { "day": 6, "startTime": "09:00", "endTime": "10:30", "selected": false, "note": "Thứ 7 sáng" },
+      { "day": 6, "startTime": "17:00", "endTime": "18:30", "selected": false, "note": "Thứ 7 chiều" },
+      { "day": 0, "startTime": "17:00", "endTime": "18:30", "selected": false, "note": "Chủ nhật" }
+    ]
+  },
+  "extractedAt": "2026-06-03"
+}

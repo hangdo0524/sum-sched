@@ -1,0 +1,137 @@
+{
+  "version": "1.0",
+  "exportedAt": "2025-06-03T00:00:00.000Z",
+  "subjects": [
+    {
+      "id": "subj_1",
+      "name": "Bài hè Toán",
+      "category": "academic",
+      "type": "self-study",
+      "slotDuration": 2,
+      "color": "#ef4444",
+      "config": {
+        "duration": 2,
+        "sessionsPerWeek": 5,
+        "preferredSlots": ["early", "morning"]
+      }
+    },
+    {
+      "id": "subj_2",
+      "name": "Bài hè Tiếng Việt",
+      "category": "academic",
+      "type": "self-study",
+      "slotDuration": 2,
+      "color": "#f59e0b",
+      "config": {
+        "duration": 2,
+        "sessionsPerWeek": 5,
+        "preferredSlots": ["early", "morning"]
+      }
+    },
+    {
+      "id": "subj_3",
+      "name": "Bài hè Tiếng Anh",
+      "category": "academic",
+      "type": "self-study",
+      "slotDuration": 2,
+      "color": "#10b981",
+      "config": {
+        "duration": 2,
+        "sessionsPerWeek": 5,
+        "preferredSlots": ["morning", "afternoon"]
+      }
+    },
+    {
+      "id": "subj_4",
+      "name": "Tiếng Anh Online 1:1",
+      "category": "academic",
+      "type": "fixed",
+      "slotDuration": 1,
+      "color": "#3b82f6",
+      "schedule": [
+        { "day": 2, "startTime": "19:00", "endTime": "20:00", "selected": true },
+        { "day": 4, "startTime": "19:00", "endTime": "20:00", "selected": true },
+        { "day": 6, "startTime": "10:00", "endTime": "11:00", "selected": false }
+      ]
+    },
+    {
+      "id": "subj_5",
+      "name": "Toán MathX",
+      "category": "academic",
+      "type": "fixed",
+      "slotDuration": 1.5,
+      "color": "#8b5cf6",
+      "schedule": [
+        { "day": 3, "startTime": "09:00", "endTime": "10:30", "selected": true }
+      ],
+      "extraSelfStudy": {
+        "enabled": true,
+        "duration": 1.5,
+        "sessionsPerWeek": 3,
+        "preferredSlots": ["early", "morning", "afternoon"]
+      }
+    },
+    {
+      "id": "subj_6",
+      "name": "Học Bơi",
+      "category": "physical",
+      "type": "fixed",
+      "slotDuration": 1,
+      "color": "#06b6d4",
+      "schedule": [
+        { "day": 2, "startTime": "17:00", "endTime": "18:00", "selected": true },
+        { "day": 4, "startTime": "17:00", "endTime": "18:00", "selected": true },
+        { "day": 6, "startTime": "08:00", "endTime": "09:00", "selected": true }
+      ]
+    },
+    {
+      "id": "subj_7",
+      "name": "Học Vẽ",
+      "category": "art",
+      "type": "weekly-pick",
+      "slotDuration": 1.5,
+      "color": "#ec4899",
+      "config": {
+        "requiredSessions": 0,
+        "targetSessions": 2
+      },
+      "schedule": [
+        { "day": 4, "startTime": "17:30", "endTime": "19:00", "selected": false },
+        { "day": 5, "startTime": "17:30", "endTime": "19:00", "selected": false },
+        { "day": 6, "startTime": "09:00", "endTime": "10:30", "selected": false },
+        { "day": 6, "startTime": "17:00", "endTime": "18:30", "selected": false },
+        { "day": 0, "startTime": "17:00", "endTime": "18:30", "selected": false }
+      ]
+    },
+    {
+      "id": "subj_8",
+      "name": "Học Võ Taekwondo",
+      "category": "physical",
+      "type": "fixed-plus",
+      "slotDuration": 1.25,
+      "color": "#f97316",
+      "config": {
+        "requiredSessions": 2,
+        "targetSessions": 3,
+        "location": "Gold Silk Vạn Phúc - Hà Đông",
+        "phone": "058.440.6711"
+      },
+      "schedule": [
+        { "day": 2, "startTime": "17:45", "endTime": "19:00", "selected": true },
+        { "day": 4, "startTime": "17:45", "endTime": "19:00", "selected": true },
+        { "day": 5, "startTime": "17:45", "endTime": "19:00", "selected": false },
+        { "day": 6, "startTime": "09:30", "endTime": "11:00", "selected": false },
+        { "day": 6, "startTime": "18:00", "endTime": "19:30", "selected": false },
+        { "day": 0, "startTime": "15:30", "endTime": "17:00", "selected": false }
+      ]
+    }
+  ],
+  "events": [],
+  "sessions": [],
+  "settings": {
+    "dailyStartTime": "08:30",
+    "dailyEndTime": "20:00",
+    "breakDuration": 30,
+    "preferredSlots": ["morning", "afternoon"]
+  }
+}

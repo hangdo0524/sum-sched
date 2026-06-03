@@ -1,0 +1,30 @@
+{
+  "subject": {
+    "id": "subj_8",
+    "name": "Học Võ Taekwondo",
+    "type": "fixed-plus",
+    "slotDuration": 1.25,
+    "color": "#f97316",
+    "config": {
+      "requiredSessions": 2,
+      "targetSessions": 3,
+      "location": "Gold Silk Vạn Phúc - Hà Đông",
+      "phone": "058.440.6711"
+    },
+    "schedule": [
+      { "day": 2, "startTime": "17:45", "endTime": "19:00", "selected": true, "note": "Thứ 3" },
+      { "day": 4, "startTime": "17:45", "endTime": "19:00", "selected": true, "note": "Thứ 5" },
+      { "day": 5, "startTime": "17:45", "endTime": "19:00", "selected": false, "note": "Thứ 6" },
+      { "day": 6, "startTime": "09:30", "endTime": "11:00", "selected": false, "note": "Thứ 7 sáng" },
+      { "day": 6, "startTime": "18:00", "endTime": "19:30", "selected": false, "note": "Thứ 7 tối" },
+      { "day": 0, "startTime": "15:30", "endTime": "17:00", "selected": false, "note": "Chủ nhật" }
+    ]
+  },
+  "source": {
+    "name": "Long Quyền Taekwondo Club",
+    "year": 2026,
+    "campus": "CS3 - Gold Silk Vạn Phúc - Hà Đông",
+    "price": "800.000đ/tháng (8 buổi)"
+  },
+  "extractedAt": "2026-06-03"
+}

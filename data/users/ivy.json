@@ -1,0 +1,55 @@
+{
+  "version": "1.1",
+  "exportedAt": "2025-06-03T00:00:00.000Z",
+  "userId": "ivy",
+  "userName": "Ivy",
+  "subjects": [
+    {
+      "id": "ivy_subj_1",
+      "name": "Tập đọc",
+      "category": "academic",
+      "type": "self-study",
+      "slotDuration": 1,
+      "color": "#f59e0b",
+      "config": {
+        "duration": 1,
+        "sessionsPerWeek": 5,
+        "preferredSlots": ["early", "morning"]
+      }
+    },
+    {
+      "id": "ivy_subj_2",
+      "name": "Tập viết",
+      "category": "academic",
+      "type": "self-study",
+      "slotDuration": 1,
+      "color": "#10b981",
+      "config": {
+        "duration": 1,
+        "sessionsPerWeek": 5,
+        "preferredSlots": ["morning"]
+      }
+    },
+    {
+      "id": "ivy_subj_3",
+      "name": "Học Bơi",
+      "category": "physical",
+      "type": "fixed",
+      "slotDuration": 1,
+      "color": "#06b6d4",
+      "schedule": [
+        { "day": 2, "startTime": "09:00", "endTime": "10:00", "selected": true },
+        { "day": 4, "startTime": "09:00", "endTime": "10:00", "selected": true },
+        { "day": 6, "startTime": "09:00", "endTime": "10:00", "selected": true }
+      ]
+    }
+  ],
+  "events": [],
+  "sessions": [],
+  "settings": {
+    "dailyStartTime": "08:30",
+    "dailyEndTime": "18:00",
+    "breakDuration": 30,
+    "preferredSlots": ["morning", "early-afternoon"]
+  }
+}

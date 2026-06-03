@@ -28,16 +28,23 @@ export function addDays(date, days) {
 
 export function getWeekStart(date) {
   const d = new Date(date);
+  d.setHours(0, 0, 0, 0); // Normalize to midnight
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday as first day
-  return new Date(d.setDate(diff));
+  d.setDate(diff);
+  return d;
 }
 
-export function getWeekDates(date) {
-  const start = getWeekStart(date);
+export function getWeekDates(weekStart) {
+  // weekStart should already be a Monday
+  const start = new Date(weekStart);
+  start.setHours(0, 0, 0, 0); // Normalize to midnight
+
   const dates = [];
   for (let i = 0; i < 7; i++) {
-    dates.push(formatDate(addDays(start, i)));
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    dates.push(formatDate(d));
   }
   return dates;
 }
@@ -72,13 +79,55 @@ function addHoursToTime(time, hours) {
   return minutesToTime(minutes);
 }
 
+function hasTimeConflict(newStart, newEnd, existingSessions, minGapMinutes = 30) {
+  const newStartMins = timeToMinutes(newStart);
+  const newEndMins = timeToMinutes(newEnd);
+
+  for (const session of existingSessions) {
+    const existStart = timeToMinutes(session.startTime);
+    const existEnd = timeToMinutes(session.endTime);
+
+    // Check overlap
+    if (newStartMins < existEnd && newEndMins > existStart) {
+      return { conflict: true, type: 'overlap', session };
+    }
+
+    // Check gap less than minGapMinutes
+    const gapBefore = newStartMins - existEnd;
+    const gapAfter = existStart - newEndMins;
+
+    if ((gapBefore > 0 && gapBefore < minGapMinutes) ||
+        (gapAfter > 0 && gapAfter < minGapMinutes)) {
+      return { conflict: true, type: 'too_close', session, gap: Math.min(gapBefore, gapAfter) };
+    }
+  }
+  return { conflict: false };
+}
+
+// Export for use in app.js
+export function checkSessionConflict(date, startTime, endTime, excludeSessionId = null) {
+  const subjects = getSubjects();
+  const existingSessions = getSessions();
+
+  // Get all sessions for this date
+  const fixedSessions = getFixedSessionsForDate(date, subjects);
+  const confirmedSessions = existingSessions.filter(s => s.date === date && s.id !== excludeSessionId);
+
+  const allDaySessions = [...fixedSessions, ...confirmedSessions];
+
+  return hasTimeConflict(startTime, endTime, allDaySessions, 30);
+}
+
 function getFixedSessionsForDate(dateStr, subjects) {
   const dayOfWeek = getDayOfWeek(dateStr);
   const sessions = [];
 
-  // Get fixed sessions from 'fixed' and 'hybrid' type subjects
-  // Only include slots that are selected (selected !== false)
-  subjects.filter(s => (s.type === 'fixed' || s.type === 'hybrid') && s.schedule).forEach(subject => {
+  // Get fixed sessions from subjects that have fixed slots
+  // 'fixed': all selected slots are fixed
+  // 'fixed-plus': selected slots are fixed, unselected are optional
+  // 'hybrid': (legacy) same as fixed-plus
+  const fixedTypes = ['fixed', 'hybrid', 'fixed-plus'];
+  subjects.filter(s => fixedTypes.includes(s.type) && s.schedule).forEach(subject => {
     subject.schedule.forEach(slot => {
       // Skip if slot is not selected
       if (slot.selected === false) return;
@@ -190,11 +239,13 @@ export function generateWeekSchedule(weekStartDate) {
       const existing = existingSessions.find(
         s => s.subjectId === session.subjectId && s.date === dateStr && s.startTime === session.startTime
       );
+      const subject = subjects.find(sub => sub.id === session.subjectId);
 
       schedule[dateStr].sessions.push({
         id: existing?.id || generateId(),
         subjectId: session.subjectId,
         subjectName: session.subjectName,
+        category: subject?.category || 'academic',
         date: dateStr,
         startTime: session.startTime,
         endTime: session.endTime,
@@ -207,16 +258,26 @@ export function generateWeekSchedule(weekStartDate) {
     });
 
     // Also add confirmed flexible sessions from storage
+    // (sessions that were selected from suggestions or created manually)
     const confirmedFlexible = existingSessions.filter(
       s => s.date === dateStr && !fixedSessions.some(f => f.subjectId === s.subjectId && f.startTime === s.startTime)
     );
 
     confirmedFlexible.forEach(session => {
       const subject = subjects.find(sub => sub.id === session.subjectId);
-      if (subject && (subject.type === 'flexible' || subject.type === 'semi-flexible' || subject.type === 'hybrid')) {
+      // Include all flexible-type subjects (old and new naming)
+      const flexibleTypes = ['flexible', 'semi-flexible', 'hybrid', 'weekly-pick', 'fixed-plus', 'self-study'];
+      if (subject && flexibleTypes.includes(subject.type)) {
+        // Skip if this is a fixed slot that's already added
+        const isAlreadyAdded = schedule[dateStr].sessions.some(
+          s => s.subjectId === session.subjectId && s.startTime === session.startTime
+        );
+        if (isAlreadyAdded) return;
+
         schedule[dateStr].sessions.push({
           ...session,
           subjectName: subject.name,
+          category: subject.category || 'academic',
           color: subject.color,
           isFixed: false
         });
@@ -267,6 +328,14 @@ export function generateSmartSuggestions(weekStartDate) {
         const endTime = slot.endTime || addHoursToTime(slot.startTime, subject.slotDuration || 1.5);
         const duration = (timeToMinutes(endTime) - timeToMinutes(slot.startTime)) / 60;
 
+        // Get all sessions for this day (fixed + confirmed)
+        const fixedForDay = getFixedSessionsForDate(dateStr, subjects);
+        const confirmedForDay = existingSessions.filter(s => s.date === dateStr);
+        const allDaySessions = [...fixedForDay, ...confirmedForDay];
+
+        // Check for conflict (overlap or < 1h gap)
+        if (hasTimeConflict(slot.startTime, endTime, allDaySessions).conflict) return;
+
         let reason = '';
         if (subject.type === 'weekly-pick') {
           reason = `📆 Buổi thầy/cô có sẵn • Chọn ${config.targetSessions || 1} buổi/tuần`;
@@ -294,15 +363,36 @@ export function generateSmartSuggestions(weekStartDate) {
   });
 
   // PART 2: Self-study subjects (AI suggestions)
+  // Include pure self-study AND subjects with extraSelfStudy enabled
   const selfStudySubjects = subjects.filter(s =>
     s.type === 'self-study' || s.type === 'flexible' || s.type === 'semi-flexible'
   );
 
-  if (selfStudySubjects.length === 0 && suggestions.length === 0) return suggestions;
+  // Also include subjects with extraSelfStudy config
+  const extraSelfStudySubjects = subjects.filter(s =>
+    s.extraSelfStudy?.enabled && ['fixed', 'weekly-pick', 'fixed-plus'].includes(s.type)
+  ).map(s => ({
+    ...s,
+    id: s.id + '_extra', // Separate ID for extra self-study sessions
+    name: s.name + ' (tự học)',
+    type: 'self-study',
+    config: {
+      duration: s.extraSelfStudy.duration,
+      sessionsPerWeek: s.extraSelfStudy.sessionsPerWeek,
+      preferredSlots: s.extraSelfStudy.preferredSlots
+    },
+    slotDuration: s.extraSelfStudy.duration,
+    isExtraSelfStudy: true,
+    originalSubjectId: s.id
+  }));
+
+  const allSelfStudySubjects = [...selfStudySubjects, ...extraSelfStudySubjects];
+
+  if (allSelfStudySubjects.length === 0 && suggestions.length === 0) return suggestions;
 
   // Track sessions per subject for self-study
   const sessionCounts = {};
-  selfStudySubjects.forEach(s => sessionCounts[s.id] = 0);
+  allSelfStudySubjects.forEach(s => sessionCounts[s.id] = 0);
 
   // Count existing confirmed sessions
   existingSessions.forEach(s => {
@@ -320,7 +410,15 @@ export function generateSmartSuggestions(weekStartDate) {
 
     // Get fixed sessions for this day
     const fixedSessions = getFixedSessionsForDate(dateStr, subjects);
+    const confirmedForDay = existingSessions.filter(s => s.date === dateStr);
     const freeSlots = findFreeSlots(fixedSessions, settings);
+
+    // Track all sessions for this day (for conflict checking)
+    const daySessions = [...fixedSessions, ...confirmedForDay];
+
+    // Also include already added suggestions for this day (teacher slots)
+    const teacherSuggestionsForDay = suggestions.filter(s => s.date === dateStr);
+    daySessions.push(...teacherSuggestionsForDay);
 
     // Analyze what categories are already scheduled today
     const todayCategories = fixedSessions.map(s => {
@@ -336,17 +434,33 @@ export function generateSmartSuggestions(weekStartDate) {
       if (slot.duration < 1) continue;
 
       const slotMinutes = timeToMinutes(slot.startTime);
+
+      // Determine time slot category
+      const getSlotCategory = (minutes) => {
+        if (minutes < timeToMinutes('10:00')) return 'early';
+        if (minutes < timeToMinutes('11:30')) return 'morning';
+        if (minutes < timeToMinutes('13:30')) return 'noon';
+        if (minutes < timeToMinutes('15:30')) return 'early-afternoon';
+        if (minutes < timeToMinutes('17:30')) return 'afternoon';
+        return 'evening';
+      };
+
+      const slotCategory = getSlotCategory(slotMinutes);
       const isMorning = slotMinutes < timeToMinutes('12:00');
       const isAfternoon = slotMinutes >= timeToMinutes('14:00') && slotMinutes < timeToMinutes('17:00');
       const isEvening = slotMinutes >= timeToMinutes('19:00');
 
-      for (const subject of selfStudySubjects) {
+      for (const subject of allSelfStudySubjects) {
         const config = subject.config || subject.flexibleConfig || {};
         const targetSessions = config.sessionsPerWeek || 5;
         const duration = config.duration || subject.slotDuration || 2;
+        const preferredSlots = config.preferredSlots || ['morning', 'afternoon'];
 
         if (sessionCounts[subject.id] >= targetSessions) continue;
         if (slot.duration < duration) continue;
+
+        // Check if this time slot matches preferred slots
+        if (!preferredSlots.includes(slotCategory)) continue;
 
         const hasSessionToday = existingSessions.some(
           s => s.subjectId === subject.id && s.date === dateStr
@@ -354,6 +468,11 @@ export function generateSmartSuggestions(weekStartDate) {
           s => s.subjectId === subject.id && s.date === dateStr && !s.isTeacherSlot
         );
         if (hasSessionToday) continue;
+
+        const newEndTime = addHoursToTime(slot.startTime, duration);
+
+        // Check for time conflict (overlap or < 30min gap) with all sessions for this day
+        if (hasTimeConflict(slot.startTime, newEndTime, daySessions).conflict) continue;
 
         const category = categorizeSubject(subject.name);
         let reason = '';
@@ -384,21 +503,25 @@ export function generateSmartSuggestions(weekStartDate) {
           priority += 3;
         }
 
-        suggestions.push({
+        const newSuggestion = {
           id: generateId(),
-          subjectId: subject.id,
+          subjectId: subject.originalSubjectId || subject.id,
           subjectName: subject.name,
           color: subject.color,
           date: dateStr,
           dayName: formatDateDisplay(dateStr),
           startTime: slot.startTime,
-          endTime: addHoursToTime(slot.startTime, duration),
+          endTime: newEndTime,
           duration: duration,
           reason: '🤖 ' + reason,
           priority: priority,
           selected: true,
-          isTeacherSlot: false
-        });
+          isTeacherSlot: false,
+          isExtraSelfStudy: subject.isExtraSelfStudy || false
+        };
+
+        suggestions.push(newSuggestion);
+        daySessions.push(newSuggestion); // Add to day sessions for subsequent conflict checks
 
         sessionCounts[subject.id]++;
         slot.startTime = addHoursToTime(slot.startTime, duration + 0.5);
@@ -444,5 +567,6 @@ export default {
   isToday,
   generateWeekSchedule,
   generateSmartSuggestions,
-  saveGeneratedSessions
+  saveGeneratedSessions,
+  checkSessionConflict
 };

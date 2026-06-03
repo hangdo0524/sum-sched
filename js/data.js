@@ -1,13 +1,106 @@
 /**
- * Data Management Module - LocalStorage CRUD
+ * Data Management Module - LocalStorage CRUD with Multi-User Support
  */
 
+// User management
+const USERS_KEY = 'sumSched_users';
+const CURRENT_USER_KEY = 'sumSched_currentUser';
+
+let currentUserId = null;
+
+function getStorageKey(baseKey) {
+  if (!currentUserId) {
+    currentUserId = getCurrentUserId();
+  }
+  return `sumSched_${currentUserId}_${baseKey}`;
+}
+
 const STORAGE_KEYS = {
-  SUBJECTS: 'sumSched_subjects',
-  EVENTS: 'sumSched_events',
-  SESSIONS: 'sumSched_sessions',
-  SETTINGS: 'sumSched_settings'
+  get SUBJECTS() { return getStorageKey('subjects'); },
+  get EVENTS() { return getStorageKey('events'); },
+  get SESSIONS() { return getStorageKey('sessions'); },
+  get SETTINGS() { return getStorageKey('settings'); }
 };
+
+// User CRUD
+export function getUsers() {
+  try {
+    const data = localStorage.getItem(USERS_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+export function saveUsers(users) {
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+export function addUser(name, color = '#6366f1') {
+  const users = getUsers();
+  const id = name.toLowerCase().replace(/\s+/g, '_');
+
+  if (users.some(u => u.id === id)) {
+    return null; // User already exists
+  }
+
+  const user = { id, name, color, createdAt: new Date().toISOString() };
+  users.push(user);
+  saveUsers(users);
+  return user;
+}
+
+export function deleteUser(userId) {
+  const users = getUsers().filter(u => u.id !== userId);
+  saveUsers(users);
+
+  // Also delete user's data
+  const keysToDelete = [
+    `sumSched_${userId}_subjects`,
+    `sumSched_${userId}_events`,
+    `sumSched_${userId}_sessions`,
+    `sumSched_${userId}_settings`
+  ];
+  keysToDelete.forEach(key => localStorage.removeItem(key));
+}
+
+export function getCurrentUserId() {
+  let userId = localStorage.getItem(CURRENT_USER_KEY);
+  const users = getUsers();
+
+  // Initialize default users if none exist
+  if (users.length === 0) {
+    addUser('Anna', '#ec4899');
+    addUser('Ivy', '#10b981');
+    userId = 'anna';
+    localStorage.setItem(CURRENT_USER_KEY, userId);
+  }
+
+  // Validate current user exists
+  if (!userId || !users.some(u => u.id === userId)) {
+    userId = users[0]?.id || 'anna';
+    localStorage.setItem(CURRENT_USER_KEY, userId);
+  }
+
+  currentUserId = userId;
+  return userId;
+}
+
+export function setCurrentUser(userId) {
+  const users = getUsers();
+  if (users.some(u => u.id === userId)) {
+    currentUserId = userId;
+    localStorage.setItem(CURRENT_USER_KEY, userId);
+    return true;
+  }
+  return false;
+}
+
+export function getCurrentUser() {
+  const userId = getCurrentUserId();
+  const users = getUsers();
+  return users.find(u => u.id === userId) || users[0];
+}
 
 export function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -150,7 +243,7 @@ export function deleteSessionsByDate(date) {
 // Settings
 export function getSettings() {
   return getItem(STORAGE_KEYS.SETTINGS) || {
-    dailyStartTime: '08:00',
+    dailyStartTime: '08:30',
     dailyEndTime: '20:00',
     breakDuration: 30, // minutes
     preferredSlots: ['morning', 'afternoon']
@@ -169,12 +262,111 @@ export function clearAllData() {
   console.log('All data cleared');
 }
 
+// Export all data to JSON
+export function exportData() {
+  const user = getCurrentUser();
+  const data = {
+    version: '1.1',
+    exportedAt: new Date().toISOString(),
+    userId: user.id,
+    userName: user.name,
+    subjects: getSubjects(),
+    events: getEvents(),
+    sessions: getSessions(),
+    settings: getSettings()
+  };
+  return JSON.stringify(data, null, 2);
+}
+
+// Import data from JSON
+export function importData(jsonString) {
+  try {
+    const data = JSON.parse(jsonString);
+
+    if (!data.subjects || !Array.isArray(data.subjects)) {
+      throw new Error('Invalid data format: missing subjects');
+    }
+
+    // Clear existing data
+    clearAllData();
+
+    // Import each type
+    if (data.subjects) setItem(STORAGE_KEYS.SUBJECTS, data.subjects);
+    if (data.events) setItem(STORAGE_KEYS.EVENTS, data.events);
+    if (data.sessions) setItem(STORAGE_KEYS.SESSIONS, data.sessions);
+    if (data.settings) setItem(STORAGE_KEYS.SETTINGS, data.settings);
+
+    console.log('Data imported successfully');
+    return { success: true, message: `Imported ${data.subjects.length} subjects, ${(data.sessions || []).length} sessions` };
+  } catch (e) {
+    console.error('Import error:', e);
+    return { success: false, message: e.message };
+  }
+}
+
+// Download data as JSON file
+export function downloadDataAsFile() {
+  const user = getCurrentUser();
+  const data = exportData();
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  // Filename format for easy commit to repo: data/users/anna.json
+  a.download = `${user.id}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Auto-load data from server file (for deployment)
+export async function autoLoadUserData(userId) {
+  const filePath = `data/users/${userId}.json`;
+
+  try {
+    const response = await fetch(filePath);
+    if (!response.ok) {
+      console.log(`No saved data found for ${userId} at ${filePath}`);
+      return { loaded: false, reason: 'file_not_found' };
+    }
+
+    const jsonText = await response.text();
+    const result = importData(jsonText);
+
+    if (result.success) {
+      console.log(`Auto-loaded data for ${userId} from ${filePath}`);
+      return { loaded: true, message: result.message };
+    } else {
+      return { loaded: false, reason: result.message };
+    }
+  } catch (e) {
+    console.log(`Could not auto-load data for ${userId}:`, e.message);
+    return { loaded: false, reason: e.message };
+  }
+}
+
+// Check if user has any data in localStorage
+export function userHasData(userId) {
+  const key = `sumSched_${userId}_subjects`;
+  const data = localStorage.getItem(key);
+  return data && JSON.parse(data).length > 0;
+}
+
 // Sample Data (for demo)
+// Subject categories
+export const SUBJECT_CATEGORIES = {
+  academic: { label: '📚 Học thuật', color: '#3b82f6' },
+  art: { label: '🎨 Nghệ thuật', color: '#ec4899' },
+  physical: { label: '🏃 Thể chất', color: '#10b981' }
+};
+
 export function loadSampleData() {
   const subjects = [
     {
       id: 'subj_1',
       name: 'Bài hè Toán',
+      category: 'academic',
       type: 'self-study',
       slotDuration: 2,
       color: '#ef4444',
@@ -186,6 +378,7 @@ export function loadSampleData() {
     {
       id: 'subj_2',
       name: 'Bài hè Tiếng Việt',
+      category: 'academic',
       type: 'self-study',
       slotDuration: 2,
       color: '#f59e0b',
@@ -197,6 +390,7 @@ export function loadSampleData() {
     {
       id: 'subj_3',
       name: 'Bài hè Tiếng Anh',
+      category: 'academic',
       type: 'self-study',
       slotDuration: 2,
       color: '#10b981',
@@ -208,31 +402,37 @@ export function loadSampleData() {
     {
       id: 'subj_4',
       name: 'Tiếng Anh Online 1:1',
+      category: 'academic',
       type: 'fixed',
       slotDuration: 1,
       color: '#3b82f6',
       schedule: [
         { day: 2, startTime: '19:00', endTime: '20:00', selected: true },
         { day: 4, startTime: '19:00', endTime: '20:00', selected: true },
-        { day: 6, startTime: '10:00', endTime: '11:00', selected: false } // Available but not chosen
+        { day: 6, startTime: '10:00', endTime: '11:00', selected: false }
       ]
     },
     {
       id: 'subj_5',
       name: 'Toán MathX',
+      category: 'academic',
       type: 'fixed',
       slotDuration: 1.5,
       color: '#8b5cf6',
       schedule: [
-        { day: 1, startTime: '09:00', endTime: '10:30', selected: true },
-        { day: 3, startTime: '09:00', endTime: '10:30', selected: true },
-        { day: 5, startTime: '09:00', endTime: '10:30', selected: true },
-        { day: 6, startTime: '09:00', endTime: '10:30', selected: false } // Available on Saturday too
-      ]
+        { day: 3, startTime: '09:00', endTime: '10:30', selected: true }
+      ],
+      extraSelfStudy: {
+        enabled: true,
+        duration: 1.5,
+        sessionsPerWeek: 3,
+        preferredSlots: ['early', 'morning', 'afternoon']
+      }
     },
     {
       id: 'subj_6',
       name: 'Học Bơi',
+      category: 'physical',
       type: 'fixed',
       slotDuration: 1,
       color: '#06b6d4',
@@ -245,6 +445,7 @@ export function loadSampleData() {
     {
       id: 'subj_7',
       name: 'Học Vẽ',
+      category: 'art',
       type: 'weekly-pick',
       slotDuration: 1.5,
       color: '#ec4899',
@@ -263,20 +464,23 @@ export function loadSampleData() {
     {
       id: 'subj_8',
       name: 'Học Võ Taekwondo',
+      category: 'physical',
       type: 'fixed-plus',
-      slotDuration: 1.5,
+      slotDuration: 1.25,
       color: '#f97316',
       config: {
         requiredSessions: 2,
-        targetSessions: 3
+        targetSessions: 3,
+        location: 'Gold Silk Vạn Phúc - Hà Đông',
+        phone: '058.440.6711'
       },
       schedule: [
-        { day: 1, startTime: '18:00', endTime: '19:30', selected: true },
-        { day: 3, startTime: '18:00', endTime: '19:30', selected: true },
-        { day: 5, startTime: '18:00', endTime: '19:30', selected: false },
+        { day: 2, startTime: '17:45', endTime: '19:00', selected: true },
+        { day: 4, startTime: '17:45', endTime: '19:00', selected: true },
+        { day: 5, startTime: '17:45', endTime: '19:00', selected: false },
         { day: 6, startTime: '09:30', endTime: '11:00', selected: false },
         { day: 6, startTime: '18:00', endTime: '19:30', selected: false },
-        { day: 0, startTime: '16:15', endTime: '17:45', selected: false }
+        { day: 0, startTime: '15:30', endTime: '17:00', selected: false }
       ]
     }
   ];
@@ -287,6 +491,14 @@ export function loadSampleData() {
 
 // Export all
 export default {
+  // User management
+  getUsers,
+  addUser,
+  deleteUser,
+  getCurrentUserId,
+  setCurrentUser,
+  getCurrentUser,
+  // Data CRUD
   getSubjects,
   getSubject,
   saveSubject,
@@ -307,5 +519,10 @@ export default {
   saveSettings,
   clearAllData,
   loadSampleData,
-  generateId
+  generateId,
+  exportData,
+  importData,
+  downloadDataAsFile,
+  autoLoadUserData,
+  userHasData
 };
