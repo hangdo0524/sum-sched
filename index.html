@@ -43,6 +43,17 @@
           </button>
         </div>
 
+        <div class="suggest-bar">
+          <button class="btn btn--secondary" id="btn-suggest-schedule">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1z"/>
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z"/>
+            </svg>
+            Gợi ý lịch linh hoạt
+          </button>
+          <span class="suggest-bar__hint">Lịch cố định đã sẵn sàng • Bấm để AI đề xuất phần linh hoạt</span>
+        </div>
+
         <div class="view-toggle">
           <button class="toggle-btn toggle-btn--active" data-mode="week">Tuần</button>
           <button class="toggle-btn" data-mode="day">Ngày</button>
@@ -258,6 +269,39 @@
         <div class="modal__footer">
           <button class="btn btn--outline modal__cancel">Hủy</button>
           <button class="btn btn--primary" id="btn-save-event">Lưu</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: AI Suggestions -->
+    <div class="modal" id="modal-suggestions">
+      <div class="modal__backdrop"></div>
+      <div class="modal__content modal__content--large">
+        <div class="modal__header">
+          <h3>Gợi ý lịch học linh hoạt</h3>
+          <button class="btn btn--icon modal__close" aria-label="Đóng">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="modal__body">
+          <div class="suggest-principles">
+            <h4>Nguyên tắc sắp xếp:</h4>
+            <ul>
+              <li>🧠 Xen kẽ trí não & thể chất</li>
+              <li>📚 Học thuật trước, nghệ thuật sau</li>
+              <li>⏰ Buổi sáng: tập trung cao → môn khó</li>
+              <li>🌙 Buổi chiều/tối: thư giãn → môn nhẹ</li>
+            </ul>
+          </div>
+          <div class="suggest-list" id="suggest-list">
+            <!-- Generated suggestions -->
+          </div>
+        </div>
+        <div class="modal__footer">
+          <button class="btn btn--outline modal__cancel">Hủy</button>
+          <button class="btn btn--primary" id="btn-confirm-suggestions">Xác nhận tạo lịch</button>
         </div>
       </div>
     </div>

@@ -134,27 +134,36 @@ function findFreeSlots(fixedSessions, settings) {
 }
 
 const TIME_SLOTS = {
-  morning: { start: '08:00', end: '11:30' },
-  afternoon: { start: '14:00', end: '17:00' },
-  evening: { start: '19:00', end: '21:00' }
+  morning: { start: '08:00', end: '11:30', label: 'Sáng' },
+  afternoon: { start: '14:00', end: '17:00', label: 'Chiều' },
+  evening: { start: '19:00', end: '21:00', label: 'Tối' }
 };
+
+// Subject categories for smart scheduling
+const SUBJECT_CATEGORIES = {
+  brain: ['toán', 'math', 'tiếng việt', 'tiếng anh', 'english', 'khoa học', 'science'],
+  physical: ['bơi', 'swim', 'võ', 'martial', 'thể dục', 'sport'],
+  art: ['vẽ', 'draw', 'paint', 'nhạc', 'music', 'đàn', 'piano'],
+  academic: ['bài hè', 'homework', 'ôn tập', 'review', 'sách']
+};
+
+function categorizeSubject(name) {
+  const lower = name.toLowerCase();
+  for (const [category, keywords] of Object.entries(SUBJECT_CATEGORIES)) {
+    if (keywords.some(kw => lower.includes(kw))) {
+      return category;
+    }
+  }
+  return 'other';
+}
 
 export function generateWeekSchedule(weekStartDate) {
   const subjects = getSubjects();
   const events = getEvents();
   const existingSessions = getSessions();
-  const settings = getSettings();
 
   const weekDates = getWeekDates(weekStartDate);
   const schedule = {};
-
-  // Track sessions per subject per week for flexible scheduling
-  const flexibleSessionCounts = {};
-  subjects.forEach(s => {
-    if (s.type === 'flexible' || s.type === 'semi-flexible' || s.type === 'hybrid') {
-      flexibleSessionCounts[s.id] = 0;
-    }
-  });
 
   weekDates.forEach(dateStr => {
     schedule[dateStr] = {
@@ -170,10 +179,9 @@ export function generateWeekSchedule(weekStartDate) {
       return;
     }
 
-    // Get fixed sessions for this day (from fixed and hybrid subjects)
+    // Get ONLY fixed sessions (no auto-scheduling flexible)
     const fixedSessions = getFixedSessionsForDate(dateStr, subjects);
 
-    // Add fixed sessions
     fixedSessions.forEach(session => {
       const existing = existingSessions.find(
         s => s.subjectId === session.subjectId && s.date === dateStr && s.startTime === session.startTime
@@ -194,65 +202,20 @@ export function generateWeekSchedule(weekStartDate) {
       });
     });
 
-    // Find free slots
-    const freeSlots = findFreeSlots(fixedSessions, settings);
+    // Also add confirmed flexible sessions from storage
+    const confirmedFlexible = existingSessions.filter(
+      s => s.date === dateStr && !fixedSessions.some(f => f.subjectId === s.subjectId && f.startTime === s.startTime)
+    );
 
-    // Get flexible subjects that still need sessions this week
-    const flexibleSubjects = subjects.filter(s => {
-      if (s.type === 'flexible' || s.type === 'semi-flexible') {
-        const target = s.flexibleConfig?.sessionsPerWeek || 3;
-        return flexibleSessionCounts[s.id] < target;
-      }
-      if (s.type === 'hybrid') {
-        const target = s.flexibleConfig?.sessionsPerWeek || 0;
-        return flexibleSessionCounts[s.id] < target;
-      }
-      return false;
-    });
-
-    // Fill free slots with flexible subjects
-    freeSlots.forEach(slot => {
-      for (const subject of flexibleSubjects) {
-        const config = subject.flexibleConfig || {};
-        const duration = config.duration || subject.slotDuration || 2;
-        const targetSessions = config.sessionsPerWeek || 3;
-
-        if (flexibleSessionCounts[subject.id] >= targetSessions) continue;
-        if (slot.duration < duration) continue;
-
-        // For semi-flexible: check if slot falls within preferred time slots
-        if (subject.type === 'semi-flexible' && config.timeSlots) {
-          const slotStartMin = timeToMinutes(slot.startTime);
-          const isInPreferredSlot = config.timeSlots.some(ts => {
-            const tsConfig = TIME_SLOTS[ts];
-            return slotStartMin >= timeToMinutes(tsConfig.start) &&
-                   slotStartMin < timeToMinutes(tsConfig.end);
-          });
-          if (!isInPreferredSlot) continue;
-        }
-
-        const existing = existingSessions.find(
-          s => s.subjectId === subject.id && s.date === dateStr && s.startTime === slot.startTime
-        );
-
+    confirmedFlexible.forEach(session => {
+      const subject = subjects.find(sub => sub.id === session.subjectId);
+      if (subject && (subject.type === 'flexible' || subject.type === 'semi-flexible' || subject.type === 'hybrid')) {
         schedule[dateStr].sessions.push({
-          id: existing?.id || generateId(),
-          subjectId: subject.id,
+          ...session,
           subjectName: subject.name,
-          date: dateStr,
-          startTime: slot.startTime,
-          endTime: addHoursToTime(slot.startTime, duration),
-          duration: duration,
           color: subject.color,
-          status: existing?.status || 'pending',
-          notes: existing?.notes || '',
           isFixed: false
         });
-
-        slot.startTime = addHoursToTime(slot.startTime, duration + 0.5);
-        slot.duration -= duration + 0.5;
-        flexibleSessionCounts[subject.id]++;
-        break;
       }
     });
 
@@ -263,6 +226,167 @@ export function generateWeekSchedule(weekStartDate) {
   });
 
   return schedule;
+}
+
+export function generateSmartSuggestions(weekStartDate) {
+  const subjects = getSubjects();
+  const events = getEvents();
+  const existingSessions = getSessions();
+  const settings = getSettings();
+
+  const weekDates = getWeekDates(weekStartDate);
+  const suggestions = [];
+
+  // Get flexible subjects
+  const flexibleSubjects = subjects.filter(s =>
+    s.type === 'flexible' || s.type === 'semi-flexible' || s.type === 'hybrid'
+  );
+
+  if (flexibleSubjects.length === 0) return suggestions;
+
+  // Track sessions per subject
+  const sessionCounts = {};
+  flexibleSubjects.forEach(s => sessionCounts[s.id] = 0);
+
+  // Count existing confirmed sessions
+  existingSessions.forEach(s => {
+    if (sessionCounts[s.subjectId] !== undefined) {
+      const sessionDate = s.date;
+      if (weekDates.includes(sessionDate)) {
+        sessionCounts[s.subjectId]++;
+      }
+    }
+  });
+
+  weekDates.forEach(dateStr => {
+    const event = events.find(e => e.date === dateStr);
+    if (event && ['holiday', 'trip'].includes(event.type)) return;
+
+    // Get fixed sessions for this day
+    const fixedSessions = getFixedSessionsForDate(dateStr, subjects);
+    const freeSlots = findFreeSlots(fixedSessions, settings);
+
+    // Analyze what categories are already scheduled today
+    const todayCategories = fixedSessions.map(s => {
+      const subject = subjects.find(sub => sub.id === s.subjectId);
+      return categorizeSubject(subject?.name || '');
+    });
+
+    // Smart selection based on balance
+    const needsBrain = !todayCategories.includes('brain') && !todayCategories.includes('academic');
+    const needsPhysical = !todayCategories.includes('physical');
+    const needsArt = !todayCategories.includes('art');
+
+    for (const slot of freeSlots) {
+      if (slot.duration < 1) continue;
+
+      // Determine optimal time period
+      const slotMinutes = timeToMinutes(slot.startTime);
+      const isMorning = slotMinutes < timeToMinutes('12:00');
+      const isAfternoon = slotMinutes >= timeToMinutes('14:00') && slotMinutes < timeToMinutes('17:00');
+      const isEvening = slotMinutes >= timeToMinutes('19:00');
+
+      // Find best subject for this slot
+      for (const subject of flexibleSubjects) {
+        const config = subject.flexibleConfig || {};
+        const targetSessions = config.sessionsPerWeek || (subject.type === 'hybrid' ? 2 : 5);
+        const duration = config.duration || subject.slotDuration || 2;
+
+        if (sessionCounts[subject.id] >= targetSessions) continue;
+        if (slot.duration < duration) continue;
+
+        // Check if already has a session today
+        const hasSessionToday = existingSessions.some(
+          s => s.subjectId === subject.id && s.date === dateStr
+        ) || suggestions.some(
+          s => s.subjectId === subject.id && s.date === dateStr
+        );
+        if (hasSessionToday) continue;
+
+        const category = categorizeSubject(subject.name);
+        let reason = '';
+        let priority = 0;
+
+        // Smart reasoning
+        if (isMorning) {
+          if (category === 'brain' || category === 'academic') {
+            reason = '🌅 Buổi sáng tập trung cao → phù hợp môn học thuật';
+            priority = 10;
+          } else if (category === 'physical') {
+            reason = '🌅 Buổi sáng mát mẻ → tốt cho vận động';
+            priority = 8;
+          } else {
+            reason = '🌅 Buổi sáng → học tập hiệu quả';
+            priority = 5;
+          }
+        } else if (isAfternoon) {
+          if (category === 'physical' && needsPhysical) {
+            reason = '☀️ Xen kẽ sau học buổi sáng → thể chất giúp thư giãn';
+            priority = 10;
+          } else if (category === 'art' && needsArt) {
+            reason = '🎨 Buổi chiều → sáng tạo, nghệ thuật';
+            priority = 9;
+          } else {
+            reason = '☀️ Buổi chiều → học nhẹ nhàng';
+            priority = 5;
+          }
+        } else if (isEvening) {
+          if (category === 'art') {
+            reason = '🌙 Buổi tối thư giãn → phù hợp nghệ thuật';
+            priority = 8;
+          } else if (category === 'brain' || category === 'academic') {
+            reason = '🌙 Ôn lại bài buổi tối → củng cố kiến thức';
+            priority = 6;
+          } else {
+            reason = '🌙 Buổi tối → hoạt động nhẹ';
+            priority = 4;
+          }
+        }
+
+        // Bonus for balance
+        if ((category === 'brain' || category === 'academic') && needsBrain) {
+          reason += ' • Cân bằng: chưa có môn học thuật hôm nay';
+          priority += 3;
+        }
+        if (category === 'physical' && needsPhysical) {
+          reason += ' • Cân bằng: chưa có vận động hôm nay';
+          priority += 3;
+        }
+        if (category === 'art' && needsArt) {
+          reason += ' • Cân bằng: chưa có nghệ thuật hôm nay';
+          priority += 2;
+        }
+
+        suggestions.push({
+          id: generateId(),
+          subjectId: subject.id,
+          subjectName: subject.name,
+          color: subject.color,
+          date: dateStr,
+          dayName: formatDateDisplay(dateStr),
+          startTime: slot.startTime,
+          endTime: addHoursToTime(slot.startTime, duration),
+          duration: duration,
+          reason: reason,
+          priority: priority,
+          selected: true
+        });
+
+        sessionCounts[subject.id]++;
+        slot.startTime = addHoursToTime(slot.startTime, duration + 0.5);
+        slot.duration -= duration + 0.5;
+        break;
+      }
+    }
+  });
+
+  // Sort by date then priority
+  suggestions.sort((a, b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    return b.priority - a.priority;
+  });
+
+  return suggestions;
 }
 
 export function saveGeneratedSessions(schedule) {
@@ -291,5 +415,6 @@ export default {
   formatDateDisplay,
   isToday,
   generateWeekSchedule,
+  generateSmartSuggestions,
   saveGeneratedSessions
 };

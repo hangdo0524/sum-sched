@@ -23,6 +23,7 @@ import {
   getWeekDates,
   addDays,
   generateWeekSchedule,
+  generateSmartSuggestions,
   formatDateDisplay
 } from './scheduler.js';
 
@@ -53,6 +54,7 @@ let currentWeekStart = getWeekStart(currentDate);
 let currentViewMode = 'week'; // 'week' or 'day'
 let currentReportPeriod = 'day';
 let currentSchedule = {};
+let currentSuggestions = [];
 
 // DOM Elements
 const scheduleGrid = document.getElementById('schedule-grid');
@@ -224,6 +226,96 @@ function setupScheduleControls() {
   document.getElementById('btn-add-subject').addEventListener('click', () => {
     openSubjectModal();
   });
+
+  // Suggest schedule button
+  document.getElementById('btn-suggest-schedule').addEventListener('click', () => {
+    showSuggestions();
+  });
+
+  // Confirm suggestions
+  document.getElementById('btn-confirm-suggestions').addEventListener('click', () => {
+    confirmSuggestions();
+  });
+}
+
+function showSuggestions() {
+  currentSuggestions = generateSmartSuggestions(currentWeekStart);
+  const container = document.getElementById('suggest-list');
+
+  if (currentSuggestions.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state__icon">✨</div>
+        <div class="empty-state__text">Không có gợi ý nào.<br>Có thể tất cả môn linh hoạt đã được xếp lịch.</div>
+      </div>
+    `;
+    showModal('modal-suggestions');
+    return;
+  }
+
+  // Group by date
+  const byDate = {};
+  currentSuggestions.forEach(s => {
+    if (!byDate[s.date]) byDate[s.date] = { dayName: s.dayName, items: [] };
+    byDate[s.date].items.push(s);
+  });
+
+  container.innerHTML = Object.entries(byDate).map(([date, data]) => `
+    <div class="suggest-day">${data.dayName}</div>
+    ${data.items.map((s, idx) => `
+      <div class="suggest-item ${s.selected ? 'suggest-item--selected' : ''}" data-id="${s.id}">
+        <div class="suggest-item__check">
+          <input type="checkbox" ${s.selected ? 'checked' : ''} data-suggestion-id="${s.id}">
+        </div>
+        <div class="suggest-item__content">
+          <div class="suggest-item__header">
+            <span class="suggest-item__color" style="background-color: ${s.color}"></span>
+            <span class="suggest-item__name">${s.subjectName}</span>
+            <span class="suggest-item__time">${s.startTime} - ${s.endTime}</span>
+          </div>
+          <div class="suggest-item__reason">${s.reason}</div>
+        </div>
+      </div>
+    `).join('')}
+  `).join('');
+
+  // Add checkbox listeners
+  container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const id = e.target.dataset.suggestionId;
+      const suggestion = currentSuggestions.find(s => s.id === id);
+      if (suggestion) {
+        suggestion.selected = e.target.checked;
+        e.target.closest('.suggest-item').classList.toggle('suggest-item--selected', e.target.checked);
+      }
+    });
+  });
+
+  showModal('modal-suggestions');
+}
+
+function confirmSuggestions() {
+  const selected = currentSuggestions.filter(s => s.selected);
+
+  selected.forEach(suggestion => {
+    saveSession({
+      id: suggestion.id,
+      subjectId: suggestion.subjectId,
+      date: suggestion.date,
+      startTime: suggestion.startTime,
+      endTime: suggestion.endTime,
+      status: 'pending',
+      notes: ''
+    });
+  });
+
+  hideModal('modal-suggestions');
+  refreshSchedule();
+  refreshReports();
+
+  if (selected.length > 0) {
+    alert(`Đã tạo ${selected.length} buổi học linh hoạt!`);
+  }
 }
 
 // Subject Form

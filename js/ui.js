@@ -6,6 +6,7 @@ import { getSubjects, getSubject } from './data.js';
 
 export function renderScheduleWeek(schedule, container) {
   container.innerHTML = '';
+  container.className = 'schedule schedule--week';
 
   Object.values(schedule).forEach(day => {
     const dayEl = document.createElement('div');
@@ -80,8 +81,16 @@ function renderSessionItem(session) {
 export function renderSubjectList(subjects, container, filter = 'all') {
   container.innerHTML = '';
 
-  const filtered = filter === 'all' ? subjects :
-    subjects.filter(s => s.type === filter);
+  let filtered;
+  if (filter === 'all') {
+    filtered = subjects;
+  } else if (filter === 'fixed') {
+    filtered = subjects.filter(s => s.type === 'fixed' || s.type === 'hybrid');
+  } else if (filter === 'flexible') {
+    filtered = subjects.filter(s => s.type === 'flexible' || s.type === 'semi-flexible' || s.type === 'hybrid');
+  } else {
+    filtered = subjects.filter(s => s.type === filter);
+  }
 
   if (filtered.length === 0) {
     container.innerHTML = `
