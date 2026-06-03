@@ -72,12 +72,24 @@ import {
 
 import { initDashboard, updateDashboard } from './dashboard.js';
 
+import {
+  getCalendars,
+  createCalendar,
+  getCurrentCalendarId,
+  setCurrentCalendar,
+  getActiveCalendar,
+  renderCalendarList,
+  CALENDAR_TYPES
+} from './calendar.js';
+
 // State
 let currentDate = new Date();
 let currentWeekStart = getWeekStart(currentDate);
 let currentViewMode = 'week'; // 'week' or 'day'
 let currentReportPeriod = 'day';
 let currentSchedule = {};
+let currentCalendars = [];
+let authUserId = null;
 let currentSuggestions = [];
 
 // DOM Elements
@@ -127,12 +139,18 @@ function onAuthStateChange(authUser, profile) {
 }
 
 async function initApp(authUser, profile) {
+  // Store auth user ID
+  authUserId = authUser?.uid || 'demo';
+
   // Update user profile display
   updateUserProfileDisplay(authUser, profile);
 
   // Always start with current week
   currentDate = new Date();
   currentWeekStart = getWeekStart(currentDate);
+
+  // Load calendars
+  await loadCalendars();
 
   // Set up Firebase real-time update callback
   onFirebaseDataUpdate(() => {
@@ -226,10 +244,68 @@ function setupUserProfile() {
   }
 }
 
+async function loadCalendars() {
+  currentCalendars = await getCalendars(authUserId);
+
+  // Set current calendar if not set
+  let currentId = getCurrentCalendarId();
+  if (!currentId || !currentCalendars.find(c => c.id === currentId)) {
+    const active = getActiveCalendar(currentCalendars);
+    if (active) {
+      setCurrentCalendar(active.id);
+      currentId = active.id;
+    }
+  }
+
+  // Update UI
+  refreshCalendarSelector();
+}
+
+function refreshCalendarSelector() {
+  const nameEl = document.getElementById('current-calendar-name');
+  const listEl = document.getElementById('calendar-list');
+  const currentId = getCurrentCalendarId();
+
+  // Update current calendar name
+  const currentCal = currentCalendars.find(c => c.id === currentId);
+  if (nameEl && currentCal) {
+    nameEl.textContent = currentCal.name;
+  }
+
+  // Render calendar list
+  if (listEl) {
+    renderCalendarList(currentCalendars, currentId, listEl);
+
+    // Add click handlers
+    listEl.querySelectorAll('.calendar-dropdown__item').forEach(item => {
+      item.addEventListener('click', () => {
+        const calId = item.dataset.calendarId;
+        switchCalendar(calId);
+      });
+    });
+  }
+}
+
+function switchCalendar(calendarId) {
+  setCurrentCalendar(calendarId);
+  refreshCalendarSelector();
+
+  // Close dropdown
+  document.getElementById('calendar-dropdown')?.classList.remove('calendar-dropdown--open');
+
+  // Refresh views for new calendar
+  // TODO: When we have calendar-scoped data, refresh here
+  refreshSchedule();
+  refreshSubjects();
+  refreshReports();
+  updateDashboard();
+}
+
 function setupCalendarSelector() {
   const btn = document.getElementById('btn-calendar-selector');
   const dropdown = document.getElementById('calendar-dropdown');
   const addBtn = document.getElementById('btn-add-calendar');
+  const saveBtn = document.getElementById('btn-save-calendar');
 
   if (btn && dropdown) {
     btn.addEventListener('click', (e) => {
@@ -238,7 +314,7 @@ function setupCalendarSelector() {
     });
 
     document.addEventListener('click', (e) => {
-      if (!dropdown.contains(e.target)) {
+      if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
         dropdown.classList.remove('calendar-dropdown--open');
       }
     });
@@ -246,8 +322,51 @@ function setupCalendarSelector() {
 
   if (addBtn) {
     addBtn.addEventListener('click', () => {
+      document.getElementById('calendar-dropdown')?.classList.remove('calendar-dropdown--open');
       openCalendarModal();
     });
+  }
+
+  if (saveBtn) {
+    saveBtn.addEventListener('click', async () => {
+      await saveCalendarFromModal();
+    });
+  }
+}
+
+async function saveCalendarFromModal() {
+  const name = document.getElementById('calendar-name')?.value?.trim();
+  const type = document.getElementById('calendar-type')?.value;
+  const color = document.getElementById('calendar-color')?.value;
+  const startDate = document.getElementById('calendar-start')?.value;
+  const endDate = document.getElementById('calendar-end')?.value;
+
+  if (!name || !startDate || !endDate) {
+    alert('Vui lòng điền đầy đủ thông tin');
+    return;
+  }
+
+  if (startDate > endDate) {
+    alert('Ngày kết thúc phải sau ngày bắt đầu');
+    return;
+  }
+
+  const calendar = await createCalendar(authUserId, {
+    name,
+    type,
+    color,
+    startDate,
+    endDate
+  });
+
+  if (calendar) {
+    currentCalendars.push(calendar);
+    setCurrentCalendar(calendar.id);
+    refreshCalendarSelector();
+    hideModal('modal-calendar');
+    alert('✅ Đã tạo lịch mới: ' + name);
+  } else {
+    alert('❌ Không thể tạo lịch. Vui lòng thử lại.');
   }
 }
 
@@ -266,15 +385,22 @@ function openCalendarModal(calendarId = null) {
   document.getElementById('calendar-end').value = '';
 
   if (calendarId) {
-    // Edit mode - TODO: load calendar data
-    titleEl.textContent = 'Sửa lịch';
-    saveBtn.textContent = 'Lưu thay đổi';
+    // Edit mode
+    const cal = currentCalendars.find(c => c.id === calendarId);
+    if (cal) {
+      titleEl.textContent = 'Sửa lịch';
+      saveBtn.textContent = 'Lưu thay đổi';
+      document.getElementById('calendar-name').value = cal.name;
+      document.getElementById('calendar-type').value = cal.type;
+      document.getElementById('calendar-color').value = cal.color;
+      document.getElementById('calendar-start').value = cal.startDate;
+      document.getElementById('calendar-end').value = cal.endDate;
+    }
   } else {
     // Create mode - set default dates
     titleEl.textContent = 'Tạo lịch mới';
     saveBtn.textContent = 'Tạo lịch';
 
-    // Set default dates based on calendar type
     const today = new Date();
     const year = today.getFullYear();
 

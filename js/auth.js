@@ -3,30 +3,15 @@
  * Firebase Auth with Google Sign-In only
  */
 
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { db, auth } from './firebase-config.js';
 import {
-  getAuth,
   signInWithPopup,
   signOut,
   onAuthStateChanged,
   GoogleAuthProvider
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getDatabase, ref, set, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+import { ref, set, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDTmNGAnainIY9I_FUTVFco_JXGil_bcWo",
-  authDomain: "sum-sched.firebaseapp.com",
-  databaseURL: "https://sum-sched-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "sum-sched",
-  storageBucket: "sum-sched.firebasestorage.app",
-  messagingSenderId: "286594886319",
-  appId: "1:286594886319:web:483c952e7eefe8d90e425a"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
 const googleProvider = new GoogleAuthProvider();
 
 let currentUser = null;

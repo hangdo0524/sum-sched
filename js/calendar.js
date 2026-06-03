@@ -3,23 +3,19 @@
  * Handles multiple calendars (summer, school year, etc.)
  */
 
-import { getDatabase, ref, set, get, push, remove, onValue } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+import { db } from './firebase-config.js';
+import { ref, set, get, push, remove, onValue } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
-let db = null;
 let currentCalendarId = null;
 let calendarsCache = [];
 let onCalendarChangeCallback = null;
-
-export function initCalendarModule(database) {
-  db = database;
-}
 
 export function setOnCalendarChange(callback) {
   onCalendarChangeCallback = callback;
 }
 
 export function getCurrentCalendarId() {
-  return currentCalendarId;
+  return currentCalendarId || localStorage.getItem('sumSched_currentCalendar');
 }
 
 export function setCurrentCalendar(calendarId) {
@@ -32,78 +28,117 @@ export function setCurrentCalendar(calendarId) {
 
 // Calendar CRUD
 export async function getCalendars(userId) {
-  if (!db || !userId) return [];
+  if (!db || !userId) {
+    // Fallback to localStorage
+    return getCalendarsFromLocal();
+  }
 
-  const calendarsRef = ref(db, 'calendars');
+  const calendarsRef = ref(db, `calendars/${userId}`);
   try {
     const snapshot = await get(calendarsRef);
     if (snapshot.exists()) {
-      const allCalendars = snapshot.val();
-      // Filter by owner
-      const userCalendars = Object.entries(allCalendars)
-        .filter(([id, cal]) => cal.ownerId === userId)
-        .map(([id, cal]) => ({ id, ...cal }));
-      calendarsCache = userCalendars;
-      return userCalendars;
+      const data = snapshot.val();
+      const calendars = Object.entries(data).map(([id, cal]) => ({ id, ...cal }));
+      calendarsCache = calendars;
+      // Sync to localStorage
+      localStorage.setItem('sumSched_calendars', JSON.stringify(calendars));
+      return calendars;
     }
-    return [];
+    return getCalendarsFromLocal();
   } catch (error) {
     console.error('Error fetching calendars:', error);
-    return [];
+    return getCalendarsFromLocal();
   }
+}
+
+function getCalendarsFromLocal() {
+  try {
+    const data = localStorage.getItem('sumSched_calendars');
+    return data ? JSON.parse(data) : getDefaultCalendars();
+  } catch (e) {
+    return getDefaultCalendars();
+  }
+}
+
+function getDefaultCalendars() {
+  const year = new Date().getFullYear();
+  return [{
+    id: 'default_summer',
+    name: `Lịch học hè ${year}`,
+    type: 'summer',
+    startDate: `${year}-06-01`,
+    endDate: `${year}-08-31`,
+    color: '#f59e0b',
+    isActive: true,
+    createdAt: new Date().toISOString()
+  }];
 }
 
 export async function getCalendar(calendarId) {
-  if (!db || !calendarId) return null;
-
-  const calendarRef = ref(db, `calendars/${calendarId}`);
-  try {
-    const snapshot = await get(calendarRef);
-    if (snapshot.exists()) {
-      return { id: calendarId, ...snapshot.val() };
-    }
-    return null;
-  } catch (error) {
-    console.error('Error fetching calendar:', error);
-    return null;
-  }
+  const calendars = calendarsCache.length > 0 ? calendarsCache : await getCalendars();
+  return calendars.find(c => c.id === calendarId) || null;
 }
 
 export async function createCalendar(userId, calendarData) {
-  if (!db || !userId) return null;
-
-  const calendarsRef = ref(db, 'calendars');
-  const newCalendarRef = push(calendarsRef);
-
   const calendar = {
     name: calendarData.name || 'Lịch mới',
     type: calendarData.type || 'summer',
     startDate: calendarData.startDate,
     endDate: calendarData.endDate,
     color: calendarData.color || '#6366f1',
-    ownerId: userId,
     isActive: true,
     createdAt: new Date().toISOString()
   };
 
+  if (!db || !userId) {
+    // Fallback to localStorage
+    const id = 'cal_' + Date.now().toString(36);
+    const calendars = getCalendarsFromLocal();
+    calendars.push({ id, ...calendar });
+    localStorage.setItem('sumSched_calendars', JSON.stringify(calendars));
+    calendarsCache = calendars;
+    return { id, ...calendar };
+  }
+
+  const calendarsRef = ref(db, `calendars/${userId}`);
+  const newCalendarRef = push(calendarsRef);
+
   try {
     await set(newCalendarRef, calendar);
-    return { id: newCalendarRef.key, ...calendar };
+    const newCal = { id: newCalendarRef.key, ...calendar };
+    calendarsCache.push(newCal);
+    return newCal;
   } catch (error) {
     console.error('Error creating calendar:', error);
     return null;
   }
 }
 
-export async function updateCalendar(calendarId, updates) {
-  if (!db || !calendarId) return false;
+export async function updateCalendar(userId, calendarId, updates) {
+  if (!db || !userId) {
+    // Fallback to localStorage
+    const calendars = getCalendarsFromLocal();
+    const index = calendars.findIndex(c => c.id === calendarId);
+    if (index >= 0) {
+      calendars[index] = { ...calendars[index], ...updates };
+      localStorage.setItem('sumSched_calendars', JSON.stringify(calendars));
+      calendarsCache = calendars;
+      return true;
+    }
+    return false;
+  }
 
-  const calendarRef = ref(db, `calendars/${calendarId}`);
+  const calendarRef = ref(db, `calendars/${userId}/${calendarId}`);
   try {
     const snapshot = await get(calendarRef);
     if (snapshot.exists()) {
       const current = snapshot.val();
       await set(calendarRef, { ...current, ...updates, updatedAt: new Date().toISOString() });
+      // Update cache
+      const index = calendarsCache.findIndex(c => c.id === calendarId);
+      if (index >= 0) {
+        calendarsCache[index] = { ...calendarsCache[index], ...updates };
+      }
       return true;
     }
     return false;
@@ -113,16 +148,18 @@ export async function updateCalendar(calendarId, updates) {
   }
 }
 
-export async function deleteCalendar(calendarId) {
-  if (!db || !calendarId) return false;
+export async function deleteCalendar(userId, calendarId) {
+  if (!db || !userId) {
+    // Fallback to localStorage
+    const calendars = getCalendarsFromLocal().filter(c => c.id !== calendarId);
+    localStorage.setItem('sumSched_calendars', JSON.stringify(calendars));
+    calendarsCache = calendars;
+    return true;
+  }
 
   try {
-    // Delete calendar
-    await remove(ref(db, `calendars/${calendarId}`));
-    // Delete associated subjects
-    await remove(ref(db, `subjects/${calendarId}`));
-    // Delete associated sessions
-    await remove(ref(db, `sessions/${calendarId}`));
+    await remove(ref(db, `calendars/${userId}/${calendarId}`));
+    calendarsCache = calendarsCache.filter(c => c.id !== calendarId);
     return true;
   } catch (error) {
     console.error('Error deleting calendar:', error);
@@ -161,8 +198,37 @@ export function isDateInCalendar(dateStr, calendar) {
   return dateStr >= calendar.startDate && dateStr <= calendar.endDate;
 }
 
+// Render calendar list in dropdown
+export function renderCalendarList(calendars, currentId, container) {
+  if (!container) return;
+
+  const typeIcons = {
+    summer: '☀️',
+    school: '📚',
+    extra: '📝',
+    camp: '🏕️'
+  };
+
+  container.innerHTML = calendars.map(cal => {
+    const icon = typeIcons[cal.type] || '📅';
+    const isActive = cal.id === currentId;
+    const startDate = new Date(cal.startDate);
+    const endDate = new Date(cal.endDate);
+    const dateRange = `${startDate.getDate()}/${startDate.getMonth() + 1} - ${endDate.getDate()}/${endDate.getMonth() + 1}`;
+
+    return `
+      <div class="calendar-dropdown__item ${isActive ? 'calendar-dropdown__item--active' : ''}" data-calendar-id="${cal.id}">
+        <span class="calendar-dropdown__item-icon">${icon}</span>
+        <div class="calendar-dropdown__item-info">
+          <div class="calendar-dropdown__item-name">${cal.name}</div>
+          <div class="calendar-dropdown__item-dates">${dateRange}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 export default {
-  initCalendarModule,
   setOnCalendarChange,
   getCurrentCalendarId,
   setCurrentCalendar,
@@ -173,5 +239,6 @@ export default {
   deleteCalendar,
   getActiveCalendar,
   isDateInCalendar,
+  renderCalendarList,
   CALENDAR_TYPES
 };

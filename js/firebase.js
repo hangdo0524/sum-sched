@@ -3,15 +3,8 @@
  * Real-time sync across devices
  */
 
+import { db } from './firebase-config.js';
 import { ref, set, get, onValue } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
-import { getDb } from './auth.js';
-
-// Get database from auth module (single source of truth)
-let db = null;
-function getDatabase() {
-  if (!db) db = getDb();
-  return db;
-}
 
 let currentUserId = null;
 let onDataChangeCallback = null;
@@ -27,7 +20,12 @@ export function setFirebaseUser(userId) {
  * Save user data to Firebase
  */
 export async function saveToFirebase(userId, data) {
-  const userRef = ref(getDatabase(), `users/${userId}`);
+  if (!db) {
+    console.warn('Firebase not initialized');
+    return false;
+  }
+
+  const userRef = ref(db, `userData/${userId}`);
   try {
     await set(userRef, {
       ...data,
@@ -45,7 +43,12 @@ export async function saveToFirebase(userId, data) {
  * Load user data from Firebase
  */
 export async function loadFromFirebase(userId) {
-  const userRef = ref(getDatabase(), `users/${userId}`);
+  if (!db) {
+    console.warn('Firebase not initialized');
+    return null;
+  }
+
+  const userRef = ref(db, `userData/${userId}`);
   try {
     const snapshot = await get(userRef);
     if (snapshot.exists()) {
@@ -64,7 +67,12 @@ export async function loadFromFirebase(userId) {
  * Subscribe to real-time updates for a user
  */
 export function subscribeToUser(userId, callback) {
-  const userRef = ref(getDatabase(), `users/${userId}`);
+  if (!db) {
+    console.warn('Firebase not initialized');
+    return () => {};
+  }
+
+  const userRef = ref(db, `userData/${userId}`);
 
   const unsubscribe = onValue(userRef, (snapshot) => {
     if (snapshot.exists()) {
@@ -83,7 +91,9 @@ export function subscribeToUser(userId, callback) {
  * Save all users list to Firebase
  */
 export async function saveUsersListToFirebase(users) {
-  const usersListRef = ref(getDatabase(), 'usersList');
+  if (!db) return false;
+
+  const usersListRef = ref(db, 'childProfiles');
   try {
     await set(usersListRef, users);
     return true;
@@ -97,7 +107,9 @@ export async function saveUsersListToFirebase(users) {
  * Load users list from Firebase
  */
 export async function loadUsersListFromFirebase() {
-  const usersListRef = ref(getDatabase(), 'usersList');
+  if (!db) return null;
+
+  const usersListRef = ref(db, 'childProfiles');
   try {
     const snapshot = await get(usersListRef);
     if (snapshot.exists()) {
