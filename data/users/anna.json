@@ -1,139 +1,358 @@
 {
   "version": "1.1",
-  "exportedAt": "2025-06-03T00:00:00.000Z",
+  "exportedAt": "2026-06-03T10:51:41.424Z",
   "userId": "anna",
   "userName": "Anna",
   "subjects": [
     {
       "id": "subj_1",
-      "name": "Bài hè Toán",
+      "name": "Toán hè",
       "category": "academic",
       "type": "self-study",
-      "slotDuration": 2,
       "color": "#ef4444",
       "config": {
-        "duration": 2,
-        "sessionsPerWeek": 5,
-        "preferredSlots": ["early", "morning"]
-      }
+        "duration": 1.5,
+        "sessionsPerWeek": 2,
+        "preferredSlots": [
+          "early",
+          "morning",
+          "early-afternoon",
+          "afternoon",
+          "evening"
+        ]
+      },
+      "slotDuration": 1.5
     },
     {
       "id": "subj_2",
-      "name": "Bài hè Tiếng Việt",
+      "name": "Việt (hè)",
       "category": "academic",
       "type": "self-study",
-      "slotDuration": 2,
       "color": "#f59e0b",
       "config": {
-        "duration": 2,
-        "sessionsPerWeek": 5,
-        "preferredSlots": ["early", "morning"]
-      }
+        "duration": 1.5,
+        "sessionsPerWeek": 2,
+        "preferredSlots": [
+          "early",
+          "morning",
+          "early-afternoon",
+          "afternoon",
+          "evening"
+        ]
+      },
+      "slotDuration": 1.5
     },
     {
       "id": "subj_3",
-      "name": "Bài hè Tiếng Anh",
+      "name": "English (hè)",
       "category": "academic",
       "type": "self-study",
-      "slotDuration": 2,
       "color": "#10b981",
       "config": {
-        "duration": 2,
-        "sessionsPerWeek": 5,
-        "preferredSlots": ["morning", "afternoon"]
-      }
+        "duration": 1.5,
+        "sessionsPerWeek": 2,
+        "preferredSlots": [
+          "early",
+          "morning",
+          "early-afternoon",
+          "afternoon",
+          "evening"
+        ]
+      },
+      "slotDuration": 1.5
     },
     {
       "id": "subj_4",
-      "name": "Tiếng Anh Online 1:1",
+      "name": "English 1:1",
       "category": "academic",
       "type": "fixed",
-      "slotDuration": 1,
       "color": "#3b82f6",
       "schedule": [
-        { "day": 2, "startTime": "19:00", "endTime": "20:00", "selected": true },
-        { "day": 4, "startTime": "19:00", "endTime": "20:00", "selected": true },
-        { "day": 6, "startTime": "10:00", "endTime": "11:00", "selected": false }
-      ]
+        {
+          "day": 2,
+          "startTime": "19:10",
+          "endTime": "19:40",
+          "selected": true
+        },
+        {
+          "day": 3,
+          "startTime": "19:10",
+          "endTime": "19:40",
+          "selected": true
+        }
+      ],
+      "slotDuration": 0.5,
+      "extraSelfStudy": {
+        "enabled": false
+      }
     },
     {
       "id": "subj_5",
-      "name": "Toán MathX",
+      "name": "MathX",
       "category": "academic",
       "type": "fixed",
-      "slotDuration": 1.5,
       "color": "#8b5cf6",
       "schedule": [
-        { "day": 3, "startTime": "09:00", "endTime": "10:30", "selected": true }
+        {
+          "day": 3,
+          "startTime": "09:00",
+          "endTime": "10:30",
+          "selected": true
+        }
       ],
+      "slotDuration": 1.5,
       "extraSelfStudy": {
         "enabled": true,
         "duration": 1.5,
         "sessionsPerWeek": 3,
-        "preferredSlots": ["early", "morning", "afternoon"]
+        "preferredSlots": [
+          "early",
+          "morning",
+          "early-afternoon",
+          "afternoon",
+          "evening"
+        ]
       }
     },
     {
       "id": "subj_6",
-      "name": "Học Bơi",
+      "name": "Bơi",
       "category": "physical",
       "type": "fixed",
-      "slotDuration": 1,
       "color": "#06b6d4",
       "schedule": [
-        { "day": 2, "startTime": "17:00", "endTime": "18:00", "selected": true },
-        { "day": 4, "startTime": "17:00", "endTime": "18:00", "selected": true },
-        { "day": 6, "startTime": "08:00", "endTime": "09:00", "selected": true }
-      ]
+        {
+          "day": 1,
+          "startTime": "14:00",
+          "endTime": "16:00",
+          "selected": true
+        },
+        {
+          "day": 3,
+          "startTime": "14:00",
+          "endTime": "16:00",
+          "selected": true
+        },
+        {
+          "day": 5,
+          "startTime": "14:00",
+          "endTime": "16:00",
+          "selected": true
+        }
+      ],
+      "slotDuration": 2,
+      "extraSelfStudy": {
+        "enabled": false
+      }
     },
     {
       "id": "subj_7",
-      "name": "Học Vẽ",
+      "name": "Vẽ",
       "category": "art",
       "type": "weekly-pick",
-      "slotDuration": 1.5,
       "color": "#ec4899",
+      "schedule": [
+        {
+          "day": 4,
+          "startTime": "17:30",
+          "endTime": "19:00",
+          "selected": false
+        },
+        {
+          "day": 5,
+          "startTime": "17:30",
+          "endTime": "19:00",
+          "selected": false
+        },
+        {
+          "day": 6,
+          "startTime": "09:00",
+          "endTime": "10:30",
+          "selected": false
+        },
+        {
+          "day": 6,
+          "startTime": "17:00",
+          "endTime": "18:30",
+          "selected": true
+        },
+        {
+          "day": 0,
+          "startTime": "17:00",
+          "endTime": "18:30",
+          "selected": false
+        }
+      ],
+      "slotDuration": 1.5,
       "config": {
         "requiredSessions": 0,
         "targetSessions": 2
       },
-      "schedule": [
-        { "day": 4, "startTime": "17:30", "endTime": "19:00", "selected": false },
-        { "day": 5, "startTime": "17:30", "endTime": "19:00", "selected": false },
-        { "day": 6, "startTime": "09:00", "endTime": "10:30", "selected": false },
-        { "day": 6, "startTime": "17:00", "endTime": "18:30", "selected": false },
-        { "day": 0, "startTime": "17:00", "endTime": "18:30", "selected": false }
-      ]
+      "extraSelfStudy": {
+        "enabled": false
+      }
     },
     {
       "id": "subj_8",
-      "name": "Học Võ Taekwondo",
+      "name": "Taekwondo",
       "category": "physical",
       "type": "fixed-plus",
-      "slotDuration": 1.25,
       "color": "#f97316",
+      "schedule": [
+        {
+          "day": 2,
+          "startTime": "17:45",
+          "endTime": "19:00",
+          "selected": true
+        },
+        {
+          "day": 4,
+          "startTime": "17:45",
+          "endTime": "19:00",
+          "selected": true
+        },
+        {
+          "day": 5,
+          "startTime": "17:45",
+          "endTime": "19:00",
+          "selected": false
+        },
+        {
+          "day": 6,
+          "startTime": "09:30",
+          "endTime": "11:00",
+          "selected": true
+        },
+        {
+          "day": 6,
+          "startTime": "18:00",
+          "endTime": "19:30",
+          "selected": false
+        },
+        {
+          "day": 0,
+          "startTime": "15:30",
+          "endTime": "17:00",
+          "selected": false
+        }
+      ],
+      "slotDuration": 1.375,
       "config": {
         "requiredSessions": 2,
-        "targetSessions": 3,
-        "location": "Gold Silk Vạn Phúc - Hà Đông",
-        "phone": "058.440.6711"
+        "targetSessions": 3
       },
+      "extraSelfStudy": {
+        "enabled": false
+      }
+    },
+    {
+      "id": "mpxy0huy5xb1mhxx9w9",
+      "name": "Viết",
+      "category": "academic",
+      "type": "fixed",
+      "color": "#4f46e5",
       "schedule": [
-        { "day": 2, "startTime": "17:45", "endTime": "19:00", "selected": true },
-        { "day": 4, "startTime": "17:45", "endTime": "19:00", "selected": true },
-        { "day": 5, "startTime": "17:45", "endTime": "19:00", "selected": false },
-        { "day": 6, "startTime": "09:30", "endTime": "11:00", "selected": false },
-        { "day": 6, "startTime": "18:00", "endTime": "19:30", "selected": false },
-        { "day": 0, "startTime": "15:30", "endTime": "17:00", "selected": false }
-      ]
+        {
+          "day": 3,
+          "startTime": "20:00",
+          "endTime": "21:30",
+          "selected": true
+        },
+        {
+          "day": 5,
+          "startTime": "20:00",
+          "endTime": "21:30",
+          "selected": true
+        }
+      ],
+      "slotDuration": 1.5,
+      "extraSelfStudy": {
+        "enabled": false
+      }
     }
   ],
   "events": [],
-  "sessions": [],
+  "sessions": [
+    {
+      "id": "mpxxwm5uqys4j2hrdf8",
+      "subjectId": "subj_1",
+      "date": "2026-06-08",
+      "startTime": "08:30",
+      "endTime": "10:00",
+      "status": "pending",
+      "notes": ""
+    },
+    {
+      "id": "mpxxwm5uej58w09ea88",
+      "subjectId": "subj_2",
+      "date": "2026-06-08",
+      "startTime": "16:30",
+      "endTime": "18:00",
+      "status": "pending",
+      "notes": ""
+    },
+    {
+      "id": "mpxxwm5u8xlyfr521n",
+      "subjectId": "subj_1",
+      "date": "2026-06-09",
+      "startTime": "08:30",
+      "endTime": "10:00",
+      "status": "pending",
+      "notes": ""
+    },
+    {
+      "id": "mpxxwm5umgs2kllyo3a",
+      "subjectId": "subj_2",
+      "date": "2026-06-10",
+      "startTime": "11:00",
+      "endTime": "12:30",
+      "status": "pending",
+      "notes": ""
+    },
+    {
+      "id": "mpxxwm5uimpzuazstr",
+      "subjectId": "subj_3",
+      "date": "2026-06-10",
+      "startTime": "16:30",
+      "endTime": "18:00",
+      "status": "pending",
+      "notes": ""
+    },
+    {
+      "id": "mpxxwm5u0d1x9ijlqdnm",
+      "subjectId": "subj_3",
+      "date": "2026-06-11",
+      "startTime": "08:30",
+      "endTime": "10:00",
+      "status": "pending",
+      "notes": ""
+    },
+    {
+      "id": "mpxxwm5vz9vt4ua22lq",
+      "subjectId": "subj_5",
+      "date": "2026-06-12",
+      "startTime": "08:30",
+      "endTime": "10:00",
+      "status": "pending",
+      "notes": ""
+    },
+    {
+      "id": "mpxxwm5vzrax3c0loz",
+      "subjectId": "subj_5",
+      "date": "2026-06-14",
+      "startTime": "08:30",
+      "endTime": "10:00",
+      "status": "pending",
+      "notes": ""
+    }
+  ],
   "settings": {
     "dailyStartTime": "08:30",
     "dailyEndTime": "20:00",
     "breakDuration": 30,
-    "preferredSlots": ["morning", "afternoon"]
+    "preferredSlots": [
+      "morning",
+      "afternoon"
+    ]
   }
 }
