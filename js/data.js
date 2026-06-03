@@ -161,6 +161,14 @@ export function saveSettings(settings) {
   return setItem(STORAGE_KEYS.SETTINGS, settings);
 }
 
+// Clear all data
+export function clearAllData() {
+  localStorage.removeItem(STORAGE_KEYS.SUBJECTS);
+  localStorage.removeItem(STORAGE_KEYS.EVENTS);
+  localStorage.removeItem(STORAGE_KEYS.SESSIONS);
+  console.log('All data cleared');
+}
+
 // Sample Data (for demo)
 export function loadSampleData() {
   const subjects = [
@@ -169,24 +177,33 @@ export function loadSampleData() {
       name: 'Bài hè Toán',
       type: 'flexible',
       slotDuration: 2,
-      hasTeacher: false,
-      color: '#ef4444'
+      color: '#ef4444',
+      flexibleConfig: {
+        duration: 2,
+        sessionsPerWeek: 5
+      }
     },
     {
       id: 'subj_2',
       name: 'Bài hè Tiếng Việt',
       type: 'flexible',
       slotDuration: 2,
-      hasTeacher: false,
-      color: '#f59e0b'
+      color: '#f59e0b',
+      flexibleConfig: {
+        duration: 2,
+        sessionsPerWeek: 5
+      }
     },
     {
       id: 'subj_3',
       name: 'Bài hè Tiếng Anh',
       type: 'flexible',
       slotDuration: 2,
-      hasTeacher: false,
-      color: '#10b981'
+      color: '#10b981',
+      flexibleConfig: {
+        duration: 2,
+        sessionsPerWeek: 5
+      }
     },
     {
       id: 'subj_4',
@@ -270,6 +287,7 @@ export default {
   deleteSessionsByDate,
   getSettings,
   saveSettings,
+  clearAllData,
   loadSampleData,
   generateId
 };

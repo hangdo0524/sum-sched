@@ -13,6 +13,7 @@ import {
   getSession,
   saveSession,
   loadSampleData,
+  clearAllData,
   generateId
 } from './data.js';
 
@@ -61,6 +62,15 @@ const currentWeekEl = document.getElementById('current-week');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', init);
+
+// Expose reset function globally for debugging
+window.resetApp = function() {
+  if (confirm('Xóa toàn bộ dữ liệu và tải lại?')) {
+    clearAllData();
+    loadSampleData();
+    location.reload();
+  }
+};
 
 function init() {
   // Load sample data if empty

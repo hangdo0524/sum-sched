@@ -108,10 +108,12 @@ export function renderSubjectList(subjects, container, filter = 'all') {
         break;
       case 'semi-flexible':
         typeLabel = '🕐 Bán linh hoạt';
-        const slots = subject.flexibleConfig?.timeSlots?.map(s =>
-          s === 'morning' ? 'Sáng' : s === 'afternoon' ? 'Chiều' : 'Tối'
-        ).join('/') || 'Sáng';
-        scheduleText = `${subject.flexibleConfig?.sessionsPerWeek || 3}x/tuần • ${slots} • ${subject.slotDuration || 1.5}h`;
+        {
+          const slots = subject.flexibleConfig?.timeSlots?.map(s =>
+            s === 'morning' ? 'Sáng' : s === 'afternoon' ? 'Chiều' : 'Tối'
+          ).join('/') || 'Sáng';
+          scheduleText = `${subject.flexibleConfig?.sessionsPerWeek || 3}x/tuần • ${slots} • ${subject.slotDuration || 1.5}h`;
+        }
         break;
       case 'flexible':
         typeLabel = '🔄 Linh hoạt';
@@ -119,10 +121,15 @@ export function renderSubjectList(subjects, container, filter = 'all') {
         break;
       case 'hybrid':
         typeLabel = '🔀 Kết hợp';
-        const fixedPart = subject.schedule?.map(s => `${getDayName(s.day)} ${s.startTime}`).join(', ') || '';
-        const flexPart = subject.flexibleConfig ? `+ ${subject.flexibleConfig.sessionsPerWeek}x linh hoạt` : '';
-        scheduleText = `${fixedPart} ${flexPart}`;
+        {
+          const fixedPart = subject.schedule?.map(s => `${getDayName(s.day)} ${s.startTime}`).join(', ') || '';
+          const flexPart = subject.flexibleConfig ? `+ ${subject.flexibleConfig.sessionsPerWeek}x linh hoạt` : '';
+          scheduleText = `${fixedPart} ${flexPart}`;
+        }
         break;
+      default:
+        typeLabel = '📋 Khác';
+        scheduleText = `${subject.slotDuration || 1.5}h/buổi`;
     }
 
     li.innerHTML = `
