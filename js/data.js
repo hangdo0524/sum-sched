@@ -1,12 +1,66 @@
 /**
- * Data Management Module - LocalStorage CRUD with Multi-User Support
+ * Data Management Module - LocalStorage + Firebase Real-time Sync
  */
+
+import {
+  saveToFirebase,
+  loadFromFirebase,
+  subscribeToUser,
+  saveUsersListToFirebase,
+  loadUsersListFromFirebase
+} from './firebase.js';
 
 // User management
 const USERS_KEY = 'sumSched_users';
 const CURRENT_USER_KEY = 'sumSched_currentUser';
 
 let currentUserId = null;
+let firebaseUnsubscribe = null;
+let syncInProgress = false;
+let onDataUpdateCallback = null;
+
+// Debounce Firebase sync to avoid too many writes
+let syncTimeout = null;
+function debouncedFirebaseSync() {
+  if (syncTimeout) clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(() => {
+    syncToFirebase();
+  }, 1000); // Wait 1 second after last change
+}
+
+// Sync current user data to Firebase
+async function syncToFirebase() {
+  if (syncInProgress || !currentUserId) return;
+  syncInProgress = true;
+
+  const data = {
+    subjects: getSubjects(),
+    events: getEvents(),
+    sessions: getSessions(),
+    settings: getSettings()
+  };
+
+  const success = await saveToFirebase(currentUserId, data);
+  syncInProgress = false;
+
+  if (success) {
+    showSyncIndicator('✓ Synced');
+  }
+}
+
+// Show sync indicator (non-blocking)
+function showSyncIndicator(message) {
+  let indicator = document.getElementById('sync-indicator');
+  if (!indicator) {
+    indicator = document.createElement('div');
+    indicator.id = 'sync-indicator';
+    indicator.style.cssText = 'position:fixed;bottom:10px;right:10px;background:#10b981;color:white;padding:4px 12px;border-radius:20px;font-size:12px;z-index:9999;opacity:0;transition:opacity 0.3s';
+    document.body.appendChild(indicator);
+  }
+  indicator.textContent = message;
+  indicator.style.opacity = '1';
+  setTimeout(() => { indicator.style.opacity = '0'; }, 2000);
+}
 
 function getStorageKey(baseKey) {
   if (!currentUserId) {
@@ -86,14 +140,64 @@ export function getCurrentUserId() {
   return userId;
 }
 
-export function setCurrentUser(userId) {
+export async function setCurrentUser(userId, skipFirebaseLoad = false) {
   const users = getUsers();
-  if (users.some(u => u.id === userId)) {
-    currentUserId = userId;
-    localStorage.setItem(CURRENT_USER_KEY, userId);
+  if (!users.some(u => u.id === userId)) {
+    return false;
+  }
+
+  // Unsubscribe from previous user
+  if (firebaseUnsubscribe) {
+    firebaseUnsubscribe();
+    firebaseUnsubscribe = null;
+  }
+
+  currentUserId = userId;
+  localStorage.setItem(CURRENT_USER_KEY, userId);
+
+  // Load data from Firebase (if not skipping)
+  if (!skipFirebaseLoad) {
+    await loadUserFromFirebase(userId);
+  }
+
+  // Subscribe to real-time updates
+  firebaseUnsubscribe = subscribeToUser(userId, (data) => {
+    if (syncInProgress) return; // Don't update if we're the ones syncing
+
+    // Update localStorage with Firebase data
+    if (data.subjects) setItem(STORAGE_KEYS.SUBJECTS, data.subjects);
+    if (data.events) setItem(STORAGE_KEYS.EVENTS, data.events);
+    if (data.sessions) setItem(STORAGE_KEYS.SESSIONS, data.sessions);
+    if (data.settings) setItem(STORAGE_KEYS.SETTINGS, data.settings);
+
+    showSyncIndicator('🔄 Updated');
+
+    // Notify app to refresh UI
+    if (onDataUpdateCallback) {
+      onDataUpdateCallback();
+    }
+  });
+
+  return true;
+}
+
+// Load user data from Firebase into localStorage
+async function loadUserFromFirebase(userId) {
+  const data = await loadFromFirebase(userId);
+  if (data) {
+    if (data.subjects) setItem(`sumSched_${userId}_subjects`, data.subjects);
+    if (data.events) setItem(`sumSched_${userId}_events`, data.events);
+    if (data.sessions) setItem(`sumSched_${userId}_sessions`, data.sessions);
+    if (data.settings) setItem(`sumSched_${userId}_settings`, data.settings);
+    console.log('✅ Loaded user data from Firebase:', userId);
     return true;
   }
   return false;
+}
+
+// Set callback for when data updates from Firebase
+export function onFirebaseDataUpdate(callback) {
+  onDataUpdateCallback = callback;
 }
 
 export function getCurrentUser() {
@@ -150,7 +254,9 @@ export function saveSubject(subject) {
     subjects.push(subject);
   }
 
-  return setItem(STORAGE_KEYS.SUBJECTS, subjects) ? subject : null;
+  const result = setItem(STORAGE_KEYS.SUBJECTS, subjects) ? subject : null;
+  if (result) debouncedFirebaseSync();
+  return result;
 }
 
 export function deleteSubject(id) {
@@ -160,6 +266,8 @@ export function deleteSubject(id) {
   // Also delete related sessions
   const sessions = getSessions().filter(s => s.subjectId !== id);
   setItem(STORAGE_KEYS.SESSIONS, sessions);
+
+  debouncedFirebaseSync();
 }
 
 // Events CRUD
@@ -188,12 +296,15 @@ export function saveEvent(event) {
     events.push(event);
   }
 
-  return setItem(STORAGE_KEYS.EVENTS, events) ? event : null;
+  const result = setItem(STORAGE_KEYS.EVENTS, events) ? event : null;
+  if (result) debouncedFirebaseSync();
+  return result;
 }
 
 export function deleteEvent(id) {
   const events = getEvents().filter(e => e.id !== id);
   setItem(STORAGE_KEYS.EVENTS, events);
+  debouncedFirebaseSync();
 }
 
 // Sessions CRUD
@@ -227,17 +338,21 @@ export function saveSession(session) {
     sessions.push(session);
   }
 
-  return setItem(STORAGE_KEYS.SESSIONS, sessions) ? session : null;
+  const result = setItem(STORAGE_KEYS.SESSIONS, sessions) ? session : null;
+  if (result) debouncedFirebaseSync();
+  return result;
 }
 
 export function deleteSession(id) {
   const sessions = getSessions().filter(s => s.id !== id);
   setItem(STORAGE_KEYS.SESSIONS, sessions);
+  debouncedFirebaseSync();
 }
 
 export function deleteSessionsByDate(date) {
   const sessions = getSessions().filter(s => s.date !== date);
   setItem(STORAGE_KEYS.SESSIONS, sessions);
+  debouncedFirebaseSync();
 }
 
 // Settings
@@ -251,7 +366,9 @@ export function getSettings() {
 }
 
 export function saveSettings(settings) {
-  return setItem(STORAGE_KEYS.SETTINGS, settings);
+  const result = setItem(STORAGE_KEYS.SETTINGS, settings);
+  if (result) debouncedFirebaseSync();
+  return result;
 }
 
 // Clear all data
@@ -571,6 +688,24 @@ export function loadSampleData() {
   console.log('Sample data loaded');
 }
 
+// Force sync to Firebase (for manual trigger)
+export async function forceSyncToFirebase() {
+  if (!currentUserId) return { success: false, message: 'No user' };
+  syncInProgress = true;
+
+  const data = {
+    subjects: getSubjects(),
+    events: getEvents(),
+    sessions: getSessions(),
+    settings: getSettings()
+  };
+
+  const success = await saveToFirebase(currentUserId, data);
+  syncInProgress = false;
+
+  return { success, message: success ? 'Đã đồng bộ lên Firebase!' : 'Lỗi khi đồng bộ' };
+}
+
 // Export all
 export default {
   // User management
@@ -609,5 +744,7 @@ export default {
   userHasData,
   saveToGitHub,
   getGitHubToken,
-  setGitHubToken
+  setGitHubToken,
+  onFirebaseDataUpdate,
+  forceSyncToFirebase
 };

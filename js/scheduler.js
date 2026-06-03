@@ -362,7 +362,7 @@ export function generateSmartSuggestions(weekStartDate) {
     });
   });
 
-  // PART 2: Self-study subjects (AI suggestions)
+  // PART 2: Self-study subjects (AI suggestions) - BALANCED DISTRIBUTION
   // Include pure self-study AND subjects with extraSelfStudy enabled
   const selfStudySubjects = subjects.filter(s =>
     s.type === 'self-study' || s.type === 'flexible' || s.type === 'semi-flexible'
@@ -373,9 +373,10 @@ export function generateSmartSuggestions(weekStartDate) {
     s.extraSelfStudy?.enabled && ['fixed', 'weekly-pick', 'fixed-plus'].includes(s.type)
   ).map(s => ({
     ...s,
-    id: s.id + '_extra', // Separate ID for extra self-study sessions
+    id: s.id + '_extra',
     name: s.name + ' (tự học)',
     type: 'self-study',
+    category: s.category,
     config: {
       duration: s.extraSelfStudy.duration,
       sessionsPerWeek: s.extraSelfStudy.sessionsPerWeek,
@@ -389,168 +390,232 @@ export function generateSmartSuggestions(weekStartDate) {
   const allSelfStudySubjects = [...selfStudySubjects, ...extraSelfStudySubjects];
 
   console.log('AI Suggestions Debug:', {
-    selfStudySubjects: selfStudySubjects.map(s => s.name),
-    extraSelfStudySubjects: extraSelfStudySubjects.map(s => s.name),
+    selfStudySubjects: selfStudySubjects.map(s => ({ name: s.name, cat: s.category })),
+    extraSelfStudySubjects: extraSelfStudySubjects.map(s => ({ name: s.name, cat: s.category })),
     totalFlexible: allSelfStudySubjects.length
   });
 
   if (allSelfStudySubjects.length === 0 && suggestions.length === 0) return suggestions;
 
-  // Track sessions per subject for self-study
-  const sessionCounts = {};
+  // Group subjects by category for balanced distribution
+  const subjectsByCategory = {
+    academic: allSelfStudySubjects.filter(s => s.category === 'academic'),
+    physical: allSelfStudySubjects.filter(s => s.category === 'physical'),
+    art: allSelfStudySubjects.filter(s => s.category === 'art')
+  };
+
+  // Calculate remaining sessions needed for each subject
+  const subjectNeeds = {};
   allSelfStudySubjects.forEach(s => {
-    sessionCounts[s.id] = 0;
-    // For extra self-study, also track by original ID
-    if (s.originalSubjectId) {
-      sessionCounts[s.id + '_orig'] = s.originalSubjectId;
-    }
+    const config = s.config || s.flexibleConfig || {};
+    const target = config.sessionsPerWeek || 2;
+    subjectNeeds[s.id] = {
+      subject: s,
+      target: target,
+      scheduled: 0,
+      remaining: target
+    };
   });
 
-  // Count existing confirmed sessions
-  existingSessions.forEach(s => {
-    const sessionDate = s.date;
-    if (!weekDates.includes(sessionDate)) return;
+  // Count existing confirmed sessions in this week
+  existingSessions.forEach(session => {
+    if (!weekDates.includes(session.date)) return;
 
     // Direct match
-    if (sessionCounts[s.subjectId] !== undefined) {
-      sessionCounts[s.subjectId]++;
+    if (subjectNeeds[session.subjectId]) {
+      subjectNeeds[session.subjectId].scheduled++;
+      subjectNeeds[session.subjectId].remaining--;
     }
 
-    // Also count for extra self-study (sessions saved with original ID)
+    // For extra self-study (sessions saved with original ID)
     allSelfStudySubjects.forEach(subj => {
-      if (subj.originalSubjectId === s.subjectId && subj.isExtraSelfStudy) {
-        // Check if this session is NOT a fixed slot (it's a self-study session)
-        const subject = subjects.find(sub => sub.id === s.subjectId);
-        if (subject) {
-          const dayOfWeek = new Date(sessionDate + 'T00:00:00').getDay();
-          const isFixedSlot = (subject.schedule || []).some(slot =>
-            slot.day === dayOfWeek && slot.startTime === s.startTime
+      if (subj.originalSubjectId === session.subjectId && subj.isExtraSelfStudy) {
+        const origSubject = subjects.find(sub => sub.id === session.subjectId);
+        if (origSubject) {
+          const dayOfWeek = new Date(session.date + 'T00:00:00').getDay();
+          const isFixedSlot = (origSubject.schedule || []).some(slot =>
+            slot.day === dayOfWeek && slot.startTime === session.startTime
           );
-          if (!isFixedSlot) {
-            sessionCounts[subj.id]++;
+          if (!isFixedSlot && subjectNeeds[subj.id]) {
+            subjectNeeds[subj.id].scheduled++;
+            subjectNeeds[subj.id].remaining--;
           }
         }
       }
     });
   });
 
-  weekDates.forEach(dateStr => {
-    const event = events.find(e => e.date === dateStr);
-    if (event && ['holiday', 'trip'].includes(event.type)) return;
+  // Helper: Get time slot category
+  const getSlotCategory = (minutes) => {
+    if (minutes < timeToMinutes('10:00')) return 'early';
+    if (minutes < timeToMinutes('11:30')) return 'morning';
+    if (minutes < timeToMinutes('13:30')) return 'noon';
+    if (minutes < timeToMinutes('15:30')) return 'early-afternoon';
+    if (minutes < timeToMinutes('17:30')) return 'afternoon';
+    return 'evening';
+  };
 
-    // Get fixed sessions for this day
+  // Build day info for each day in the week
+  const dayInfoMap = {};
+  const availableDays = weekDates.filter(dateStr => {
+    const event = events.find(e => e.date === dateStr);
+    return !(event && ['holiday', 'trip'].includes(event.type));
+  });
+
+  availableDays.forEach(dateStr => {
     const fixedSessions = getFixedSessionsForDate(dateStr, subjects);
     const confirmedForDay = existingSessions.filter(s => s.date === dateStr);
-    const freeSlots = findFreeSlots(fixedSessions, settings);
-
-    // Track all sessions for this day (for conflict checking)
-    const daySessions = [...fixedSessions, ...confirmedForDay];
-
-    // Also include already added suggestions for this day (teacher slots)
     const teacherSuggestionsForDay = suggestions.filter(s => s.date === dateStr);
-    daySessions.push(...teacherSuggestionsForDay);
 
-    // Analyze what categories are already scheduled today
-    const todayCategories = fixedSessions.map(s => {
-      const subject = subjects.find(sub => sub.id === s.subjectId);
-      return categorizeSubject(subject?.name || '');
+    // Analyze what categories are already scheduled today (from fixed sessions)
+    const existingCategories = new Set();
+    [...fixedSessions, ...confirmedForDay].forEach(s => {
+      const subj = subjects.find(sub => sub.id === s.subjectId);
+      if (subj?.category) existingCategories.add(subj.category);
     });
 
-    const needsBrain = !todayCategories.includes('brain') && !todayCategories.includes('academic');
-    const needsPhysical = !todayCategories.includes('physical');
-    const needsArt = !todayCategories.includes('art');
+    dayInfoMap[dateStr] = {
+      date: dateStr,
+      fixedSessions,
+      confirmedSessions: confirmedForDay,
+      allSessions: [...fixedSessions, ...confirmedForDay, ...teacherSuggestionsForDay],
+      freeSlots: findFreeSlots(fixedSessions, settings),
+      existingCategories,
+      suggestedSubjects: new Set()
+    };
+  });
 
-    for (const slot of freeSlots) {
-      if (slot.duration < 1) continue;
+  // BALANCED DISTRIBUTION ALGORITHM
+  // Strategy: Round-robin across days, alternating categories
+  // Goal: Each day should have academic + physical if possible
 
-      const slotMinutes = timeToMinutes(slot.startTime);
+  // Build a queue of sessions to distribute per category
+  const categoryQueues = {
+    academic: [],
+    physical: [],
+    art: []
+  };
 
-      // Determine time slot category
-      const getSlotCategory = (minutes) => {
-        if (minutes < timeToMinutes('10:00')) return 'early';
-        if (minutes < timeToMinutes('11:30')) return 'morning';
-        if (minutes < timeToMinutes('13:30')) return 'noon';
-        if (minutes < timeToMinutes('15:30')) return 'early-afternoon';
-        if (minutes < timeToMinutes('17:30')) return 'afternoon';
-        return 'evening';
-      };
+  Object.values(subjectNeeds).forEach(need => {
+    if (need.remaining <= 0) return;
+    const cat = need.subject.category || 'academic';
+    for (let i = 0; i < need.remaining; i++) {
+      categoryQueues[cat]?.push(need.subject);
+    }
+  });
 
-      const slotCategory = getSlotCategory(slotMinutes);
-      const isMorning = slotMinutes < timeToMinutes('12:00');
-      const isAfternoon = slotMinutes >= timeToMinutes('14:00') && slotMinutes < timeToMinutes('17:00');
-      const isEvening = slotMinutes >= timeToMinutes('19:00');
+  console.log('Distribution plan:', {
+    academic: categoryQueues.academic.length,
+    physical: categoryQueues.physical.length,
+    art: categoryQueues.art.length
+  });
 
-      for (const subject of allSelfStudySubjects) {
-        const config = subject.config || subject.flexibleConfig || {};
-        const targetSessions = config.sessionsPerWeek || 5;
-        const duration = config.duration || subject.slotDuration || 2;
-        const preferredSlots = config.preferredSlots || ['morning', 'afternoon'];
+  // Round-robin distribute: iterate through days, try to add 1 academic + 1 physical per day
+  let dayIndex = 0;
+  let maxIterations = availableDays.length * 10;
+  let iterations = 0;
 
-        if (sessionCounts[subject.id] >= targetSessions) continue;
+  while (iterations < maxIterations) {
+    iterations++;
+    const dateStr = availableDays[dayIndex % availableDays.length];
+    const dayInfo = dayInfoMap[dateStr];
+
+    // Determine which category to prioritize for this day
+    const hasAcademic = dayInfo.existingCategories.has('academic') || dayInfo.suggestedSubjects.size > 0 &&
+      [...dayInfo.suggestedSubjects].some(id => {
+        const subj = allSelfStudySubjects.find(s => s.id === id);
+        return subj?.category === 'academic';
+      });
+    const hasPhysical = dayInfo.existingCategories.has('physical') ||
+      [...dayInfo.suggestedSubjects].some(id => {
+        const subj = allSelfStudySubjects.find(s => s.id === id);
+        return subj?.category === 'physical';
+      });
+
+    // Try to add what's missing
+    const categoriesToTry = [];
+    if (!hasAcademic && categoryQueues.academic.length > 0) categoriesToTry.push('academic');
+    if (!hasPhysical && categoryQueues.physical.length > 0) categoriesToTry.push('physical');
+    if (categoryQueues.art.length > 0) categoriesToTry.push('art');
+
+    // If day already has both, still try to add more if subject needs more sessions
+    if (categoriesToTry.length === 0) {
+      if (categoryQueues.academic.length > 0) categoriesToTry.push('academic');
+      if (categoryQueues.physical.length > 0) categoriesToTry.push('physical');
+    }
+
+    if (categoriesToTry.length === 0) break; // Nothing left to schedule
+
+    let addedThisRound = false;
+
+    for (const category of categoriesToTry) {
+      const queue = categoryQueues[category];
+      if (queue.length === 0) continue;
+
+      // Find a subject from this category that hasn't been scheduled today
+      let subjectIndex = -1;
+      for (let i = 0; i < queue.length; i++) {
+        const subject = queue[i];
+        const subjectIdsToCheck = [subject.id];
+        if (subject.originalSubjectId) subjectIdsToCheck.push(subject.originalSubjectId);
+
+        const alreadyToday = dayInfo.suggestedSubjects.has(subject.id) ||
+          dayInfo.confirmedSessions.some(s => subjectIdsToCheck.includes(s.subjectId));
+
+        if (!alreadyToday) {
+          subjectIndex = i;
+          break;
+        }
+      }
+
+      if (subjectIndex === -1) continue;
+
+      const subject = queue[subjectIndex];
+      const config = subject.config || subject.flexibleConfig || {};
+      const duration = config.duration || subject.slotDuration || 1.5;
+      const preferredSlots = config.preferredSlots || ['early', 'morning', 'early-afternoon', 'afternoon', 'evening'];
+
+      // Find a valid time slot
+      let scheduled = false;
+      for (const slot of dayInfo.freeSlots) {
         if (slot.duration < duration) continue;
 
-        // Check if this time slot matches preferred slots
+        const slotCategory = getSlotCategory(timeToMinutes(slot.startTime));
         if (!preferredSlots.includes(slotCategory)) continue;
-
-        // Check if already has a session today for this subject
-        // For extraSelfStudy, check both the virtual ID and original ID
-        const subjectIdsToCheck = [subject.id];
-        if (subject.originalSubjectId) {
-          subjectIdsToCheck.push(subject.originalSubjectId);
-        }
-
-        const hasSessionToday = existingSessions.some(s => {
-          if (s.date !== dateStr) return false;
-          if (!subjectIdsToCheck.includes(s.subjectId)) return false;
-          // For extraSelfStudy, only count non-fixed sessions
-          if (subject.isExtraSelfStudy) {
-            const origSubject = subjects.find(sub => sub.id === subject.originalSubjectId);
-            if (origSubject) {
-              const dayOfWeek = new Date(dateStr + 'T00:00:00').getDay();
-              const isFixedSlot = (origSubject.schedule || []).some(slot =>
-                slot.day === dayOfWeek && slot.startTime === s.startTime
-              );
-              if (isFixedSlot) return false; // Don't count fixed slots
-            }
-          }
-          return true;
-        }) || suggestions.some(
-          s => subjectIdsToCheck.includes(s.subjectId) && s.date === dateStr && !s.isTeacherSlot
-        );
-        if (hasSessionToday) continue;
 
         const newEndTime = addHoursToTime(slot.startTime, duration);
 
-        // Check for time conflict (overlap or < 30min gap) with all sessions for this day
-        if (hasTimeConflict(slot.startTime, newEndTime, daySessions).conflict) continue;
+        // Check for time conflict
+        if (hasTimeConflict(slot.startTime, newEndTime, dayInfo.allSessions).conflict) continue;
 
-        const category = categorizeSubject(subject.name);
+        // Create suggestion
+        const slotMinutes = timeToMinutes(slot.startTime);
+        const isMorning = slotMinutes < timeToMinutes('12:00');
+        const isAfternoon = slotMinutes >= timeToMinutes('14:00') && slotMinutes < timeToMinutes('17:00');
+        const isEvening = slotMinutes >= timeToMinutes('19:00');
+
         let reason = '';
         let priority = 0;
 
         if (isMorning) {
-          if (category === 'brain' || category === 'academic') {
-            reason = '🌅 Buổi sáng tập trung cao → học thuật';
+          if (category === 'academic') {
+            reason = '🌅 Sáng tập trung cao → học thuật';
             priority = 10;
           } else {
-            reason = '🌅 Buổi sáng → học tập hiệu quả';
+            reason = '🌅 Sáng → học tập hiệu quả';
             priority = 5;
           }
         } else if (isAfternoon) {
-          if (category === 'physical' && needsPhysical) {
-            reason = '☀️ Chiều → thể chất giúp thư giãn';
+          if (category === 'physical') {
+            reason = '☀️ Chiều → thể chất thư giãn';
             priority = 10;
           } else {
-            reason = '☀️ Buổi chiều → học nhẹ nhàng';
+            reason = '☀️ Chiều → học nhẹ nhàng';
             priority = 5;
           }
         } else if (isEvening) {
-          reason = '🌙 Buổi tối → ôn bài';
+          reason = '🌙 Tối → ôn bài';
           priority = 6;
-        }
-
-        if ((category === 'brain' || category === 'academic') && needsBrain) {
-          priority += 3;
         }
 
         const newSuggestion = {
@@ -571,15 +636,30 @@ export function generateSmartSuggestions(weekStartDate) {
         };
 
         suggestions.push(newSuggestion);
-        daySessions.push(newSuggestion); // Add to day sessions for subsequent conflict checks
+        dayInfo.allSessions.push(newSuggestion);
+        dayInfo.suggestedSubjects.add(subject.id);
 
-        sessionCounts[subject.id]++;
+        // Update free slot
         slot.startTime = addHoursToTime(slot.startTime, duration + 0.5);
         slot.duration -= duration + 0.5;
+
+        // Remove from queue
+        queue.splice(subjectIndex, 1);
+        scheduled = true;
+        addedThisRound = true;
         break;
       }
+
+      if (scheduled) break; // Move to next day
     }
-  });
+
+    dayIndex++;
+
+    // If we've gone through all days without adding anything, we're done
+    if (dayIndex % availableDays.length === 0 && !addedThisRound) {
+      break;
+    }
+  }
 
   // Sort by date then priority
   suggestions.sort((a, b) => {

@@ -25,7 +25,9 @@ import {
   setCurrentUser,
   autoLoadUserData,
   userHasData,
-  saveToGitHub
+  saveToGitHub,
+  onFirebaseDataUpdate,
+  forceSyncToFirebase
 } from './data.js';
 
 import {
@@ -91,22 +93,18 @@ async function init() {
   currentDate = new Date();
   currentWeekStart = getWeekStart(currentDate);
 
-  // Initialize user (creates default users if needed)
-  const user = getCurrentUser();
-  refreshUserSelector();
+  // Set up Firebase real-time update callback
+  onFirebaseDataUpdate(() => {
+    console.log('🔄 Firebase update received, refreshing UI...');
+    refreshSchedule();
+    refreshSubjects();
+    refreshReports();
+  });
 
-  // Auto-load from file if localStorage is empty for this user
-  if (!userHasData(user.id)) {
-    console.log(`No local data for ${user.name}, trying to load from file...`);
-    const result = await autoLoadUserData(user.id);
-    if (result.loaded) {
-      console.log('Auto-loaded:', result.message);
-    } else if (getSubjects().length === 0) {
-      // Fallback to sample data only if no file and no data
-      console.log('No file found, loading sample data');
-      loadSampleData();
-    }
-  }
+  // Initialize user (creates default users if needed, loads from Firebase)
+  const user = getCurrentUser();
+  await setCurrentUser(user.id); // This loads from Firebase and subscribes to updates
+  refreshUserSelector();
 
   // Render initial views
   refreshSchedule();
@@ -316,23 +314,28 @@ function setupScheduleControls() {
     e.target.value = '';
   });
 
-  // Sync from GitHub (force reload from file)
+  // Force sync to Firebase
   document.getElementById('btn-sync-data').addEventListener('click', async () => {
     const user = getCurrentUser();
-    if (confirm(`Tải lại data của ${user.name} từ server?\n(Dữ liệu local sẽ bị ghi đè)`)) {
-      const result = await autoLoadUserData(user.id);
-      if (result.loaded) {
-        alert('Đồng bộ thành công!\n' + result.message);
-        refreshSchedule();
-        refreshSubjects();
-        refreshReports();
-      } else {
-        alert('Không tìm thấy file trên server.\nĐường dẫn: data/users/' + user.id + '.json');
-      }
+    const btn = document.getElementById('btn-sync-data');
+    const originalText = btn.innerHTML;
+
+    btn.innerHTML = '⏳';
+    btn.disabled = true;
+
+    const result = await forceSyncToFirebase();
+
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+
+    if (result.success) {
+      alert('✅ ' + result.message);
+    } else {
+      alert('❌ Lỗi: ' + result.message);
     }
   });
 
-  // Save to GitHub
+  // Save to GitHub (legacy - keep for backup)
   document.getElementById('btn-save-to-github').addEventListener('click', async () => {
     const user = getCurrentUser();
     const btn = document.getElementById('btn-save-to-github');
@@ -1115,15 +1118,10 @@ function refreshUserSelector() {
   listEl.querySelectorAll('.user-dropdown__item').forEach(item => {
     item.addEventListener('click', async () => {
       const userId = item.dataset.userId;
-      if (setCurrentUser(userId)) {
-        document.getElementById('user-dropdown').classList.remove('user-dropdown--open');
+      document.getElementById('user-dropdown').classList.remove('user-dropdown--open');
 
-        // Auto-load from file if no local data for this user
-        if (!userHasData(userId)) {
-          console.log(`Switching to ${userId}, trying to load from file...`);
-          await autoLoadUserData(userId);
-        }
-
+      // setCurrentUser now loads from Firebase and subscribes to updates
+      if (await setCurrentUser(userId)) {
         refreshUserSelector();
         refreshSchedule();
         refreshSubjects();
@@ -1149,7 +1147,7 @@ function setupUserSelector() {
   });
 
   // Add user button
-  document.getElementById('btn-add-user').addEventListener('click', () => {
+  document.getElementById('btn-add-user').addEventListener('click', async () => {
     const name = prompt('Tên bé:');
     if (name && name.trim()) {
       const colors = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4'];
@@ -1157,7 +1155,7 @@ function setupUserSelector() {
       const user = addUser(name.trim(), randomColor);
 
       if (user) {
-        setCurrentUser(user.id);
+        await setCurrentUser(user.id);
         dropdown.classList.remove('user-dropdown--open');
         refreshUserSelector();
         refreshSchedule();
