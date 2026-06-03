@@ -186,9 +186,13 @@ export function renderScheduleInputs(container, schedule = []) {
 
 export function addScheduleRow(container, slot = null) {
   const row = document.createElement('div');
-  row.className = 'schedule-row';
+  const isSelected = slot?.selected !== false; // Default to selected for new rows
+  row.className = `schedule-row ${isSelected ? 'schedule-row--selected' : ''}`;
 
   row.innerHTML = `
+    <div class="schedule-row__check">
+      <input type="checkbox" class="schedule-selected" ${isSelected ? 'checked' : ''} title="Chọn buổi này">
+    </div>
     <select class="schedule-day-select">
       <option value="1" ${slot?.day === 1 ? 'selected' : ''}>T2</option>
       <option value="2" ${slot?.day === 2 ? 'selected' : ''}>T3</option>
@@ -213,6 +217,7 @@ export function addScheduleRow(container, slot = null) {
   const startInput = row.querySelector('.schedule-start-input');
   const endInput = row.querySelector('.schedule-end-input');
   const durationSpan = row.querySelector('.schedule-duration');
+  const checkbox = row.querySelector('.schedule-selected');
 
   const updateDuration = () => {
     durationSpan.textContent = calculateDuration(startInput.value, endInput.value);
@@ -220,6 +225,11 @@ export function addScheduleRow(container, slot = null) {
 
   startInput.addEventListener('change', updateDuration);
   endInput.addEventListener('change', updateDuration);
+
+  // Toggle selected state
+  checkbox.addEventListener('change', () => {
+    row.classList.toggle('schedule-row--selected', checkbox.checked);
+  });
 
   container.appendChild(row);
 }
@@ -240,9 +250,10 @@ export function getScheduleFromInputs(container) {
     const day = parseInt(row.querySelector('.schedule-day-select').value);
     const startTime = row.querySelector('.schedule-start-input').value;
     const endTime = row.querySelector('.schedule-end-input').value;
+    const selected = row.querySelector('.schedule-selected')?.checked ?? true;
 
     if (startTime && endTime) {
-      schedule.push({ day, startTime, endTime });
+      schedule.push({ day, startTime, endTime, selected });
     }
   });
 

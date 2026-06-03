@@ -77,8 +77,12 @@ function getFixedSessionsForDate(dateStr, subjects) {
   const sessions = [];
 
   // Get fixed sessions from 'fixed' and 'hybrid' type subjects
+  // Only include slots that are selected (selected !== false)
   subjects.filter(s => (s.type === 'fixed' || s.type === 'hybrid') && s.schedule).forEach(subject => {
     subject.schedule.forEach(slot => {
+      // Skip if slot is not selected
+      if (slot.selected === false) return;
+
       if (slot.day === dayOfWeek) {
         const endTime = slot.endTime || addHoursToTime(slot.startTime, subject.slotDuration || 1.5);
         const duration = (timeToMinutes(endTime) - timeToMinutes(slot.startTime)) / 60;

@@ -525,10 +525,33 @@ function setupSessionModal() {
     const status = document.getElementById('session-status').value;
     const notes = document.getElementById('session-notes').value.trim();
 
-    const session = getSession(id);
-    if (session) {
+    // Get session from storage or create new one from schedule data
+    let session = getSession(id);
+
+    if (!session) {
+      // Session doesn't exist in storage yet (generated from fixed schedule)
+      // Find it in current schedule and save it
+      for (const daySchedule of Object.values(currentSchedule)) {
+        const found = daySchedule.sessions.find(s => s.id === id);
+        if (found) {
+          session = {
+            id: found.id,
+            subjectId: found.subjectId,
+            date: found.date,
+            startTime: found.startTime,
+            endTime: found.endTime,
+            status: status,
+            notes: notes
+          };
+          break;
+        }
+      }
+    } else {
       session.status = status;
       session.notes = notes;
+    }
+
+    if (session) {
       saveSession(session);
     }
 

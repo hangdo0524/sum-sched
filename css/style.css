@@ -936,12 +936,38 @@ body {
   flex: 1;
 }
 
+.form-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-500);
+  margin-bottom: var(--spacing-2);
+}
+
 /* Schedule Input Row */
 .schedule-row {
   display: flex;
   gap: var(--spacing-2);
   align-items: center;
   margin-bottom: var(--spacing-2);
+  padding: var(--spacing-2);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+}
+
+.schedule-row--selected {
+  background: #ecfdf5;
+  border: 1px solid var(--color-success);
+}
+
+.schedule-row__check {
+  flex-shrink: 0;
+}
+
+.schedule-row__check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-success);
+  cursor: pointer;
 }
 
 .schedule-row select,
