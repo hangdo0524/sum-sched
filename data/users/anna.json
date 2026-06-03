@@ -1,12 +1,12 @@
 {
   "version": "1.1",
-  "exportedAt": "2026-06-03T10:51:41.424Z",
+  "exportedAt": "2026-06-03T11:05:38.631Z",
   "userId": "anna",
   "userName": "Anna",
   "subjects": [
     {
       "id": "subj_1",
-      "name": "Toán hè",
+      "name": "Toán (hè)",
       "category": "academic",
       "type": "self-study",
       "color": "#ef4444",
@@ -344,6 +344,98 @@
       "endTime": "10:00",
       "status": "pending",
       "notes": ""
+    },
+    {
+      "id": "mpxykylir1ij5zd69m",
+      "subjectId": "subj_1",
+      "date": "2026-06-01",
+      "startTime": "08:30",
+      "endTime": "10:00",
+      "status": "pending",
+      "notes": ""
+    },
+    {
+      "id": "mpxykylies42qjmhun5",
+      "subjectId": "subj_2",
+      "date": "2026-06-01",
+      "startTime": "16:30",
+      "endTime": "18:00",
+      "status": "pending",
+      "notes": ""
+    },
+    {
+      "id": "mpxykyli1n4hcva0x9m",
+      "subjectId": "subj_1",
+      "date": "2026-06-02",
+      "startTime": "08:30",
+      "endTime": "10:00",
+      "status": "pending",
+      "notes": ""
+    },
+    {
+      "id": "mpxykylih6v672btn4o",
+      "subjectId": "subj_2",
+      "date": "2026-06-03",
+      "startTime": "11:00",
+      "endTime": "12:30",
+      "status": "pending",
+      "notes": ""
+    },
+    {
+      "id": "mpxykyliwpz46riasce",
+      "subjectId": "subj_3",
+      "date": "2026-06-03",
+      "startTime": "16:30",
+      "endTime": "18:00",
+      "status": "pending",
+      "notes": ""
+    },
+    {
+      "id": "mpxykyljzy4p6frgal",
+      "subjectId": "subj_3",
+      "date": "2026-06-04",
+      "startTime": "08:30",
+      "endTime": "10:00",
+      "status": "pending",
+      "notes": ""
+    },
+    {
+      "id": "mpxykyljegwmym3in4n",
+      "subjectId": "subj_5",
+      "date": "2026-06-05",
+      "startTime": "08:30",
+      "endTime": "10:00",
+      "status": "pending",
+      "notes": ""
+    },
+    {
+      "id": "mpxykyljfmu4iaw317i",
+      "subjectId": "subj_5",
+      "date": "2026-06-07",
+      "startTime": "08:30",
+      "endTime": "10:00",
+      "status": "pending",
+      "notes": ""
+    },
+    {
+      "id": "mpxyl3adqbiwnsiwyo",
+      "subjectId": "subj_6",
+      "date": "2026-06-01",
+      "startTime": "14:00",
+      "endTime": "16:00",
+      "status": "skipped",
+      "notes": "Bỏ qua buổi này",
+      "isSkippedFixed": true
+    },
+    {
+      "id": "mpxymim0ov85rlvpn8",
+      "subjectId": "subj_6",
+      "date": "2026-06-03",
+      "startTime": "14:00",
+      "endTime": "16:00",
+      "status": "skipped",
+      "notes": "Bỏ qua buổi này",
+      "isSkippedFixed": true
     }
   ],
   "settings": {
