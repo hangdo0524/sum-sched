@@ -388,6 +388,12 @@ export function generateSmartSuggestions(weekStartDate) {
 
   const allSelfStudySubjects = [...selfStudySubjects, ...extraSelfStudySubjects];
 
+  console.log('AI Suggestions Debug:', {
+    selfStudySubjects: selfStudySubjects.map(s => s.name),
+    extraSelfStudySubjects: extraSelfStudySubjects.map(s => s.name),
+    totalFlexible: allSelfStudySubjects.length
+  });
+
   if (allSelfStudySubjects.length === 0 && suggestions.length === 0) return suggestions;
 
   // Track sessions per subject for self-study
@@ -486,10 +492,30 @@ export function generateSmartSuggestions(weekStartDate) {
         // Check if this time slot matches preferred slots
         if (!preferredSlots.includes(slotCategory)) continue;
 
-        const hasSessionToday = existingSessions.some(
-          s => s.subjectId === subject.id && s.date === dateStr
-        ) || suggestions.some(
-          s => s.subjectId === subject.id && s.date === dateStr && !s.isTeacherSlot
+        // Check if already has a session today for this subject
+        // For extraSelfStudy, check both the virtual ID and original ID
+        const subjectIdsToCheck = [subject.id];
+        if (subject.originalSubjectId) {
+          subjectIdsToCheck.push(subject.originalSubjectId);
+        }
+
+        const hasSessionToday = existingSessions.some(s => {
+          if (s.date !== dateStr) return false;
+          if (!subjectIdsToCheck.includes(s.subjectId)) return false;
+          // For extraSelfStudy, only count non-fixed sessions
+          if (subject.isExtraSelfStudy) {
+            const origSubject = subjects.find(sub => sub.id === subject.originalSubjectId);
+            if (origSubject) {
+              const dayOfWeek = new Date(dateStr + 'T00:00:00').getDay();
+              const isFixedSlot = (origSubject.schedule || []).some(slot =>
+                slot.day === dayOfWeek && slot.startTime === s.startTime
+              );
+              if (isFixedSlot) return false; // Don't count fixed slots
+            }
+          }
+          return true;
+        }) || suggestions.some(
+          s => subjectIdsToCheck.includes(s.subjectId) && s.date === dateStr && !s.isTeacherSlot
         );
         if (hasSessionToday) continue;
 
