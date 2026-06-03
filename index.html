@@ -139,88 +139,63 @@
             <div class="radio-group">
               <label class="radio">
                 <input type="radio" name="subject-type" value="fixed" checked>
-                <span>Cố định (có giờ cụ thể)</span>
+                <span>Cố định cả hè</span>
+                <small class="radio__hint">Chọn buổi 1 lần, học cố định</small>
               </label>
               <label class="radio">
-                <input type="radio" name="subject-type" value="semi-flexible">
-                <span>Bán linh hoạt (chọn ngày, khung giờ có sẵn)</span>
+                <input type="radio" name="subject-type" value="weekly-pick">
+                <span>Chọn theo tuần</span>
+                <small class="radio__hint">Mỗi tuần chọn buổi từ lịch thầy/cô</small>
               </label>
               <label class="radio">
-                <input type="radio" name="subject-type" value="flexible">
-                <span>Linh hoạt hoàn toàn (tự học tại nhà)</span>
+                <input type="radio" name="subject-type" value="fixed-plus">
+                <span>Cố định + Đi thêm tùy ý</span>
+                <small class="radio__hint">X buổi bắt buộc + đi thêm nếu muốn</small>
               </label>
               <label class="radio">
-                <input type="radio" name="subject-type" value="hybrid">
-                <span>Kết hợp (vừa cố định, vừa linh hoạt)</span>
+                <input type="radio" name="subject-type" value="self-study">
+                <span>Tự học tại nhà</span>
+                <small class="radio__hint">Không có lịch thầy/cô</small>
               </label>
             </div>
           </div>
 
-          <!-- Fixed schedule - Teacher's available slots -->
+          <!-- Teacher's available slots (for fixed, weekly-pick, fixed-plus) -->
           <div class="form-group" id="schedule-group">
             <label>Lịch thầy/cô có sẵn</label>
-            <p class="form-hint">Nhập tất cả buổi thầy/cô dạy, sau đó tick chọn buổi con học</p>
+            <p class="form-hint" id="schedule-hint">Nhập tất cả buổi thầy/cô dạy</p>
             <div id="fixed-schedules">
-              <!-- Dynamic schedule inputs with checkboxes -->
+              <!-- Dynamic schedule inputs -->
             </div>
-            <button type="button" class="btn btn--outline btn--sm" id="btn-add-schedule">+ Thêm buổi có sẵn</button>
+            <button type="button" class="btn btn--outline btn--sm" id="btn-add-schedule">+ Thêm buổi</button>
           </div>
 
-          <!-- Semi-flexible: choose time slots -->
-          <div class="form-group" id="semi-flexible-group" style="display: none;">
-            <label>Khung giờ ưu tiên</label>
-            <div class="checkbox-group">
-              <label class="checkbox">
-                <input type="checkbox" name="time-slots" value="morning" checked>
-                <span>Sáng (8:00 - 11:30)</span>
-              </label>
-              <label class="checkbox">
-                <input type="checkbox" name="time-slots" value="afternoon">
-                <span>Chiều (14:00 - 17:00)</span>
-              </label>
-              <label class="checkbox">
-                <input type="checkbox" name="time-slots" value="evening">
-                <span>Tối (19:00 - 21:00)</span>
-              </label>
-            </div>
+          <!-- Sessions per week config -->
+          <div class="form-group" id="sessions-config-group" style="display: none;">
             <div class="form-row">
               <div class="form-group form-group--half">
-                <label for="semi-duration">Thời lượng (giờ)</label>
-                <input type="number" id="semi-duration" min="0.5" max="4" step="0.5" value="1.5">
+                <label for="required-sessions">Số buổi bắt buộc/tuần</label>
+                <input type="number" id="required-sessions" min="0" max="7" value="2">
               </div>
               <div class="form-group form-group--half">
-                <label for="semi-sessions-per-week">Số buổi/tuần</label>
-                <input type="number" id="semi-sessions-per-week" min="1" max="7" value="3">
+                <label for="target-sessions">Mục tiêu buổi/tuần</label>
+                <input type="number" id="target-sessions" min="1" max="14" value="2">
+                <small class="form-hint">Bao gồm cả buổi đi thêm</small>
               </div>
             </div>
           </div>
 
-          <!-- Fully flexible -->
-          <div class="form-group" id="flexible-group" style="display: none;">
+          <!-- Self-study config -->
+          <div class="form-group" id="self-study-group" style="display: none;">
             <label>Cài đặt tự học</label>
             <div class="form-row">
               <div class="form-group form-group--half">
-                <label for="flexible-duration">Thời lượng (giờ)</label>
-                <input type="number" id="flexible-duration" min="0.5" max="4" step="0.5" value="2">
+                <label for="self-study-duration">Thời lượng (giờ)</label>
+                <input type="number" id="self-study-duration" min="0.5" max="4" step="0.5" value="2">
               </div>
               <div class="form-group form-group--half">
-                <label for="flexible-sessions-per-week">Số buổi/tuần</label>
-                <input type="number" id="flexible-sessions-per-week" min="1" max="14" value="5">
-              </div>
-            </div>
-          </div>
-
-          <!-- Hybrid: fixed + flexible parts -->
-          <div class="form-group" id="hybrid-flexible-group" style="display: none;">
-            <label>Phần linh hoạt (ngoài lịch cố định)</label>
-            <div class="form-row">
-              <div class="form-group form-group--half">
-                <label for="hybrid-duration">Thời lượng (giờ)</label>
-                <input type="number" id="hybrid-duration" min="0.5" max="4" step="0.5" value="2">
-              </div>
-              <div class="form-group form-group--half">
-                <label for="hybrid-sessions-per-week">Số buổi linh hoạt/tuần</label>
-                <input type="number" id="hybrid-sessions-per-week" min="0" max="7" value="2">
+                <label for="self-study-sessions">Số buổi/tuần</label>
+                <input type="number" id="self-study-sessions" min="1" max="14" value="5">
               </div>
             </div>
           </div>

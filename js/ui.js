@@ -85,9 +85,14 @@ export function renderSubjectList(subjects, container, filter = 'all') {
   if (filter === 'all') {
     filtered = subjects;
   } else if (filter === 'fixed') {
-    filtered = subjects.filter(s => s.type === 'fixed' || s.type === 'hybrid');
+    filtered = subjects.filter(s =>
+      s.type === 'fixed' || s.type === 'fixed-plus' || s.type === 'weekly-pick' || s.type === 'hybrid'
+    );
   } else if (filter === 'flexible') {
-    filtered = subjects.filter(s => s.type === 'flexible' || s.type === 'semi-flexible' || s.type === 'hybrid');
+    filtered = subjects.filter(s =>
+      s.type === 'self-study' || s.type === 'flexible' || s.type === 'semi-flexible' ||
+      s.type === 'fixed-plus' || s.type === 'weekly-pick' || s.type === 'hybrid'
+    );
   } else {
     filtered = subjects.filter(s => s.type === filter);
   }
@@ -110,31 +115,47 @@ export function renderSubjectList(subjects, container, filter = 'all') {
     let scheduleText = '';
     let typeLabel = '';
 
+    // Get selected slots only
+    const selectedSlots = subject.schedule?.filter(s => s.selected !== false) || [];
+
     switch (subject.type) {
       case 'fixed':
         typeLabel = '📅 Cố định';
-        scheduleText = subject.schedule?.map(s => `${getDayName(s.day)} ${s.startTime}-${s.endTime || ''}`).join(', ') || '';
+        scheduleText = selectedSlots.map(s => `${getDayName(s.day)} ${s.startTime}`).join(', ') || 'Chưa chọn buổi';
         break;
-      case 'semi-flexible':
-        typeLabel = '🕐 Bán linh hoạt';
+      case 'weekly-pick':
+        typeLabel = '📆 Chọn theo tuần';
         {
-          const slots = subject.flexibleConfig?.timeSlots?.map(s =>
-            s === 'morning' ? 'Sáng' : s === 'afternoon' ? 'Chiều' : 'Tối'
-          ).join('/') || 'Sáng';
-          scheduleText = `${subject.flexibleConfig?.sessionsPerWeek || 3}x/tuần • ${slots} • ${subject.slotDuration || 1.5}h`;
+          const target = subject.config?.targetSessions || 1;
+          const totalSlots = subject.schedule?.length || 0;
+          scheduleText = `${target} buổi/tuần • ${totalSlots} buổi có sẵn`;
         }
         break;
+      case 'fixed-plus':
+        typeLabel = '📅+ Cố định + Thêm';
+        {
+          const required = subject.config?.requiredSessions || 2;
+          const fixedSlots = selectedSlots.map(s => `${getDayName(s.day)} ${s.startTime}`).join(', ');
+          const optionalCount = (subject.schedule?.length || 0) - selectedSlots.length;
+          scheduleText = `${fixedSlots || 'Chưa chọn'} (+${optionalCount} tùy chọn)`;
+        }
+        break;
+      case 'self-study':
+        typeLabel = '📖 Tự học';
+        {
+          const config = subject.config || {};
+          scheduleText = `${config.sessionsPerWeek || 5}x/tuần • ${subject.slotDuration || 2}h/buổi`;
+        }
+        break;
+      // Backwards compatibility for old types
+      case 'semi-flexible':
       case 'flexible':
-        typeLabel = '🔄 Linh hoạt';
+        typeLabel = '📖 Tự học';
         scheduleText = `${subject.flexibleConfig?.sessionsPerWeek || 5}x/tuần • ${subject.slotDuration || 2}h/buổi`;
         break;
       case 'hybrid':
-        typeLabel = '🔀 Kết hợp';
-        {
-          const fixedPart = subject.schedule?.map(s => `${getDayName(s.day)} ${s.startTime}`).join(', ') || '';
-          const flexPart = subject.flexibleConfig ? `+ ${subject.flexibleConfig.sessionsPerWeek}x linh hoạt` : '';
-          scheduleText = `${fixedPart} ${flexPart}`;
-        }
+        typeLabel = '📅+ Cố định + Thêm';
+        scheduleText = selectedSlots.map(s => `${getDayName(s.day)} ${s.startTime}`).join(', ') || '';
         break;
       default:
         typeLabel = '📋 Khác';

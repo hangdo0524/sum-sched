@@ -323,27 +323,38 @@ function setupSubjectForm() {
   const form = document.getElementById('form-subject');
   const scheduleGroup = document.getElementById('schedule-group');
   const fixedSchedules = document.getElementById('fixed-schedules');
+  const sessionsConfigGroup = document.getElementById('sessions-config-group');
+  const selfStudyGroup = document.getElementById('self-study-group');
+  const scheduleHint = document.getElementById('schedule-hint');
 
   // Toggle form sections based on type
   form.querySelectorAll('input[name="subject-type"]').forEach(radio => {
     radio.addEventListener('change', () => {
       const type = radio.value;
+
       // Hide all optional groups first
       scheduleGroup.style.display = 'none';
-      document.getElementById('semi-flexible-group').style.display = 'none';
-      document.getElementById('flexible-group').style.display = 'none';
-      document.getElementById('hybrid-flexible-group').style.display = 'none';
+      sessionsConfigGroup.style.display = 'none';
+      selfStudyGroup.style.display = 'none';
 
-      // Show relevant groups
+      // Show relevant groups based on type
       if (type === 'fixed') {
         scheduleGroup.style.display = 'block';
-      } else if (type === 'semi-flexible') {
-        document.getElementById('semi-flexible-group').style.display = 'block';
-      } else if (type === 'flexible') {
-        document.getElementById('flexible-group').style.display = 'block';
-      } else if (type === 'hybrid') {
+        scheduleHint.textContent = 'Tick chọn buổi con học (cố định cả hè)';
+      } else if (type === 'weekly-pick') {
         scheduleGroup.style.display = 'block';
-        document.getElementById('hybrid-flexible-group').style.display = 'block';
+        sessionsConfigGroup.style.display = 'block';
+        scheduleHint.textContent = 'Nhập tất cả buổi thầy/cô dạy (mỗi tuần chọn từ đây)';
+        document.getElementById('required-sessions').value = 0;
+        document.getElementById('target-sessions').value = 1;
+      } else if (type === 'fixed-plus') {
+        scheduleGroup.style.display = 'block';
+        sessionsConfigGroup.style.display = 'block';
+        scheduleHint.textContent = 'Tick buổi CỐ ĐỊNH, còn lại là tùy chọn đi thêm';
+        document.getElementById('required-sessions').value = 2;
+        document.getElementById('target-sessions').value = 3;
+      } else if (type === 'self-study') {
+        selfStudyGroup.style.display = 'block';
       }
     });
   });
@@ -383,7 +394,7 @@ function setupSubjectForm() {
     };
 
     // Handle different schedule types
-    if (type === 'fixed' || type === 'hybrid') {
+    if (type === 'fixed' || type === 'weekly-pick' || type === 'fixed-plus') {
       subject.schedule = getScheduleFromInputs(fixedSchedules);
       if (subject.schedule.length > 0) {
         const totalDuration = subject.schedule.reduce((sum, slot) => {
@@ -395,26 +406,17 @@ function setupSubjectForm() {
       }
     }
 
-    if (type === 'hybrid') {
-      subject.flexibleConfig = {
-        duration: parseFloat(document.getElementById('hybrid-duration').value) || 2,
-        sessionsPerWeek: parseInt(document.getElementById('hybrid-sessions-per-week').value) || 2
+    if (type === 'weekly-pick' || type === 'fixed-plus') {
+      subject.config = {
+        requiredSessions: parseInt(document.getElementById('required-sessions').value) || 0,
+        targetSessions: parseInt(document.getElementById('target-sessions').value) || 1
       };
-    } else if (type === 'semi-flexible') {
-      const checkedSlots = Array.from(form.querySelectorAll('input[name="time-slots"]:checked'))
-        .map(cb => cb.value);
-      subject.flexibleConfig = {
-        timeSlots: checkedSlots.length ? checkedSlots : ['morning'],
-        duration: parseFloat(document.getElementById('semi-duration').value) || 1.5,
-        sessionsPerWeek: parseInt(document.getElementById('semi-sessions-per-week').value) || 3
+    } else if (type === 'self-study') {
+      subject.config = {
+        duration: parseFloat(document.getElementById('self-study-duration').value) || 2,
+        sessionsPerWeek: parseInt(document.getElementById('self-study-sessions').value) || 5
       };
-      subject.slotDuration = subject.flexibleConfig.duration;
-    } else if (type === 'flexible') {
-      subject.flexibleConfig = {
-        duration: parseFloat(document.getElementById('flexible-duration').value) || 2,
-        sessionsPerWeek: parseInt(document.getElementById('flexible-sessions-per-week').value) || 5
-      };
-      subject.slotDuration = subject.flexibleConfig.duration;
+      subject.slotDuration = subject.config.duration;
     }
 
     saveSubject(subject);
@@ -422,8 +424,7 @@ function setupSubjectForm() {
     refreshSubjects();
     refreshSchedule();
   });
-
-  }
+}
 
 function openSubjectModal(subjectId = null) {
   const form = document.getElementById('form-subject');
@@ -436,14 +437,13 @@ function openSubjectModal(subjectId = null) {
   document.getElementById('subject-color').value = '#4f46e5';
 
   // Reset all form sections
-  const semiFlexGroup = document.getElementById('semi-flexible-group');
-  const flexGroup = document.getElementById('flexible-group');
-  const hybridFlexGroup = document.getElementById('hybrid-flexible-group');
+  const sessionsConfigGroup = document.getElementById('sessions-config-group');
+  const selfStudyGroup = document.getElementById('self-study-group');
+  const scheduleHint = document.getElementById('schedule-hint');
 
   scheduleGroup.style.display = 'none';
-  semiFlexGroup.style.display = 'none';
-  flexGroup.style.display = 'none';
-  hybridFlexGroup.style.display = 'none';
+  sessionsConfigGroup.style.display = 'none';
+  selfStudyGroup.style.display = 'none';
 
   if (subjectId) {
     const subject = getSubject(subjectId);
@@ -453,43 +453,45 @@ function openSubjectModal(subjectId = null) {
       document.getElementById('subject-name').value = subject.name;
       document.getElementById('subject-color').value = subject.color;
 
-      // Set type radio
-      const typeRadio = form.querySelector(`input[name="subject-type"][value="${subject.type}"]`);
+      // Set type radio (handle old types for backwards compatibility)
+      let typeValue = subject.type;
+      if (typeValue === 'flexible' || typeValue === 'semi-flexible') typeValue = 'self-study';
+      if (typeValue === 'hybrid') typeValue = 'fixed-plus';
+
+      const typeRadio = form.querySelector(`input[name="subject-type"][value="${typeValue}"]`);
       if (typeRadio) typeRadio.checked = true;
 
       // Show/populate relevant sections based on type
-      if (subject.type === 'fixed' || subject.type === 'hybrid') {
+      if (typeValue === 'fixed' || typeValue === 'weekly-pick' || typeValue === 'fixed-plus') {
         scheduleGroup.style.display = 'block';
         renderScheduleInputs(fixedSchedules, subject.schedule);
+
+        if (typeValue === 'fixed') {
+          scheduleHint.textContent = 'Tick chọn buổi con học (cố định cả hè)';
+        } else if (typeValue === 'weekly-pick') {
+          scheduleHint.textContent = 'Nhập tất cả buổi thầy/cô dạy (mỗi tuần chọn từ đây)';
+        } else {
+          scheduleHint.textContent = 'Tick buổi CỐ ĐỊNH, còn lại là tùy chọn đi thêm';
+        }
       }
 
-      if (subject.type === 'hybrid' && subject.flexibleConfig) {
-        hybridFlexGroup.style.display = 'block';
-        document.getElementById('hybrid-duration').value = subject.flexibleConfig.duration || 2;
-        document.getElementById('hybrid-sessions-per-week').value = subject.flexibleConfig.sessionsPerWeek || 2;
-      } else if (subject.type === 'semi-flexible' && subject.flexibleConfig) {
-        semiFlexGroup.style.display = 'block';
-        // Set time slots checkboxes
-        form.querySelectorAll('input[name="time-slots"]').forEach(cb => {
-          cb.checked = subject.flexibleConfig.timeSlots?.includes(cb.value);
-        });
-        document.getElementById('semi-duration').value = subject.flexibleConfig.duration || 1.5;
-        document.getElementById('semi-sessions-per-week').value = subject.flexibleConfig.sessionsPerWeek || 3;
-      } else if (subject.type === 'flexible' && subject.flexibleConfig) {
-        flexGroup.style.display = 'block';
-        document.getElementById('flexible-duration').value = subject.flexibleConfig.duration || 2;
-        document.getElementById('flexible-sessions-per-week').value = subject.flexibleConfig.sessionsPerWeek || 5;
+      if ((typeValue === 'weekly-pick' || typeValue === 'fixed-plus') && subject.config) {
+        sessionsConfigGroup.style.display = 'block';
+        document.getElementById('required-sessions').value = subject.config.requiredSessions || 0;
+        document.getElementById('target-sessions').value = subject.config.targetSessions || 1;
+      } else if (typeValue === 'self-study') {
+        selfStudyGroup.style.display = 'block';
+        const config = subject.config || subject.flexibleConfig || {};
+        document.getElementById('self-study-duration').value = config.duration || subject.slotDuration || 2;
+        document.getElementById('self-study-sessions').value = config.sessionsPerWeek || 5;
       }
     }
   } else {
     title.textContent = 'Thêm môn học';
     form.querySelector('input[name="subject-type"][value="fixed"]').checked = true;
     scheduleGroup.style.display = 'block';
+    scheduleHint.textContent = 'Tick chọn buổi con học (cố định cả hè)';
     renderScheduleInputs(fixedSchedules);
-    // Reset checkboxes
-    form.querySelectorAll('input[name="time-slots"]').forEach(cb => {
-      cb.checked = cb.value === 'morning';
-    });
   }
 
   showModal('modal-subject');

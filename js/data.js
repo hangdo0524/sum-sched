@@ -175,10 +175,10 @@ export function loadSampleData() {
     {
       id: 'subj_1',
       name: 'Bài hè Toán',
-      type: 'flexible',
+      type: 'self-study',
       slotDuration: 2,
       color: '#ef4444',
-      flexibleConfig: {
+      config: {
         duration: 2,
         sessionsPerWeek: 5
       }
@@ -186,10 +186,10 @@ export function loadSampleData() {
     {
       id: 'subj_2',
       name: 'Bài hè Tiếng Việt',
-      type: 'flexible',
+      type: 'self-study',
       slotDuration: 2,
       color: '#f59e0b',
-      flexibleConfig: {
+      config: {
         duration: 2,
         sessionsPerWeek: 5
       }
@@ -197,10 +197,10 @@ export function loadSampleData() {
     {
       id: 'subj_3',
       name: 'Bài hè Tiếng Anh',
-      type: 'flexible',
+      type: 'self-study',
       slotDuration: 2,
       color: '#10b981',
-      flexibleConfig: {
+      config: {
         duration: 2,
         sessionsPerWeek: 5
       }
@@ -245,24 +245,38 @@ export function loadSampleData() {
     {
       id: 'subj_7',
       name: 'Học Vẽ',
-      type: 'fixed',
-      slotDuration: 2,
+      type: 'weekly-pick',
+      slotDuration: 1.5,
       color: '#ec4899',
+      config: {
+        requiredSessions: 0,
+        targetSessions: 2
+      },
       schedule: [
-        { day: 6, startTime: '14:00', endTime: '16:00', selected: true },
-        { day: 0, startTime: '09:00', endTime: '11:00', selected: false } // Sunday available
+        { day: 4, startTime: '17:30', endTime: '19:00', selected: false },
+        { day: 5, startTime: '17:30', endTime: '19:00', selected: false },
+        { day: 6, startTime: '09:00', endTime: '10:30', selected: false },
+        { day: 6, startTime: '17:00', endTime: '18:30', selected: false },
+        { day: 0, startTime: '17:00', endTime: '18:30', selected: false }
       ]
     },
     {
       id: 'subj_8',
-      name: 'Học Võ',
-      type: 'fixed',
+      name: 'Học Võ Taekwondo',
+      type: 'fixed-plus',
       slotDuration: 1.5,
       color: '#f97316',
+      config: {
+        requiredSessions: 2,
+        targetSessions: 3
+      },
       schedule: [
-        { day: 1, startTime: '17:00', endTime: '18:30', selected: true },
-        { day: 3, startTime: '17:00', endTime: '18:30', selected: true },
-        { day: 5, startTime: '17:00', endTime: '18:30', selected: false } // Friday available
+        { day: 1, startTime: '18:00', endTime: '19:30', selected: true },
+        { day: 3, startTime: '18:00', endTime: '19:30', selected: true },
+        { day: 5, startTime: '18:00', endTime: '19:30', selected: false },
+        { day: 6, startTime: '09:30', endTime: '11:00', selected: false },
+        { day: 6, startTime: '18:00', endTime: '19:30', selected: false },
+        { day: 0, startTime: '16:15', endTime: '17:45', selected: false }
       ]
     }
   ];
