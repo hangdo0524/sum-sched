@@ -392,16 +392,40 @@ export function generateSmartSuggestions(weekStartDate) {
 
   // Track sessions per subject for self-study
   const sessionCounts = {};
-  allSelfStudySubjects.forEach(s => sessionCounts[s.id] = 0);
+  allSelfStudySubjects.forEach(s => {
+    sessionCounts[s.id] = 0;
+    // For extra self-study, also track by original ID
+    if (s.originalSubjectId) {
+      sessionCounts[s.id + '_orig'] = s.originalSubjectId;
+    }
+  });
 
   // Count existing confirmed sessions
   existingSessions.forEach(s => {
+    const sessionDate = s.date;
+    if (!weekDates.includes(sessionDate)) return;
+
+    // Direct match
     if (sessionCounts[s.subjectId] !== undefined) {
-      const sessionDate = s.date;
-      if (weekDates.includes(sessionDate)) {
-        sessionCounts[s.subjectId]++;
-      }
+      sessionCounts[s.subjectId]++;
     }
+
+    // Also count for extra self-study (sessions saved with original ID)
+    allSelfStudySubjects.forEach(subj => {
+      if (subj.originalSubjectId === s.subjectId && subj.isExtraSelfStudy) {
+        // Check if this session is NOT a fixed slot (it's a self-study session)
+        const subject = subjects.find(sub => sub.id === s.subjectId);
+        if (subject) {
+          const dayOfWeek = new Date(sessionDate + 'T00:00:00').getDay();
+          const isFixedSlot = (subject.schedule || []).some(slot =>
+            slot.day === dayOfWeek && slot.startTime === s.startTime
+          );
+          if (!isFixedSlot) {
+            sessionCounts[subj.id]++;
+          }
+        }
+      }
+    });
   });
 
   weekDates.forEach(dateStr => {

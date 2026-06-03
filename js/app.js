@@ -12,6 +12,7 @@ import {
   getSessions,
   getSession,
   saveSession,
+  deleteSession,
   loadSampleData,
   clearAllData,
   generateId,
@@ -284,7 +285,38 @@ function setupScheduleControls() {
     confirmSuggestions();
   });
 
-  // Sync from server (force reload from file)
+  // Export data to file
+  document.getElementById('btn-export-data').addEventListener('click', () => {
+    downloadDataAsFile();
+    alert('Đã tải xuống file dữ liệu!');
+  });
+
+  // Import data from file
+  document.getElementById('btn-import-data').addEventListener('click', () => {
+    document.getElementById('import-file-input').click();
+  });
+
+  document.getElementById('import-file-input').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = importData(event.target.result);
+      if (result.success) {
+        alert('Nhập dữ liệu thành công!\n' + result.message);
+        refreshSchedule();
+        refreshSubjects();
+        refreshReports();
+      } else {
+        alert('Lỗi nhập dữ liệu: ' + result.message);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  // Sync from GitHub (force reload from file)
   document.getElementById('btn-sync-data').addEventListener('click', async () => {
     const user = getCurrentUser();
     if (confirm(`Tải lại data của ${user.name} từ server?\n(Dữ liệu local sẽ bị ghi đè)`)) {
@@ -879,25 +911,30 @@ function setupSessionModal() {
 }
 
 function deleteSessionById(id) {
-  let sessions = getSessions();
-  const before = sessions.length;
-  sessions = sessions.filter(s => s.id !== id);
+  // Try direct delete first
+  const sessions = getSessions();
+  const session = sessions.find(s => s.id === id);
 
-  if (sessions.length === before) {
-    // Session not in storage - might be a generated fixed session ID
-    // Try to find and remove by matching the current schedule
-    for (const daySchedule of Object.values(currentSchedule)) {
-      const found = daySchedule.sessions.find(s => s.id === id);
-      if (found) {
-        sessions = sessions.filter(s =>
-          !(s.subjectId === found.subjectId && s.date === found.date && s.startTime === found.startTime)
-        );
-        break;
-      }
-    }
+  if (session) {
+    deleteSession(id);
+    return;
   }
 
-  localStorage.setItem('sumSched_sessions', JSON.stringify(sessions));
+  // Session not in storage - might be a generated fixed session ID
+  // Try to find and remove by matching the current schedule
+  for (const daySchedule of Object.values(currentSchedule)) {
+    const found = daySchedule.sessions.find(s => s.id === id);
+    if (found) {
+      // Find the stored session by subjectId + date + startTime
+      const storedSession = sessions.find(s =>
+        s.subjectId === found.subjectId && s.date === found.date && s.startTime === found.startTime
+      );
+      if (storedSession) {
+        deleteSession(storedSession.id);
+      }
+      break;
+    }
+  }
 }
 
 const TIME_SLOT_OPTIONS = [
@@ -935,7 +972,8 @@ function deleteFlexibleSessionsByDate(date) {
   const subjects = getSubjects();
   const flexibleTypes = ['flexible', 'semi-flexible', 'hybrid', 'weekly-pick', 'fixed-plus', 'self-study'];
 
-  const sessions = getSessions().filter(session => {
+  const allSessions = getSessions();
+  const sessionsToKeep = allSessions.filter(session => {
     if (session.date !== date) return true;
 
     const subject = subjects.find(s => s.id === session.subjectId);
@@ -955,7 +993,9 @@ function deleteFlexibleSessionsByDate(date) {
     return false;
   });
 
-  localStorage.setItem('sumSched_sessions', JSON.stringify(sessions));
+  // Delete sessions that should be removed
+  const sessionsToDelete = allSessions.filter(s => !sessionsToKeep.includes(s));
+  sessionsToDelete.forEach(s => deleteSession(s.id));
 }
 
 function openSessionModal(sessionId, date) {
