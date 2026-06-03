@@ -1,0 +1,34 @@
+# Cursor AI Rules for sum-sched
+
+## Context
+You are working on sum-sched, a personal summer schedule app for kids.
+Tech: Vanilla HTML/CSS/JS, LocalStorage, no build tools.
+
+## Rules
+1. Mobile-first responsive design
+2. No external dependencies - pure vanilla JS only
+3. Use ES6+ features (modules, const/let, arrow functions)
+4. BEM naming for CSS (.block__element--modifier)
+5. Semantic HTML with accessibility in mind
+6. Data persistence via LocalStorage
+
+## File Structure
+- index.html — Main app entry
+- css/style.css — All styles (mobile-first)
+- js/app.js — Main app initialization
+- js/data.js — LocalStorage CRUD operations
+- js/scheduler.js — Auto-schedule algorithm
+- js/ui.js — DOM manipulation & rendering
+- js/reports.js — Statistics & reports
+
+## Data Model
+Subjects have: id, name, type (fixed/flexible), slotDuration (1.5/2h), hasTeacher, color, schedule
+Events have: id, date, type, description
+Sessions have: id, subjectId, date, startTime, endTime, status, notes
+
+## Don't
+- Don't add npm/yarn dependencies
+- Don't use frameworks (React, Vue, etc.)
+- Don't use CSS preprocessors
+- Don't hardcode Vietnamese text in JS (use data attributes or config)
+- Don't forget mobile testing
