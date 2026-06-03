@@ -140,11 +140,160 @@ export function renderReportChart(stats, container) {
   });
 }
 
+export function getDetailedWeekStats(date = new Date()) {
+  const weekStart = getWeekStart(date);
+  const subjects = getSubjects();
+  const sessions = getSessions();
+
+  const weekDates = [];
+  for (let i = 0; i < 7; i++) {
+    weekDates.push(formatDate(addDays(weekStart, i)));
+  }
+
+  const DAY_NAMES = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+
+  const detailedStats = subjects.map(subject => {
+    const config = subject.config || {};
+    let targetSessions = 0;
+
+    if (subject.type === 'self-study' || subject.type === 'flexible') {
+      targetSessions = config.sessionsPerWeek || 0;
+    } else if (subject.type === 'fixed') {
+      targetSessions = (subject.schedule || []).filter(s => s.selected !== false).length;
+      if (subject.extraSelfStudy?.enabled) {
+        targetSessions += subject.extraSelfStudy.sessionsPerWeek || 0;
+      }
+    } else if (subject.type === 'fixed-plus') {
+      targetSessions = config.targetSessions || (subject.schedule || []).filter(s => s.selected).length;
+    } else if (subject.type === 'weekly-pick') {
+      targetSessions = config.targetSessions || 1;
+    }
+
+    const subjectSessions = sessions.filter(s =>
+      s.subjectId === subject.id && weekDates.includes(s.date)
+    );
+
+    const scheduled = subjectSessions.length;
+    const completed = subjectSessions.filter(s => s.status === 'completed').length;
+    const skipped = subjectSessions.filter(s => s.status === 'skipped').length;
+    const pending = subjectSessions.filter(s => s.status === 'pending' || !s.status).length;
+
+    const sessionsByDate = {};
+    subjectSessions.forEach(s => {
+      const d = parseDate(s.date);
+      const dayName = DAY_NAMES[d.getDay()];
+      const dateLabel = `${dayName} ${d.getDate()}/${d.getMonth() + 1}`;
+
+      if (!sessionsByDate[s.date]) {
+        sessionsByDate[s.date] = { label: dateLabel, sessions: [] };
+      }
+      sessionsByDate[s.date].sessions.push({
+        time: `${s.startTime}-${s.endTime}`,
+        status: s.status || 'pending'
+      });
+    });
+
+    return {
+      id: subject.id,
+      name: subject.name,
+      color: subject.color,
+      category: subject.category,
+      type: subject.type,
+      target: targetSessions,
+      scheduled,
+      completed,
+      skipped,
+      pending,
+      remaining: Math.max(0, targetSessions - scheduled),
+      dates: Object.values(sessionsByDate)
+    };
+  });
+
+  return detailedStats.filter(s => s.target > 0 || s.scheduled > 0);
+}
+
+export function renderDetailedTable(stats, container) {
+  if (!container) return;
+
+  if (stats.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state__icon">📋</div>
+        <div class="empty-state__text">Chưa có môn học nào</div>
+      </div>
+    `;
+    return;
+  }
+
+  const categoryIcons = {
+    academic: '📚',
+    physical: '🏃',
+    art: '🎨'
+  };
+
+  let html = `
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Môn học</th>
+          <th>Mục tiêu</th>
+          <th>Đã lên</th>
+          <th>Đã học</th>
+          <th>Bỏ qua</th>
+          <th>Chờ</th>
+          <th>Còn thiếu</th>
+          <th>Chi tiết ngày</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  stats.forEach(s => {
+    const icon = categoryIcons[s.category] || '📖';
+    const datesHtml = s.dates.map(d => {
+      const statusBadges = d.sessions.map(sess => {
+        const statusClass = sess.status === 'completed' ? 'badge--success' :
+                           sess.status === 'skipped' ? 'badge--danger' : 'badge--warning';
+        return `<span class="badge ${statusClass}" title="${sess.time}">${sess.status === 'completed' ? '✓' : sess.status === 'skipped' ? '✗' : '○'}</span>`;
+      }).join('');
+      return `<div class="date-item">${d.label} ${statusBadges}</div>`;
+    }).join('');
+
+    const remainingClass = s.remaining > 0 ? 'text-danger' : 'text-success';
+
+    html += `
+      <tr>
+        <td>
+          <span class="subject-badge" style="background-color: ${s.color}20; color: ${s.color}">
+            ${icon} ${s.name}
+          </span>
+        </td>
+        <td class="text-center">${s.target}</td>
+        <td class="text-center">${s.scheduled}</td>
+        <td class="text-center text-success">${s.completed}</td>
+        <td class="text-center text-danger">${s.skipped}</td>
+        <td class="text-center text-warning">${s.pending}</td>
+        <td class="text-center ${remainingClass}"><strong>${s.remaining}</strong></td>
+        <td class="dates-cell">${datesHtml || '<span class="text-muted">-</span>'}</td>
+      </tr>
+    `;
+  });
+
+  html += `
+      </tbody>
+    </table>
+  `;
+
+  container.innerHTML = html;
+}
+
 export default {
   calculateStats,
   getDayStats,
   getWeekStats,
   getMonthStats,
   renderReportSummary,
-  renderReportChart
+  renderReportChart,
+  getDetailedWeekStats,
+  renderDetailedTable
 };

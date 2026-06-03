@@ -59,7 +59,9 @@ import {
   getWeekStats,
   getMonthStats,
   renderReportSummary,
-  renderReportChart
+  renderReportChart,
+  getDetailedWeekStats,
+  renderDetailedTable
 } from './reports.js';
 
 // State
@@ -187,6 +189,11 @@ function refreshReports() {
 
   renderReportSummary(stats);
   renderReportChart(stats, reportChart);
+
+  // Render detailed weekly table
+  const detailedStats = getDetailedWeekStats(currentDate);
+  const tableContainer = document.getElementById('report-table');
+  renderDetailedTable(detailedStats, tableContainer);
 }
 
 // Navigation
@@ -283,6 +290,12 @@ function setupScheduleControls() {
     confirmSuggestions();
   });
 
+  // Refresh suggestions
+  document.getElementById('btn-refresh-suggestions').addEventListener('click', () => {
+    currentSuggestions = generateSmartSuggestions(currentWeekStart);
+    renderSuggestionsList();
+  });
+
   // Export data to file
   document.getElementById('btn-export-data').addEventListener('click', () => {
     downloadDataAsFile();
@@ -359,7 +372,13 @@ function setupScheduleControls() {
 
 function showSuggestions() {
   currentSuggestions = generateSmartSuggestions(currentWeekStart);
+  renderSuggestionsList();
+  showModal('modal-suggestions');
+}
+
+function renderSuggestionsList() {
   const container = document.getElementById('suggest-list');
+  const weekDates = getWeekDates(currentWeekStart);
 
   if (currentSuggestions.length === 0) {
     container.innerHTML = `
@@ -368,7 +387,6 @@ function showSuggestions() {
         <div class="empty-state__text">Không có gợi ý nào.<br>Có thể tất cả môn linh hoạt đã được xếp lịch.</div>
       </div>
     `;
-    showModal('modal-suggestions');
     return;
   }
 
@@ -387,23 +405,29 @@ function showSuggestions() {
     });
   });
 
+  const categoryIcons = { academic: '📚', physical: '🏃', art: '🎨' };
+
   container.innerHTML = Object.entries(byDate).map(([date, data]) => `
     <div class="suggest-day">${data.dayName}</div>
-    ${data.items.map((s) => `
+    ${data.items.map((s) => {
+      const subject = getSubject(s.subjectId);
+      const icon = categoryIcons[subject?.category] || '📖';
+      return `
       <div class="suggest-item ${s.selected ? 'suggest-item--selected' : ''} ${s.isTeacherSlot ? 'suggest-item--teacher' : 'suggest-item--ai'}" data-id="${s.id}">
         <div class="suggest-item__check">
           <input type="checkbox" ${s.selected ? 'checked' : ''} data-suggestion-id="${s.id}">
         </div>
         <div class="suggest-item__content">
           <div class="suggest-item__header">
-            <span class="suggest-item__color" style="background-color: ${s.color}"></span>
+            <span class="suggest-item__color" style="background-color: ${s.color}">${icon}</span>
             <span class="suggest-item__name">${s.subjectName}</span>
             <span class="suggest-item__time">${s.startTime} - ${s.endTime}</span>
+            ${!s.isTeacherSlot ? `<button class="btn btn--xs btn--outline suggest-edit-btn" data-id="${s.id}" title="Sửa ngày giờ">✏️</button>` : ''}
           </div>
           <div class="suggest-item__reason">${s.reason}</div>
         </div>
       </div>
-    `).join('')}
+    `}).join('')}
   `).join('');
 
   // Add checkbox listeners
@@ -418,7 +442,91 @@ function showSuggestions() {
     });
   });
 
-  showModal('modal-suggestions');
+  // Add edit button listeners
+  container.querySelectorAll('.suggest-edit-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      openSuggestionEditor(id);
+    });
+  });
+}
+
+function openSuggestionEditor(suggestionId) {
+  const suggestion = currentSuggestions.find(s => s.id === suggestionId);
+  if (!suggestion) return;
+
+  const weekDates = getWeekDates(currentWeekStart);
+  const DAY_NAMES = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+
+  const dateOptions = weekDates.map(d => {
+    const date = new Date(d + 'T00:00:00');
+    const dayName = DAY_NAMES[date.getDay()];
+    const label = `${dayName} ${date.getDate()}/${date.getMonth() + 1}`;
+    return `<option value="${d}" ${d === suggestion.date ? 'selected' : ''}>${label}</option>`;
+  }).join('');
+
+  const item = document.querySelector(`.suggest-item[data-id="${suggestionId}"]`);
+  const contentEl = item.querySelector('.suggest-item__content');
+
+  // Replace content with edit form
+  const originalContent = contentEl.innerHTML;
+  contentEl.innerHTML = `
+    <div class="suggest-edit-form">
+      <div class="suggest-edit-row">
+        <select class="suggest-edit-date" data-id="${suggestionId}">
+          ${dateOptions}
+        </select>
+        <input type="time" class="suggest-edit-start" value="${suggestion.startTime}" data-id="${suggestionId}">
+        <span>-</span>
+        <input type="time" class="suggest-edit-end" value="${suggestion.endTime}" data-id="${suggestionId}">
+      </div>
+      <div class="suggest-edit-actions">
+        <button class="btn btn--xs btn--primary suggest-save-btn" data-id="${suggestionId}">✓ Lưu</button>
+        <button class="btn btn--xs btn--outline suggest-cancel-btn" data-id="${suggestionId}">✗ Hủy</button>
+        <button class="btn btn--xs btn--danger-outline suggest-delete-btn" data-id="${suggestionId}">🗑️</button>
+      </div>
+    </div>
+  `;
+
+  // Save button
+  contentEl.querySelector('.suggest-save-btn').addEventListener('click', () => {
+    const newDate = contentEl.querySelector('.suggest-edit-date').value;
+    const newStart = contentEl.querySelector('.suggest-edit-start').value;
+    const newEnd = contentEl.querySelector('.suggest-edit-end').value;
+
+    // Validate
+    if (newStart >= newEnd) {
+      alert('Giờ kết thúc phải sau giờ bắt đầu');
+      return;
+    }
+
+    // Check conflict
+    const conflict = checkSessionConflict(newDate, newStart, newEnd, suggestionId);
+    if (conflict.conflict) {
+      alert(`Xung đột với ca khác: ${conflict.type === 'overlap' ? 'trùng giờ' : 'cách < 30 phút'}`);
+      return;
+    }
+
+    // Update suggestion
+    suggestion.date = newDate;
+    suggestion.startTime = newStart;
+    suggestion.endTime = newEnd;
+    suggestion.dayName = formatDateDisplay(newDate);
+
+    renderSuggestionsList();
+  });
+
+  // Cancel button
+  contentEl.querySelector('.suggest-cancel-btn').addEventListener('click', () => {
+    renderSuggestionsList();
+  });
+
+  // Delete button
+  contentEl.querySelector('.suggest-delete-btn').addEventListener('click', () => {
+    currentSuggestions = currentSuggestions.filter(s => s.id !== suggestionId);
+    renderSuggestionsList();
+  });
 }
 
 function confirmSuggestions() {
