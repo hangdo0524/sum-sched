@@ -23,11 +23,8 @@ import {
   addUser,
   getCurrentUser,
   setCurrentUser,
-  autoLoadUserData,
   userHasData,
-  saveToGitHub,
-  onFirebaseDataUpdate,
-  forceSyncToFirebase
+  onFirebaseDataUpdate
 } from './data.js';
 
 import {
@@ -327,47 +324,6 @@ function setupScheduleControls() {
     e.target.value = '';
   });
 
-  // Force sync to Firebase
-  document.getElementById('btn-sync-data').addEventListener('click', async () => {
-    const user = getCurrentUser();
-    const btn = document.getElementById('btn-sync-data');
-    const originalText = btn.innerHTML;
-
-    btn.innerHTML = '⏳';
-    btn.disabled = true;
-
-    const result = await forceSyncToFirebase();
-
-    btn.innerHTML = originalText;
-    btn.disabled = false;
-
-    if (result.success) {
-      alert('✅ ' + result.message);
-    } else {
-      alert('❌ Lỗi: ' + result.message);
-    }
-  });
-
-  // Save to GitHub (legacy - keep for backup)
-  document.getElementById('btn-save-to-github').addEventListener('click', async () => {
-    const user = getCurrentUser();
-    const btn = document.getElementById('btn-save-to-github');
-    const originalText = btn.innerHTML;
-
-    btn.innerHTML = '⏳ Đang lưu...';
-    btn.disabled = true;
-
-    const result = await saveToGitHub(user.id);
-
-    btn.innerHTML = originalText;
-    btn.disabled = false;
-
-    if (result.success) {
-      alert('✅ ' + result.message);
-    } else {
-      alert('❌ Lỗi: ' + result.message);
-    }
-  });
 }
 
 function showSuggestions() {
