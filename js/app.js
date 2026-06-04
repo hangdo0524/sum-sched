@@ -284,11 +284,15 @@ function refreshCalendarSelector() {
   if (listEl) {
     renderCalendarList(currentCalendars, currentId, listEl);
 
-    // Add click handlers
+    // Add click handlers with event propagation stop
     listEl.querySelectorAll('.calendar-dropdown__item').forEach(item => {
-      item.addEventListener('click', () => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
         const calId = item.dataset.calendarId;
-        switchCalendar(calId);
+        console.log('Calendar item clicked:', calId);
+        if (calId) {
+          switchCalendar(calId);
+        }
       });
     });
   }
@@ -329,16 +333,22 @@ function setupCalendarSelector() {
   }
 
   if (addBtn) {
-    addBtn.addEventListener('click', () => {
+    addBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      console.log('Add calendar button clicked');
       document.getElementById('calendar-dropdown')?.classList.remove('calendar-dropdown--open');
       openCalendarModal();
     });
   }
 
   if (saveBtn) {
-    saveBtn.addEventListener('click', async () => {
+    saveBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      console.log('Save calendar button clicked');
       await saveCalendarFromModal();
     });
+  } else {
+    console.warn('btn-save-calendar not found');
   }
 }
 

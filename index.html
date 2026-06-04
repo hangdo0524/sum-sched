@@ -72,24 +72,32 @@
 
     <!-- Main Content -->
     <main class="main">
-      <!-- Dashboard - Today's Overview -->
+      <!-- Dashboard - Tabs -->
       <div class="dashboard" id="dashboard">
-        <div class="dashboard__next-session" id="next-session-card">
-          <div class="next-session__icon">⏰</div>
-          <div class="next-session__content">
-            <div class="next-session__label">Sắp đến giờ</div>
-            <div class="next-session__name" id="next-session-name">---</div>
-            <div class="next-session__time" id="next-session-time">--:-- - --:--</div>
-          </div>
-          <div class="next-session__countdown">
-            <div class="countdown__value" id="countdown-value">--:--</div>
-            <div class="countdown__label">còn lại</div>
+        <div class="dashboard__tabs">
+          <button class="dashboard__tab dashboard__tab--active" data-tab="upcoming">⏰ Sắp đến</button>
+          <button class="dashboard__tab" data-tab="today">📋 Hôm nay</button>
+        </div>
+
+        <!-- Tab: Upcoming Session -->
+        <div class="dashboard__panel dashboard__panel--active" id="panel-upcoming">
+          <div class="dashboard__next-session" id="next-session-card">
+            <div class="next-session__icon">⏰</div>
+            <div class="next-session__content">
+              <div class="next-session__label">Sắp đến giờ</div>
+              <div class="next-session__name" id="next-session-name">---</div>
+              <div class="next-session__time" id="next-session-time">--:-- - --:--</div>
+            </div>
+            <div class="next-session__countdown">
+              <div class="countdown__value" id="countdown-value">--:--</div>
+              <div class="countdown__label">còn lại</div>
+            </div>
           </div>
         </div>
 
-        <div class="dashboard__today">
+        <!-- Tab: Today's Sessions -->
+        <div class="dashboard__panel" id="panel-today">
           <div class="today__header">
-            <h3>📋 Hôm nay</h3>
             <span class="today__date" id="today-date"></span>
           </div>
           <div class="today__sessions" id="today-sessions">

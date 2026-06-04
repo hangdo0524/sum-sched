@@ -11,8 +11,28 @@ const categoryIcons = { academic: '📚', physical: '🏃', art: '🎨' };
 
 export function initDashboard() {
   updateDashboard();
+  setupDashboardTabs();
   // Update every minute
   setInterval(updateDashboard, 60000);
+}
+
+function setupDashboardTabs() {
+  const tabs = document.querySelectorAll('.dashboard__tab');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const tabId = tab.dataset.tab;
+
+      // Update active tab
+      tabs.forEach(t => t.classList.remove('dashboard__tab--active'));
+      tab.classList.add('dashboard__tab--active');
+
+      // Update active panel
+      document.querySelectorAll('.dashboard__panel').forEach(p => {
+        p.classList.remove('dashboard__panel--active');
+      });
+      document.getElementById(`panel-${tabId}`)?.classList.add('dashboard__panel--active');
+    });
+  });
 }
 
 export function updateDashboard() {
