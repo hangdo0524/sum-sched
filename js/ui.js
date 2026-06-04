@@ -441,6 +441,12 @@ export function switchView(viewId) {
 
   if (view) view.classList.add('view--active');
   if (btn) btn.classList.add('nav-btn--active');
+
+  // Show dashboard only on schedule view
+  const dashboard = document.getElementById('dashboard');
+  if (dashboard) {
+    dashboard.style.display = viewId === 'schedule' ? '' : 'none';
+  }
 }
 
 export default {

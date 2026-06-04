@@ -201,12 +201,20 @@ function updateUserProfileDisplay(authUser, profile) {
     // Demo mode
     if (nameEl) nameEl.textContent = 'Demo User';
     if (emailEl) emailEl.textContent = 'demo@example.com';
+    if (avatarEl) {
+      avatarEl.style.display = 'none';
+    }
     return;
   }
 
-  if (avatarEl && authUser.photoURL) {
-    avatarEl.src = authUser.photoURL;
-    avatarEl.alt = authUser.displayName || 'Avatar';
+  if (avatarEl) {
+    if (authUser.photoURL) {
+      avatarEl.src = authUser.photoURL;
+      avatarEl.alt = authUser.displayName || 'Avatar';
+      avatarEl.style.display = '';
+    } else {
+      avatarEl.style.display = 'none';
+    }
   }
 
   if (nameEl) {
