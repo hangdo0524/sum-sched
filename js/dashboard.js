@@ -1,10 +1,18 @@
 /**
  * Dashboard Module
  * Shows today's schedule overview with countdown to next session
+ * Includes AI-powered motivation features
  */
 
-import { getSubjects, getSessions } from './data.js';
+import { getSubjects, getSessions, getCurrentUser } from './data.js';
 import { formatDate, formatDateDisplay } from './scheduler.js';
+import {
+  generateGreeting,
+  generateQuote,
+  getTimeOfDay,
+  calculateAge,
+  hasApiKey
+} from './ai-service.js';
 
 let countdownInterval = null;
 const categoryIcons = { academic: '📚', physical: '🏃', art: '🎨' };
@@ -12,8 +20,103 @@ const categoryIcons = { academic: '📚', physical: '🏃', art: '🎨' };
 export function initDashboard() {
   updateDashboard();
   setupDashboardTabs();
+  updateMotivation();
   // Update every minute
   setInterval(updateDashboard, 60000);
+  // Update motivation every 30 minutes
+  setInterval(updateMotivation, 30 * 60 * 1000);
+}
+
+async function updateMotivation() {
+  const greetingEl = document.getElementById('ai-greeting');
+  const quoteEl = document.getElementById('ai-quote');
+
+  if (!greetingEl && !quoteEl) return;
+
+  const user = getCurrentUser();
+  const sessions = getSessions();
+  const today = formatDate(new Date());
+
+  // Calculate streak (consecutive days with completed sessions)
+  let streak = 0;
+  let checkDate = new Date();
+  checkDate.setDate(checkDate.getDate() - 1);
+  while (true) {
+    const dateStr = formatDate(checkDate);
+    const daySessions = sessions.filter(s => s.date === dateStr);
+    const hasCompleted = daySessions.some(s => s.status === 'completed');
+    if (hasCompleted) {
+      streak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else {
+      break;
+    }
+    if (streak > 30) break; // Cap at 30
+  }
+
+  // Calculate recent progress
+  const last7Days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    last7Days.push(formatDate(d));
+  }
+  const recentSessions = sessions.filter(s => last7Days.includes(s.date));
+  const completedCount = recentSessions.filter(s => s.status === 'completed').length;
+  const totalCount = recentSessions.length;
+  const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+  let recentProgress = 'bình thường';
+  if (completionRate >= 80) recentProgress = 'xuất sắc';
+  else if (completionRate >= 60) recentProgress = 'tốt';
+  else if (completionRate < 40) recentProgress = 'cần cố gắng hơn';
+
+  const context = {
+    studentName: user?.name || 'bạn',
+    age: calculateAge(user?.birthDate) || 10,
+    timeOfDay: getTimeOfDay(),
+    streak: streak,
+    recentProgress: recentProgress,
+    mood: 'neutral',
+    recentPerformance: recentProgress,
+    subjectFocus: 'tổng hợp'
+  };
+
+  // Update greeting
+  if (greetingEl) {
+    if (hasApiKey()) {
+      const greeting = await generateGreeting(context);
+      greetingEl.textContent = greeting;
+    } else {
+      // Default greeting without AI
+      const greetings = {
+        morning: `🌅 Chào buổi sáng ${context.studentName}!`,
+        afternoon: `☀️ Chào buổi chiều ${context.studentName}!`,
+        evening: `🌙 Chào buổi tối ${context.studentName}!`
+      };
+      let greeting = greetings[context.timeOfDay];
+      if (streak >= 3) greeting += ` 🔥 ${streak} ngày liên tục!`;
+      greetingEl.textContent = greeting;
+    }
+  }
+
+  // Update quote
+  if (quoteEl) {
+    if (hasApiKey()) {
+      const quote = await generateQuote(context);
+      quoteEl.textContent = quote;
+    } else {
+      // Default quotes
+      const quotes = [
+        "🌟 Mỗi bước nhỏ hôm nay là nền tảng cho thành công ngày mai!",
+        "💪 Kiên trì là siêu năng lực của người thành công!",
+        "🚀 Con đang tiến bộ mỗi ngày, hãy tin vào bản thân!",
+        "🌈 Khó khăn hôm nay là bài học quý giá cho tương lai!",
+        "⭐ Không ai giỏi ngay từ đầu, quan trọng là không bỏ cuộc!"
+      ];
+      quoteEl.textContent = quotes[Math.floor(Math.random() * quotes.length)];
+    }
+  }
 }
 
 function setupDashboardTabs() {

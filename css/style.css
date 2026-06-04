@@ -532,6 +532,28 @@ body {
   display: block;
 }
 
+/* Motivation Card */
+.motivation-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-4);
+  margin-bottom: var(--spacing-3);
+  color: white;
+}
+
+.motivation-card__greeting {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  margin-bottom: var(--spacing-2);
+}
+
+.motivation-card__quote {
+  font-size: var(--font-size-sm);
+  opacity: 0.9;
+  font-style: italic;
+  line-height: 1.5;
+}
+
 .dashboard__next-session {
   display: flex;
   align-items: center;
@@ -1920,6 +1942,42 @@ body {
   border-radius: var(--radius-lg);
   padding: var(--spacing-4);
   box-shadow: var(--shadow-sm);
+}
+
+.settings-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  margin-bottom: var(--spacing-3);
+}
+
+.input-with-btn {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+.input-with-btn input {
+  flex: 1;
+  padding: var(--spacing-2) var(--spacing-3);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+.settings-status {
+  margin-top: var(--spacing-3);
+  font-size: var(--font-size-sm);
+}
+
+.status-success {
+  color: #22c55e;
+}
+
+.status-warning {
+  color: #f59e0b;
+}
+
+.status-error {
+  color: #ef4444;
 }
 
 .setting-item {

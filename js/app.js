@@ -71,6 +71,7 @@ import {
 } from './reports.js';
 
 import { initDashboard, updateDashboard } from './dashboard.js';
+import { setApiKey, hasApiKey } from './ai-service.js';
 
 import {
   getCalendars,
@@ -184,11 +185,72 @@ async function initApp(authUser, profile) {
   setupUserSelector();
   setupUserProfile();
   setupCalendarSelector();
+  setupAISettings();
 
   // Show admin section if user is admin
   if (isAdmin()) {
     const adminSection = document.getElementById('admin-section');
     if (adminSection) adminSection.style.display = 'block';
+  }
+}
+
+function setupAISettings() {
+  const keyInput = document.getElementById('setting-gemini-key');
+  const saveBtn = document.getElementById('btn-save-gemini-key');
+  const statusEl = document.getElementById('gemini-status');
+
+  // Show current status
+  if (statusEl) {
+    if (hasApiKey()) {
+      statusEl.innerHTML = '<span class="status-success">✅ Đã kết nối Gemini AI</span>';
+      if (keyInput) keyInput.placeholder = '••••••••••••••••';
+    } else {
+      statusEl.innerHTML = '<span class="status-warning">⚠️ Chưa có API key - dùng mặc định</span>';
+    }
+  }
+
+  if (saveBtn && keyInput) {
+    saveBtn.addEventListener('click', async () => {
+      const key = keyInput.value.trim();
+      if (!key) {
+        alert('Vui lòng nhập API key');
+        return;
+      }
+
+      // Test the key
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Đang kiểm tra...';
+
+      try {
+        // Simple test call
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: 'Xin chào' }] }]
+            })
+          }
+        );
+
+        if (response.ok) {
+          setApiKey(key);
+          keyInput.value = '';
+          keyInput.placeholder = '••••••••••••••••';
+          statusEl.innerHTML = '<span class="status-success">✅ Đã kết nối Gemini AI</span>';
+          alert('✅ Kết nối thành công!');
+        } else {
+          throw new Error('Invalid API key');
+        }
+      } catch (e) {
+        statusEl.innerHTML = '<span class="status-error">❌ API key không hợp lệ</span>';
+        alert('❌ API key không hợp lệ. Vui lòng kiểm tra lại.');
+      }
+
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Lưu';
+    });
   }
 }
 

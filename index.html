@@ -81,6 +81,17 @@
 
         <!-- Tab: Upcoming Session -->
         <div class="dashboard__panel dashboard__panel--active" id="panel-upcoming">
+          <!-- AI Greeting & Quote -->
+          <div class="motivation-card">
+            <div class="motivation-card__greeting" id="ai-greeting">
+              🌟 Chào bạn! Sẵn sàng học tập chưa?
+            </div>
+            <div class="motivation-card__quote" id="ai-quote">
+              💪 Mỗi ngày học tập là một bước tiến!
+            </div>
+          </div>
+
+          <!-- Next Session -->
           <div class="dashboard__next-session" id="next-session-card">
             <div class="next-session__icon">⏰</div>
             <div class="next-session__content">
@@ -283,6 +294,24 @@
               </select>
             </div>
             <button class="btn btn--primary" id="btn-save-notification-settings">💾 Lưu cài đặt</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>🤖 AI (Gemini)</h3>
+          <div class="settings-card">
+            <p class="settings-desc">Kết nối Gemini AI để có lời khích lệ cá nhân hóa.</p>
+            <div class="form-group">
+              <label>API Key</label>
+              <div class="input-with-btn">
+                <input type="password" id="setting-gemini-key" placeholder="Nhập Gemini API key...">
+                <button class="btn btn--sm btn--primary" id="btn-save-gemini-key">Lưu</button>
+              </div>
+              <small class="form-hint">
+                Lấy key tại: <a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI Studio</a> (miễn phí)
+              </small>
+            </div>
+            <div id="gemini-status" class="settings-status"></div>
           </div>
         </div>
 
