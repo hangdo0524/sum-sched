@@ -11,10 +11,31 @@ import {
 } from './firebase.js';
 
 // User management
-const USERS_KEY = 'sumSched_users';
 const CURRENT_USER_KEY = 'sumSched_currentUser';
 
 let currentUserId = null;
+let parentUserId = null; // Firebase Auth UID of parent
+
+// Set parent user ID (call after Firebase auth)
+export function setParentUserId(uid) {
+  parentUserId = uid;
+}
+
+// Get users key scoped to parent
+function getUsersKey() {
+  if (!parentUserId || parentUserId === 'demo') {
+    return 'sumSched_users'; // Fallback for demo mode
+  }
+  return `sumSched_${parentUserId}_users`;
+}
+
+// Get current user key scoped to parent
+function getCurrentUserKey() {
+  if (!parentUserId || parentUserId === 'demo') {
+    return CURRENT_USER_KEY;
+  }
+  return `sumSched_${parentUserId}_currentUser`;
+}
 let firebaseUnsubscribe = null;
 let syncInProgress = false;
 let onDataUpdateCallback = null;
@@ -76,10 +97,10 @@ const STORAGE_KEYS = {
   get SETTINGS() { return getStorageKey('settings'); }
 };
 
-// User CRUD
+// User CRUD (now scoped to parent)
 export function getUsers() {
   try {
-    const data = localStorage.getItem(USERS_KEY);
+    const data = localStorage.getItem(getUsersKey());
     return data ? JSON.parse(data) : [];
   } catch (e) {
     return [];
@@ -87,7 +108,7 @@ export function getUsers() {
 }
 
 export function saveUsers(users) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  localStorage.setItem(getUsersKey(), JSON.stringify(users));
 }
 
 export function addUser(name, color = '#6366f1') {
@@ -108,7 +129,7 @@ export function deleteUser(userId) {
   const users = getUsers().filter(u => u.id !== userId);
   saveUsers(users);
 
-  // Also delete user's data
+  // Also delete user's data (child's learning data)
   const keysToDelete = [
     `sumSched_${userId}_subjects`,
     `sumSched_${userId}_events`,
@@ -116,24 +137,22 @@ export function deleteUser(userId) {
     `sumSched_${userId}_settings`
   ];
   keysToDelete.forEach(key => localStorage.removeItem(key));
+
+  // Clear current user if deleted
+  if (currentUserId === userId) {
+    currentUserId = null;
+    localStorage.removeItem(getCurrentUserKey());
+  }
 }
 
 export function getCurrentUserId() {
-  let userId = localStorage.getItem(CURRENT_USER_KEY);
+  let userId = localStorage.getItem(getCurrentUserKey());
   const users = getUsers();
 
-  // Initialize default users if none exist
-  if (users.length === 0) {
-    addUser('Anna', '#ec4899');
-    addUser('Ivy', '#10b981');
-    userId = 'anna';
-    localStorage.setItem(CURRENT_USER_KEY, userId);
-  }
-
-  // Validate current user exists
-  if (!userId || !users.some(u => u.id === userId)) {
-    userId = users[0]?.id || 'anna';
-    localStorage.setItem(CURRENT_USER_KEY, userId);
+  // Validate current user exists (no auto-create - let family.js handle that)
+  if (users.length > 0 && (!userId || !users.some(u => u.id === userId))) {
+    userId = users[0]?.id;
+    localStorage.setItem(getCurrentUserKey(), userId);
   }
 
   currentUserId = userId;
@@ -142,7 +161,8 @@ export function getCurrentUserId() {
 
 export async function setCurrentUser(userId, skipFirebaseLoad = false) {
   const users = getUsers();
-  if (!users.some(u => u.id === userId)) {
+  // Allow setting user even if not in local list (will be synced from Firebase)
+  if (users.length > 0 && !users.some(u => u.id === userId)) {
     return false;
   }
 
@@ -153,7 +173,7 @@ export async function setCurrentUser(userId, skipFirebaseLoad = false) {
   }
 
   currentUserId = userId;
-  localStorage.setItem(CURRENT_USER_KEY, userId);
+  localStorage.setItem(getCurrentUserKey(), userId);
 
   // Load data from Firebase (if not skipping)
   if (!skipFirebaseLoad) {
@@ -709,6 +729,7 @@ export async function forceSyncToFirebase() {
 // Export all
 export default {
   // User management
+  setParentUserId,
   getUsers,
   addUser,
   deleteUser,

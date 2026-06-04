@@ -28,13 +28,22 @@ import {
   exportData,
   importData,
   downloadDataAsFile,
-  getUsers,
-  addUser,
   getCurrentUser,
   setCurrentUser,
   userHasData,
-  onFirebaseDataUpdate
+  onFirebaseDataUpdate,
+  setParentUserId
 } from './data.js';
+
+import {
+  initFamily,
+  getFamily,
+  getChildren,
+  addChild,
+  removeChild,
+  saveParentProfile,
+  CHILD_AVATARS
+} from './family.js';
 
 import {
   formatDate,
@@ -93,6 +102,7 @@ let currentSchedule = {};
 let currentCalendars = [];
 let authUserId = null;
 let currentSuggestions = [];
+let currentFamily = null; // Family data from Firebase (parent + children)
 
 // DOM Elements
 const scheduleGrid = document.getElementById('schedule-grid');
@@ -144,6 +154,9 @@ async function initApp(authUser, profile) {
   // Store auth user ID
   authUserId = authUser?.uid || 'demo';
 
+  // Set parent ID for data.js (scopes localStorage keys to this parent)
+  setParentUserId(authUserId);
+
   // Update user profile display
   updateUserProfileDisplay(authUser, profile);
 
@@ -154,6 +167,9 @@ async function initApp(authUser, profile) {
   // Load calendars
   await loadCalendars();
 
+  // Initialize family system (Firebase-based children management)
+  await initFamilyData(authUser, profile);
+
   // Set up Firebase real-time update callback
   onFirebaseDataUpdate(() => {
     console.log('🔄 Firebase update received, refreshing UI...');
@@ -163,9 +179,11 @@ async function initApp(authUser, profile) {
     updateDashboard();
   });
 
-  // Initialize user (creates default users if needed, loads from Firebase)
+  // Initialize user (now scoped to this parent)
   const user = getCurrentUser();
-  await setCurrentUser(user.id);
+  if (user) {
+    await setCurrentUser(user.id);
+  }
   refreshUserSelector();
 
   // Render initial views
@@ -394,6 +412,75 @@ function setupUserProfile() {
       }
     });
   }
+}
+
+/**
+ * Initialize family data from Firebase
+ * Syncs children list to localStorage for data.js compatibility
+ */
+async function initFamilyData(authUser, profile) {
+  if (!authUser || authUserId === 'demo') {
+    console.log('Demo mode - using local storage only');
+    return;
+  }
+
+  try {
+    // Initialize family module with database
+    const { getDb } = await import('./auth.js');
+    initFamily(getDb());
+
+    // Load family from Firebase
+    currentFamily = await getFamily(authUserId);
+
+    if (!currentFamily) {
+      // First time - create family with parent profile
+      console.log('Creating new family for:', authUser.email);
+      await saveParentProfile(authUserId, {
+        email: authUser.email,
+        name: profile?.displayName || authUser.displayName || authUser.email.split('@')[0]
+      });
+      currentFamily = await getFamily(authUserId);
+    }
+
+    // Sync children to localStorage for data.js compatibility
+    syncChildrenToLocalStorage();
+
+    console.log('✅ Family loaded:', currentFamily);
+  } catch (error) {
+    console.error('Error initializing family:', error);
+  }
+}
+
+/**
+ * Sync children from Firebase family to localStorage
+ * This allows data.js to work with the children list
+ */
+function syncChildrenToLocalStorage() {
+  if (!currentFamily) return;
+
+  const children = getChildren(currentFamily);
+  const users = children.map(child => ({
+    id: child.id,
+    name: child.name,
+    color: getColorForAvatar(child.avatar),
+    avatar: child.avatar,
+    createdAt: child.createdAt
+  }));
+
+  // Directly set localStorage with parent-scoped key
+  const usersKey = authUserId === 'demo' ? 'sumSched_users' : `sumSched_${authUserId}_users`;
+  localStorage.setItem(usersKey, JSON.stringify(users));
+  console.log('✅ Synced', users.length, 'children to localStorage');
+}
+
+function getColorForAvatar(avatar) {
+  const colorMap = {
+    '🧒': '#ec4899', '👦': '#3b82f6', '👧': '#ec4899',
+    '🦊': '#f97316', '🐰': '#a855f7', '🐻': '#78716c',
+    '🐼': '#1f2937', '🐨': '#6b7280', '🦁': '#f59e0b',
+    '🐸': '#22c55e', '🐵': '#92400e', '🦄': '#d946ef'
+  };
+  return colorMap[avatar] || '#6366f1';
 }
 
 async function loadCalendars() {
@@ -1669,13 +1756,18 @@ function setupModals() {
 
 // User Selector
 function refreshUserSelector() {
+  // Get children from Firebase family data (or fall back to localStorage)
+  let children = [];
+  if (currentFamily) {
+    children = getChildren(currentFamily);
+  }
+
   const user = getCurrentUser();
-  const users = getUsers();
-  console.log('refreshUserSelector: current user =', user, 'all users =', users);
+  console.log('refreshUserSelector: current user =', user, 'children from family =', children);
 
   // Update header display with current child name
   const nameEl = document.getElementById('user-name');
-  if (nameEl) {
+  if (nameEl && user) {
     nameEl.textContent = user.name;
   }
 
@@ -1686,10 +1778,19 @@ function refreshUserSelector() {
     return;
   }
 
-  listEl.innerHTML = users.map(u => `
-    <div class="user-dropdown__item ${u.id === user.id ? 'user-dropdown__item--active' : ''}" data-user-id="${u.id}">
-      <span class="user-dropdown__item-avatar" style="background-color: ${u.color}">${u.name.charAt(0).toUpperCase()}</span>
-      <span class="user-dropdown__item-name">${u.name}</span>
+  if (children.length === 0) {
+    listEl.innerHTML = `
+      <div class="user-dropdown__empty">
+        Chưa có hồ sơ bé nào.<br>Nhấn "Thêm bé" để tạo.
+      </div>
+    `;
+    return;
+  }
+
+  listEl.innerHTML = children.map(child => `
+    <div class="user-dropdown__item ${user && child.id === user.id ? 'user-dropdown__item--active' : ''}" data-user-id="${child.id}">
+      <span class="user-dropdown__item-avatar" style="background-color: ${getColorForAvatar(child.avatar)}">${child.avatar || child.name.charAt(0).toUpperCase()}</span>
+      <span class="user-dropdown__item-name">${child.name}</span>
     </div>
   `).join('');
 
@@ -1699,12 +1800,13 @@ function refreshUserSelector() {
       const userId = item.dataset.userId;
       document.getElementById('user-dropdown').classList.remove('user-dropdown--open');
 
-      // setCurrentUser now loads from Firebase and subscribes to updates
+      // setCurrentUser loads from Firebase and subscribes to updates
       if (await setCurrentUser(userId)) {
         refreshUserSelector();
         refreshSchedule();
         refreshSubjects();
         refreshReports();
+        updateDashboard();
       }
     });
   });
@@ -1720,19 +1822,40 @@ function setupUserSelector() {
   addBtn.addEventListener('click', async () => {
     const name = prompt('Tên bé:');
     if (name && name.trim()) {
-      const colors = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4'];
-      const randomColor = colors[Math.floor(Math.random() * colors.length)];
-      const user = addUser(name.trim(), randomColor);
+      // Pick random avatar
+      const randomAvatar = CHILD_AVATARS[Math.floor(Math.random() * CHILD_AVATARS.length)];
+      // Default PIN for new child
+      const defaultPin = '1234';
 
-      if (user) {
-        await setCurrentUser(user.id);
-        document.getElementById('user-dropdown')?.classList.remove('user-dropdown--open');
-        refreshUserSelector();
-        refreshSchedule();
-        refreshSubjects();
-        refreshReports();
-      } else {
-        alert('Tên này đã tồn tại!');
+      try {
+        // Add child to Firebase via family.js
+        const child = await addChild(authUserId, {
+          name: name.trim(),
+          avatar: randomAvatar,
+          pin: defaultPin
+        });
+
+        if (child) {
+          // Reload family data and sync to localStorage
+          currentFamily = await getFamily(authUserId);
+          syncChildrenToLocalStorage();
+
+          // Switch to new child
+          await setCurrentUser(child.id);
+          document.getElementById('user-dropdown')?.classList.remove('user-dropdown--open');
+          refreshUserSelector();
+          refreshSchedule();
+          refreshSubjects();
+          refreshReports();
+          updateDashboard();
+
+          alert(`Đã thêm bé "${child.name}"!\nPIN mặc định: ${defaultPin}\n(Có thể đổi trong Cài đặt)`);
+        } else {
+          alert('Không thể thêm bé. Vui lòng thử lại.');
+        }
+      } catch (error) {
+        console.error('Error adding child:', error);
+        alert('Lỗi: ' + error.message);
       }
     }
   });
