@@ -94,6 +94,18 @@ import {
   CALENDAR_TYPES
 } from './calendar.js';
 
+import {
+  initAcademicCalendar,
+  getAcademicYears,
+  getCurrentWeek
+} from './academic-calendar.js';
+
+import {
+  showAcademicCalendarWizard,
+  renderCalendarOverview,
+  renderTermDetail
+} from './academic-calendar-ui.js';
+
 // State
 let currentDate = new Date();
 let currentWeekStart = getWeekStart(currentDate);
@@ -144,6 +156,41 @@ window.verifyFamilySetup = async function() {
   }
   await verifySetup(authUserId);
 };
+
+// Academic Calendar global handlers
+window.showAcademicWizard = function() {
+  const childId = getCurrentUser();
+  const family = currentFamily;
+  const childName = family?.children?.[childId]?.name || 'Con';
+  showAcademicCalendarWizard(authUserId, childId, childName);
+};
+
+window.showCalendarOverview = function() {
+  const childId = getCurrentUser();
+  const container = document.getElementById('academic-calendar-view');
+  if (container) {
+    renderCalendarOverview(authUserId, childId, container);
+  }
+};
+
+window.showTermDetail = function(termId) {
+  const childId = getCurrentUser();
+  const container = document.getElementById('academic-calendar-view');
+  if (container) {
+    renderTermDetail(authUserId, childId, termId, container);
+  }
+};
+
+window.editAcademicYear = function(yearId) {
+  // TODO: Implement edit year
+  console.log('Edit year:', yearId);
+};
+
+// Listen for academic year created event
+window.addEventListener('academicYearCreated', (e) => {
+  console.log('Academic year created:', e.detail);
+  window.showCalendarOverview();
+});
 
 async function init() {
   // Check if we should skip auth (for testing/demo)
@@ -450,7 +497,9 @@ async function initFamilyData(authUser, profile) {
   try {
     // Initialize family module with database
     const { getDb } = await import('./auth.js');
-    initFamily(getDb());
+    const db = getDb();
+    initFamily(db);
+    initAcademicCalendar(db);
 
     // Load family from Firebase
     currentFamily = await getFamily(authUserId);
@@ -786,8 +835,21 @@ function setupNavigation() {
       if (btn.dataset.view === 'reports') {
         refreshReports();
       }
+
+      if (btn.dataset.view === 'academic') {
+        refreshAcademicCalendar();
+      }
     });
   });
+}
+
+// Refresh Academic Calendar View
+async function refreshAcademicCalendar() {
+  const childId = getCurrentUser();
+  const container = document.getElementById('academic-calendar-view');
+  if (container && authUserId) {
+    await renderCalendarOverview(authUserId, childId, container);
+  }
 }
 
 // Schedule Controls
