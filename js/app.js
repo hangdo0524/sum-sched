@@ -186,10 +186,24 @@ window.editAcademicYear = function(yearId) {
   console.log('Edit year:', yearId);
 };
 
+// Expose authUserId for academic calendar UI
+Object.defineProperty(window, 'authUserId', {
+  get: () => authUserId
+});
+
 // Listen for academic year created event
 window.addEventListener('academicYearCreated', (e) => {
   console.log('Academic year created:', e.detail);
   window.showCalendarOverview();
+});
+
+// Listen for navigate to week event (from academic calendar)
+window.addEventListener('navigateToWeek', (e) => {
+  const { startDate } = e.detail;
+  if (startDate) {
+    currentWeekStart = new Date(startDate);
+    refreshSchedule();
+  }
 });
 
 async function init() {

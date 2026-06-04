@@ -879,6 +879,191 @@ export async function renderTermDetail(userId, childId, termId, container) {
 }
 
 // ============================================
+// WEEK DETAIL VIEW
+// ============================================
+
+export async function renderWeekDetail(userId, childId, weekId, container) {
+  const { getWeek, updateWeek } = await import('./academic-calendar.js');
+  const week = await getWeek(userId, childId, weekId);
+
+  if (!week) {
+    container.innerHTML = '<p>Không tìm thấy tuần</p>';
+    return;
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  const isCurrent = week.startDate <= today && week.endDate >= today;
+  const isPast = week.endDate < today;
+
+  container.innerHTML = `
+    <div class="week-detail">
+      <div class="week-detail-header">
+        <button class="btn btn-sm btn-back" onclick="window.showTermDetail('${week.termId}')">◀ Kỳ học</button>
+        <div class="week-title">
+          <h2>${week.name}</h2>
+          <span class="week-type-badge ${week.type}">${getWeekTypeLabel(week.type)}</span>
+        </div>
+        <span class="week-dates-large">${formatDateRange(week.startDate, week.endDate)}</span>
+      </div>
+
+      ${isCurrent ? '<div class="current-badge">📍 Tuần hiện tại</div>' : ''}
+
+      <div class="week-content">
+        <div class="week-section">
+          <h4>🎯 Mục tiêu tuần</h4>
+          <div class="week-focus">
+            <input type="text" id="week-focus-input"
+                   value="${week.goals?.focus || ''}"
+                   placeholder="VD: Tập trung ôn Toán chương 3"
+                   onchange="window.updateWeekFocus('${weekId}', this.value)" />
+          </div>
+        </div>
+
+        <div class="week-section">
+          <h4>📋 Công việc trong tuần</h4>
+          <div class="week-tasks" id="week-tasks-list">
+            ${(week.goals?.tasks || []).map((task, i) => `
+              <div class="task-item ${task.completed ? 'completed' : ''}">
+                <input type="checkbox" ${task.completed ? 'checked' : ''}
+                       onchange="window.toggleWeekTask('${weekId}', ${i}, this.checked)" />
+                <span class="task-subject">${task.subject}</span>
+                <span class="task-text">${task.task}</span>
+              </div>
+            `).join('') || '<p class="empty-text">Chưa có công việc</p>'}
+          </div>
+          <button class="btn btn-sm btn-outline" onclick="window.addWeekTask('${weekId}')">
+            + Thêm công việc
+          </button>
+        </div>
+
+        ${week.adjustments?.reason ? `
+          <div class="week-section">
+            <h4>📌 Ghi chú</h4>
+            <p class="week-note">${week.adjustments.reason}</p>
+            ${week.adjustments.skipDates?.length > 0 ? `
+              <p class="skip-dates">Ngày nghỉ: ${week.adjustments.skipDates.join(', ')}</p>
+            ` : ''}
+          </div>
+        ` : ''}
+
+        ${isPast && week.result ? `
+          <div class="week-section">
+            <h4>📊 Kết quả tuần</h4>
+            <div class="week-result">
+              <div class="result-completion">
+                <span class="result-value">${week.result.completionRate}%</span>
+                <span class="result-label">Hoàn thành</span>
+              </div>
+              ${week.result.notes ? `<p class="result-notes">${week.result.notes}</p>` : ''}
+            </div>
+          </div>
+        ` : ''}
+      </div>
+
+      <div class="week-actions">
+        <button class="btn btn-primary" onclick="window.viewWeekSchedule('${week.startDate}')">
+          📅 Xem lịch tuần này
+        </button>
+        ${isPast && !week.result ? `
+          <button class="btn btn-secondary" onclick="window.reviewWeek('${weekId}')">
+            ✍️ Đánh giá tuần
+          </button>
+        ` : ''}
+      </div>
+    </div>
+  `;
+}
+
+// Week Detail Handlers
+window.showWeekDetail = async function(weekId) {
+  const childId = window.getCurrentUser ? window.getCurrentUser() : sessionStorage.getItem('sumSched_childId');
+  const container = document.getElementById('academic-calendar-view');
+  if (container) {
+    const { authUserId } = await getAuthContext();
+    await renderWeekDetail(authUserId, childId, weekId, container);
+  }
+};
+
+window.updateWeekFocus = async function(weekId, focus) {
+  const childId = window.getCurrentUser ? window.getCurrentUser() : sessionStorage.getItem('sumSched_childId');
+  const { authUserId } = await getAuthContext();
+  const { updateWeek, getWeek } = await import('./academic-calendar.js');
+
+  const week = await getWeek(authUserId, childId, weekId);
+  if (week) {
+    week.goals = week.goals || {};
+    week.goals.focus = focus;
+    await updateWeek(authUserId, childId, weekId, { goals: week.goals });
+  }
+};
+
+window.toggleWeekTask = async function(weekId, taskIndex, completed) {
+  const childId = window.getCurrentUser ? window.getCurrentUser() : sessionStorage.getItem('sumSched_childId');
+  const { authUserId } = await getAuthContext();
+  const { updateWeek, getWeek } = await import('./academic-calendar.js');
+
+  const week = await getWeek(authUserId, childId, weekId);
+  if (week && week.goals?.tasks?.[taskIndex]) {
+    week.goals.tasks[taskIndex].completed = completed;
+    await updateWeek(authUserId, childId, weekId, { goals: week.goals });
+  }
+};
+
+window.addWeekTask = async function(weekId) {
+  const subject = prompt('Môn học:');
+  if (!subject) return;
+  const task = prompt('Công việc:');
+  if (!task) return;
+
+  const childId = window.getCurrentUser ? window.getCurrentUser() : sessionStorage.getItem('sumSched_childId');
+  const { authUserId } = await getAuthContext();
+  const { updateWeek, getWeek } = await import('./academic-calendar.js');
+
+  const week = await getWeek(authUserId, childId, weekId);
+  if (week) {
+    week.goals = week.goals || {};
+    week.goals.tasks = week.goals.tasks || [];
+    week.goals.tasks.push({ subject, task, completed: false });
+    await updateWeek(authUserId, childId, weekId, { goals: week.goals });
+    window.showWeekDetail(weekId);
+  }
+};
+
+window.viewWeekSchedule = function(startDate) {
+  // Navigate to schedule view with this week
+  window.dispatchEvent(new CustomEvent('navigateToWeek', { detail: { startDate } }));
+
+  // Switch to schedule view
+  const scheduleBtn = document.querySelector('[data-view="schedule"]');
+  if (scheduleBtn) scheduleBtn.click();
+};
+
+window.reviewWeek = async function(weekId) {
+  const completion = prompt('Tỷ lệ hoàn thành (%):', '80');
+  if (!completion) return;
+  const notes = prompt('Ghi chú:', '');
+
+  const childId = window.getCurrentUser ? window.getCurrentUser() : sessionStorage.getItem('sumSched_childId');
+  const { authUserId } = await getAuthContext();
+  const { updateWeek } = await import('./academic-calendar.js');
+
+  await updateWeek(authUserId, childId, weekId, {
+    result: {
+      completionRate: parseInt(completion),
+      notes: notes || ''
+    }
+  });
+  window.showWeekDetail(weekId);
+};
+
+// Helper to get auth context
+async function getAuthContext() {
+  // This is a workaround - ideally we'd pass this through
+  const authUserId = window.authUserId || sessionStorage.getItem('authUserId') || 'demo';
+  return { authUserId };
+}
+
+// ============================================
 // HELPER FUNCTIONS
 // ============================================
 
@@ -940,5 +1125,6 @@ export default {
   showAcademicCalendarWizard,
   closeAcademicWizard,
   renderCalendarOverview,
-  renderTermDetail
+  renderTermDetail,
+  renderWeekDetail
 };
