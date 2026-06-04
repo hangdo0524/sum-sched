@@ -15,6 +15,10 @@ import {
 import { ref, set, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
 const googleProvider = new GoogleAuthProvider();
+// Always show account selector with option to add new account
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
 
 let currentUser = null;
 let userProfile = null;
