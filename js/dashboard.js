@@ -121,6 +121,8 @@ async function updateMotivation() {
 
 function setupDashboardTabs() {
   const tabs = document.querySelectorAll('.dashboard__tab');
+  const scheduleView = document.getElementById('view-schedule');
+
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
       const tabId = tab.dataset.tab;
@@ -134,8 +136,22 @@ function setupDashboardTabs() {
         p.classList.remove('dashboard__panel--active');
       });
       document.getElementById(`panel-${tabId}`)?.classList.add('dashboard__panel--active');
+
+      // Toggle week schedule view visibility
+      if (scheduleView) {
+        if (tabId === 'week') {
+          scheduleView.style.display = 'block';
+        } else {
+          scheduleView.style.display = 'none';
+        }
+      }
     });
   });
+
+  // Initially hide schedule view (show only "Hôm nay")
+  if (scheduleView) {
+    scheduleView.style.display = 'none';
+  }
 }
 
 export function updateDashboard() {
@@ -262,8 +278,12 @@ function getSessionStatus(session) {
 function renderTodaySessions(sessions) {
   const container = document.getElementById('today-sessions');
   const dateEl = document.getElementById('today-date');
+  console.log('renderTodaySessions:', sessions.length, 'sessions');
 
-  if (!container) return;
+  if (!container) {
+    console.warn('today-sessions container not found');
+    return;
+  }
 
   // Update date display
   const today = new Date();
@@ -289,29 +309,29 @@ function renderTodaySessions(sessions) {
     const isNext = nextSession && session.id === nextSession.id;
 
     let statusClass = '';
-    let statusText = '';
+    let statusBadge = '';
 
     switch (status) {
       case 'done':
         statusClass = 'today-session--done';
-        statusText = '<span class="today-session__status today-session__status--done">✓ Xong</span>';
+        statusBadge = '<span class="today-session__status today-session__status--done">✅ Đã học</span>';
+        break;
+      case 'skipped':
+        statusClass = 'today-session--skipped';
+        statusBadge = '<span class="today-session__status" style="background:#fecaca;color:#dc2626;">⏭️ Bỏ qua</span>';
         break;
       case 'current':
         statusClass = 'today-session--current';
-        statusText = '<span class="today-session__status today-session__status--current">🔴 Đang học</span>';
-        break;
-      case 'skipped':
-        statusClass = 'today-session--done';
-        statusText = '<span class="today-session__status">Bỏ qua</span>';
+        statusBadge = '<span class="today-session__status today-session__status--current">🔴 Đang học</span>';
         break;
       case 'past':
-        statusClass = 'today-session--done';
-        statusText = '<span class="today-session__status">Đã qua</span>';
+        statusClass = 'today-session--past';
+        statusBadge = '<span class="today-session__status" style="background:#fef3c7;color:#b45309;">⚠️ Chưa ghi nhận</span>';
         break;
       default:
         if (isNext) {
           statusClass = 'today-session--next';
-          statusText = '<span class="today-session__status" style="background: var(--color-primary); color: white;">Tiếp theo</span>';
+          statusBadge = '<span class="today-session__status" style="background:var(--color-primary);color:white;">▶️ Tiếp theo</span>';
         }
     }
 
@@ -320,7 +340,7 @@ function renderTodaySessions(sessions) {
         <span class="today-session__icon">${icon}</span>
         <span class="today-session__time">${session.startTime} - ${session.endTime}</span>
         <span class="today-session__name">${session.subjectName}</span>
-        ${statusText}
+        ${statusBadge}
       </div>
     `;
   }).join('');

@@ -6,6 +6,8 @@
 import { db, auth } from './firebase-config.js';
 import {
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   onAuthStateChanged,
   GoogleAuthProvider
@@ -24,8 +26,18 @@ export function getDb() {
 }
 
 // Listen for auth state changes
-export function initAuth(callback) {
+export async function initAuth(callback) {
   onAuthChangeCallback = callback;
+
+  // Check for redirect result first (mobile login flow)
+  try {
+    const result = await getRedirectResult(auth);
+    if (result?.user) {
+      console.log('✅ Redirect login success:', result.user.email);
+    }
+  } catch (error) {
+    console.error('Redirect result error:', error);
+  }
 
   onAuthStateChanged(auth, async (user) => {
     currentUser = user;
@@ -78,13 +90,40 @@ async function loadOrCreateUserProfile(user) {
   }
 }
 
+// Detect mobile/tablet
+function isMobileOrTablet() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    || (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
+}
+
 // Google Sign-In
 export async function signInWithGoogle() {
   try {
+    // Use redirect for mobile/tablet (popup doesn't work well)
+    if (isMobileOrTablet()) {
+      console.log('📱 Mobile detected, using redirect login...');
+      await signInWithRedirect(auth, googleProvider);
+      // This won't return - page will redirect
+      return { success: true, redirecting: true };
+    }
+
+    // Use popup for desktop
     const result = await signInWithPopup(auth, googleProvider);
     return { success: true, user: result.user };
   } catch (error) {
     console.error('Google sign-in error:', error);
+
+    // If popup blocked, try redirect
+    if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+      console.log('Popup blocked, trying redirect...');
+      try {
+        await signInWithRedirect(auth, googleProvider);
+        return { success: true, redirecting: true };
+      } catch (redirectError) {
+        return { success: false, error: redirectError.message };
+      }
+    }
+
     return { success: false, error: error.message };
   }
 }

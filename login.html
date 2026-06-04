@@ -229,7 +229,11 @@
       const result = await signInWithGoogle();
 
       if (result.success) {
-        // Auth state change will handle redirect
+        if (result.redirecting) {
+          // Mobile: will redirect to Google, keep showing spinner
+          btnLogin.innerHTML = '<span class="loading-spinner"></span> Đang chuyển hướng...';
+        }
+        // Auth state change will handle redirect to index.html
       } else {
         errorEl.textContent = result.error || 'Đăng nhập thất bại. Vui lòng thử lại.';
         errorEl.classList.add('show');

@@ -190,10 +190,13 @@ export function renderReportSummary(stats) {
   document.getElementById('stat-subjects').textContent = stats.completedSubjects;
 }
 
-export function renderReportChart(stats, container) {
+export function renderReportChart(subjects, container) {
   container.innerHTML = '';
 
-  if (stats.bySubject.length === 0) {
+  // Accept either array of subjects (from getDetailedWeekStats) or stats object
+  const subjectList = Array.isArray(subjects) ? subjects : subjects.bySubject || [];
+
+  if (subjectList.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
         <div class="empty-state__icon">📊</div>
@@ -203,49 +206,58 @@ export function renderReportChart(stats, container) {
     return;
   }
 
-  // Find max value for scaling
-  const maxValue = Math.max(...stats.bySubject.map(s =>
-    Math.max(s.total, s.completed + s.skipped)
-  ), 5);
+  // Find max value for scaling (use target as max)
+  const maxValue = Math.max(...subjectList.map(s => s.target || s.total || 1), 5);
 
-  // Create vertical bar chart
+  // Create stacked vertical bar chart - 1 column per subject
   let html = `
-    <div class="bar-chart">
+    <div class="bar-chart bar-chart--stacked">
       <div class="bar-chart__legend">
-        <span class="legend-item"><span class="legend-dot" style="background:#94a3b8"></span> Mục tiêu</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span> Đã lên lịch</span>
         <span class="legend-item"><span class="legend-dot" style="background:#22c55e"></span> Đã học</span>
         <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> Bỏ qua</span>
         <span class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span> Chờ</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#e2e8f0"></span> Chưa lên lịch</span>
       </div>
       <div class="bar-chart__container">
   `;
 
-  stats.bySubject.forEach(subject => {
-    const targetPct = (subject.total / maxValue) * 100;
-    const scheduledPct = (subject.total / maxValue) * 100;
-    const completedPct = (subject.completed / maxValue) * 100;
-    const skippedPct = (subject.skipped / maxValue) * 100;
-    const pendingPct = ((subject.total - subject.completed - subject.skipped) / maxValue) * 100;
+  const containerHeight = 180; // px, matches CSS
+
+  subjectList.forEach(subject => {
+    // Use target from detailed stats, fallback to scheduled total
+    const target = subject.target || subject.total || 0;
+    if (target === 0) return; // Skip subjects with no target
+
+    const completed = subject.completed || 0;
+    const skipped = subject.skipped || 0;
+    const pending = subject.pending || 0;
+    const scheduled = completed + skipped + pending;
+    const remaining = Math.max(0, target - scheduled);
+
+    // Calculate pixel heights based on session counts
+    const pixelsPerSession = containerHeight / maxValue;
+    const totalHeight = Math.round(target * pixelsPerSession);
+    const completedHeight = Math.round(completed * pixelsPerSession);
+    const skippedHeight = Math.round(skipped * pixelsPerSession);
+    const pendingHeight = Math.round(pending * pixelsPerSession);
+    const remainingHeight = Math.round(remaining * pixelsPerSession);
 
     html += `
       <div class="bar-chart__group">
-        <div class="bar-chart__bars">
-          <div class="bar-chart__bar bar-chart__bar--target" style="height:${targetPct}%" title="Mục tiêu: ${subject.total}">
-            <span class="bar-chart__value">${subject.total}</span>
+        <div class="bar-chart__stacked" style="height:${totalHeight}px">
+          <div class="bar-chart__segment bar-chart__segment--remaining" style="height:${remainingHeight}px" title="Chưa lên lịch: ${remaining}">
+            ${remaining > 0 && remainingHeight >= 16 ? `<span class="segment-value">${remaining}</span>` : ''}
           </div>
-          <div class="bar-chart__bar bar-chart__bar--scheduled" style="height:${scheduledPct}%" title="Đã lên lịch: ${subject.total}">
-            <span class="bar-chart__value">${subject.total}</span>
+          <div class="bar-chart__segment bar-chart__segment--pending" style="height:${pendingHeight}px" title="Chờ: ${pending}">
+            ${pending > 0 && pendingHeight >= 16 ? `<span class="segment-value">${pending}</span>` : ''}
           </div>
-          <div class="bar-chart__bar bar-chart__bar--completed" style="height:${completedPct}%" title="Đã học: ${subject.completed}">
-            ${subject.completed > 0 ? `<span class="bar-chart__value">${subject.completed}</span>` : ''}
+          <div class="bar-chart__segment bar-chart__segment--skipped" style="height:${skippedHeight}px" title="Bỏ qua: ${skipped}">
+            ${skipped > 0 && skippedHeight >= 16 ? `<span class="segment-value">${skipped}</span>` : ''}
           </div>
-          <div class="bar-chart__bar bar-chart__bar--skipped" style="height:${skippedPct}%" title="Bỏ qua: ${subject.skipped}">
-            ${subject.skipped > 0 ? `<span class="bar-chart__value">${subject.skipped}</span>` : ''}
+          <div class="bar-chart__segment bar-chart__segment--completed" style="height:${completedHeight}px" title="Đã học: ${completed}">
+            ${completed > 0 && completedHeight >= 16 ? `<span class="segment-value">${completed}</span>` : ''}
           </div>
-          <div class="bar-chart__bar bar-chart__bar--pending" style="height:${pendingPct}%" title="Chờ: ${subject.total - subject.completed - subject.skipped}">
-            ${(subject.total - subject.completed - subject.skipped) > 0 ? `<span class="bar-chart__value">${subject.total - subject.completed - subject.skipped}</span>` : ''}
-          </div>
+          <span class="bar-chart__total">${target}</span>
         </div>
         <div class="bar-chart__label" style="color:${subject.color}">${subject.name}</div>
       </div>

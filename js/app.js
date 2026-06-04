@@ -76,6 +76,7 @@ import { setApiKey, hasApiKey } from './ai-service.js';
 import {
   getCalendars,
   createCalendar,
+  updateCalendar,
   getCurrentCalendarId,
   setCurrentCalendar,
   getActiveCalendar,
@@ -186,6 +187,7 @@ async function initApp(authUser, profile) {
   setupUserProfile();
   setupCalendarSelector();
   setupAISettings();
+  setupCalendarSettings();
 
   // Show admin section if user is admin
   if (isAdmin()) {
@@ -251,6 +253,86 @@ function setupAISettings() {
       saveBtn.disabled = false;
       saveBtn.textContent = 'Lưu';
     });
+  }
+}
+
+function setupCalendarSettings() {
+  const saveBtn = document.getElementById('btn-save-calendar-settings');
+  console.log('setupCalendarSettings: saveBtn =', saveBtn);
+
+  if (saveBtn) {
+    saveBtn.addEventListener('click', async () => {
+      console.log('Save calendar clicked!');
+      const name = document.getElementById('setting-calendar-name')?.value?.trim();
+      console.log('Calendar name:', name, 'authUserId:', authUserId, 'currentCalendars:', currentCalendars);
+      const type = document.getElementById('setting-calendar-type')?.value;
+      const color = document.getElementById('setting-calendar-color')?.value;
+      const startDate = document.getElementById('setting-calendar-start')?.value;
+      const endDate = document.getElementById('setting-calendar-end')?.value;
+
+      if (!name) {
+        alert('Vui lòng nhập tên lịch');
+        return;
+      }
+
+      const currentId = getCurrentCalendarId();
+
+      if (currentId && currentCalendars.length > 0) {
+        // Update existing calendar
+        const success = await updateCalendar(authUserId, currentId, {
+          name,
+          type,
+          color,
+          startDate,
+          endDate
+        });
+
+        if (success) {
+          // Update local cache
+          const idx = currentCalendars.findIndex(c => c.id === currentId);
+          if (idx >= 0) {
+            currentCalendars[idx] = { ...currentCalendars[idx], name, type, color, startDate, endDate };
+          }
+          refreshCalendarSelector();
+          alert('✅ Đã lưu thay đổi!');
+        } else {
+          alert('❌ Không thể lưu. Vui lòng thử lại.');
+        }
+      } else {
+        // Create new calendar
+        const calendar = await createCalendar(authUserId, { name, type, color, startDate, endDate });
+        if (calendar) {
+          currentCalendars.push(calendar);
+          setCurrentCalendar(calendar.id);
+          refreshCalendarSelector();
+          alert('✅ Đã tạo lịch mới!');
+        } else {
+          alert('❌ Không thể tạo lịch. Vui lòng thử lại.');
+        }
+      }
+    });
+  }
+
+  // Load current calendar data into settings form
+  loadCalendarSettingsForm();
+}
+
+function loadCalendarSettingsForm() {
+  const currentId = getCurrentCalendarId();
+  const calendar = currentCalendars.find(c => c.id === currentId);
+
+  if (calendar) {
+    const nameEl = document.getElementById('setting-calendar-name');
+    const typeEl = document.getElementById('setting-calendar-type');
+    const colorEl = document.getElementById('setting-calendar-color');
+    const startEl = document.getElementById('setting-calendar-start');
+    const endEl = document.getElementById('setting-calendar-end');
+
+    if (nameEl) nameEl.value = calendar.name || '';
+    if (typeEl) typeEl.value = calendar.type || 'summer';
+    if (colorEl) colorEl.value = calendar.color || '#6366f1';
+    if (startEl) startEl.value = calendar.startDate || '';
+    if (endEl) endEl.value = calendar.endDate || '';
   }
 }
 
@@ -404,9 +486,11 @@ function setupCalendarSelector() {
   }
 
   if (saveBtn) {
+    console.log('btn-save-calendar found, adding listener');
     saveBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      console.log('Save calendar button clicked');
+      e.stopPropagation();
+      console.log('Save calendar button clicked!');
       await saveCalendarFromModal();
     });
   } else {
@@ -557,10 +641,12 @@ function refreshReports() {
   }
 
   renderReportSummary(stats);
-  renderReportChart(stats, reportChart);
+
+  // Use detailed stats for chart (has target vs scheduled breakdown)
+  const detailedStats = getDetailedWeekStats(currentDate);
+  renderReportChart(detailedStats, reportChart);
 
   // Render detailed weekly table
-  const detailedStats = getDetailedWeekStats(currentDate);
   const tableContainer = document.getElementById('report-table');
   renderDetailedTable(detailedStats, tableContainer);
 }
@@ -1235,11 +1321,38 @@ function setupEventForm() {
 
 // Session Modal
 function setupSessionModal() {
+  // Toggle actual time fields based on status
+  document.querySelectorAll('input[name="session-status"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const actualTimeGroup = document.getElementById('actual-time-group');
+      if (radio.value === 'completed') {
+        actualTimeGroup.style.display = 'block';
+        // Pre-fill with scheduled time
+        const startTime = document.getElementById('session-start-time').value;
+        const endTime = document.getElementById('session-end-time').value;
+        const actualStart = document.getElementById('session-actual-start');
+        const actualEnd = document.getElementById('session-actual-end');
+        if (!actualStart.value) actualStart.value = startTime;
+        if (!actualEnd.value) actualEnd.value = endTime;
+      } else {
+        actualTimeGroup.style.display = 'none';
+      }
+    });
+  });
+
   document.getElementById('btn-save-session').addEventListener('click', () => {
     const id = document.getElementById('session-id').value;
     const statusRadio = document.querySelector('input[name="session-status"]:checked');
     const status = statusRadio ? statusRadio.value : 'pending';
     const notes = document.getElementById('session-notes').value.trim();
+
+    // Get actual time if completed
+    let actualStartTime = null;
+    let actualEndTime = null;
+    if (status === 'completed') {
+      actualStartTime = document.getElementById('session-actual-start').value || null;
+      actualEndTime = document.getElementById('session-actual-end').value || null;
+    }
 
     // Get session from storage or create new one from schedule data
     let session = getSession(id);
@@ -1257,7 +1370,9 @@ function setupSessionModal() {
             startTime: found.startTime,
             endTime: found.endTime,
             status: status,
-            notes: notes
+            notes: notes,
+            actualStartTime: actualStartTime,
+            actualEndTime: actualEndTime
           };
           break;
         }
@@ -1265,6 +1380,8 @@ function setupSessionModal() {
     } else {
       session.status = status;
       session.notes = notes;
+      if (actualStartTime) session.actualStartTime = actualStartTime;
+      if (actualEndTime) session.actualEndTime = actualEndTime;
     }
 
     if (session) {
@@ -1491,6 +1608,25 @@ function openSessionModal(sessionId, date) {
 
   document.getElementById('session-is-fixed').value = isFixed ? 'true' : 'false';
 
+  // Set hidden time fields for actual time editing
+  document.getElementById('session-start-time').value = session.startTime;
+  document.getElementById('session-end-time').value = session.endTime;
+
+  // Handle actual time fields
+  const actualTimeGroup = document.getElementById('actual-time-group');
+  const actualStartInput = document.getElementById('session-actual-start');
+  const actualEndInput = document.getElementById('session-actual-end');
+
+  if (statusValue === 'completed') {
+    actualTimeGroup.style.display = 'block';
+    actualStartInput.value = session.actualStartTime || session.startTime;
+    actualEndInput.value = session.actualEndTime || session.endTime;
+  } else {
+    actualTimeGroup.style.display = 'none';
+    actualStartInput.value = '';
+    actualEndInput.value = '';
+  }
+
   // Show/hide options based on whether it's fixed
   const deleteOptions = document.getElementById('delete-options');
   const skipFixedOptions = document.getElementById('skip-fixed-options');
@@ -1535,14 +1671,21 @@ function setupModals() {
 function refreshUserSelector() {
   const user = getCurrentUser();
   const users = getUsers();
+  console.log('refreshUserSelector: current user =', user, 'all users =', users);
 
-  // Update header display
-  document.getElementById('user-name').textContent = user.name;
-  document.getElementById('user-avatar').textContent = user.name.charAt(0).toUpperCase();
-  document.getElementById('user-avatar').style.backgroundColor = user.color;
+  // Update header display with current child name
+  const nameEl = document.getElementById('user-name');
+  if (nameEl) {
+    nameEl.textContent = user.name;
+  }
 
   // Update dropdown list
   const listEl = document.getElementById('user-list');
+  if (!listEl) {
+    console.warn('user-list element not found');
+    return;
+  }
+
   listEl.innerHTML = users.map(u => `
     <div class="user-dropdown__item ${u.id === user.id ? 'user-dropdown__item--active' : ''}" data-user-id="${u.id}">
       <span class="user-dropdown__item-avatar" style="background-color: ${u.color}">${u.name.charAt(0).toUpperCase()}</span>
@@ -1568,22 +1711,13 @@ function refreshUserSelector() {
 }
 
 function setupUserSelector() {
-  const btn = document.getElementById('btn-user-selector');
-  const dropdown = document.getElementById('user-dropdown');
+  // Note: dropdown toggle is handled by setupUserProfile()
+  // This function sets up the add-user button
 
-  // Toggle dropdown
-  btn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    dropdown.classList.toggle('user-dropdown--open');
-  });
+  const addBtn = document.getElementById('btn-add-user');
+  if (!addBtn) return;
 
-  // Close dropdown when clicking outside
-  document.addEventListener('click', () => {
-    dropdown.classList.remove('user-dropdown--open');
-  });
-
-  // Add user button
-  document.getElementById('btn-add-user').addEventListener('click', async () => {
+  addBtn.addEventListener('click', async () => {
     const name = prompt('Tên bé:');
     if (name && name.trim()) {
       const colors = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4'];
@@ -1592,7 +1726,7 @@ function setupUserSelector() {
 
       if (user) {
         await setCurrentUser(user.id);
-        dropdown.classList.remove('user-dropdown--open');
+        document.getElementById('user-dropdown')?.classList.remove('user-dropdown--open');
         refreshUserSelector();
         refreshSchedule();
         refreshSubjects();

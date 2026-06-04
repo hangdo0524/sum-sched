@@ -444,8 +444,17 @@ export function switchView(viewId) {
 
   // Show dashboard only on schedule view
   const dashboard = document.getElementById('dashboard');
+  const scheduleView = document.getElementById('view-schedule');
+
   if (dashboard) {
     dashboard.style.display = viewId === 'schedule' ? '' : 'none';
+  }
+
+  // For schedule view, respect the dashboard tab state
+  if (viewId === 'schedule' && scheduleView) {
+    const weekTab = document.querySelector('.dashboard__tab[data-tab="week"]');
+    const isWeekTabActive = weekTab?.classList.contains('dashboard__tab--active');
+    scheduleView.style.display = isWeekTabActive ? 'block' : 'none';
   }
 }
 
