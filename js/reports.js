@@ -3,7 +3,71 @@
  */
 
 import { getSubjects, getSessions, getSessionsByDateRange } from './data.js';
-import { formatDate, addDays, getWeekStart, parseDate } from './scheduler.js';
+import { formatDate, addDays, getWeekStart, parseDate, getDayOfWeek } from './scheduler.js';
+
+// Get all sessions for a date range including fixed sessions from schedules
+function getAllSessionsForRange(startDate, endDate, subjects, storedSessions) {
+  const allSessions = [];
+  const processedKeys = new Set();
+
+  // Generate date range
+  const dates = [];
+  let current = new Date(startDate + 'T00:00:00');
+  const end = new Date(endDate + 'T00:00:00');
+  while (current <= end) {
+    dates.push(formatDate(current));
+    current.setDate(current.getDate() + 1);
+  }
+
+  // Add fixed sessions from subject schedules
+  subjects.forEach(subject => {
+    if (!['fixed', 'fixed-plus'].includes(subject.type)) return;
+    if (!subject.schedule) return;
+
+    subject.schedule.forEach(slot => {
+      if (slot.selected === false) return; // Skip unselected slots
+
+      dates.forEach(dateStr => {
+        const dayOfWeek = getDayOfWeek(dateStr);
+        if (slot.day !== dayOfWeek) return;
+
+        const key = `${subject.id}_${dateStr}_${slot.startTime}`;
+        if (processedKeys.has(key)) return;
+        processedKeys.add(key);
+
+        // Check if there's a stored session for this slot
+        const stored = storedSessions.find(s =>
+          s.subjectId === subject.id &&
+          s.date === dateStr &&
+          s.startTime === slot.startTime
+        );
+
+        allSessions.push({
+          subjectId: subject.id,
+          date: dateStr,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          status: stored?.status || 'pending',
+          notes: stored?.notes || '',
+          isFixed: true
+        });
+      });
+    });
+  });
+
+  // Add stored flexible sessions (not already added as fixed)
+  storedSessions.forEach(session => {
+    if (session.date < startDate || session.date > endDate) return;
+
+    const key = `${session.subjectId}_${session.date}_${session.startTime}`;
+    if (processedKeys.has(key)) return;
+    processedKeys.add(key);
+
+    allSessions.push(session);
+  });
+
+  return allSessions;
+}
 
 export function calculateStats(sessions, subjects) {
   const total = sessions.length;
@@ -73,7 +137,8 @@ export function calculateStats(sessions, subjects) {
 export function getDayStats(date = new Date()) {
   const dateStr = formatDate(date);
   const subjects = getSubjects();
-  const sessions = getSessions().filter(s => s.date === dateStr);
+  const storedSessions = getSessions();
+  const sessions = getAllSessionsForRange(dateStr, dateStr, subjects, storedSessions);
 
   return calculateStats(sessions, subjects);
 }
@@ -81,9 +146,12 @@ export function getDayStats(date = new Date()) {
 export function getWeekStats(date = new Date()) {
   const weekStart = getWeekStart(date);
   const weekEnd = addDays(weekStart, 6);
+  const startStr = formatDate(weekStart);
+  const endStr = formatDate(weekEnd);
 
   const subjects = getSubjects();
-  const sessions = getSessionsByDateRange(formatDate(weekStart), formatDate(weekEnd));
+  const storedSessions = getSessions();
+  const sessions = getAllSessionsForRange(startStr, endStr, subjects, storedSessions);
 
   return calculateStats(sessions, subjects);
 }
@@ -92,9 +160,12 @@ export function getMonthStats(date = new Date()) {
   const d = new Date(date);
   const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
   const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+  const startStr = formatDate(monthStart);
+  const endStr = formatDate(monthEnd);
 
   const subjects = getSubjects();
-  const sessions = getSessionsByDateRange(formatDate(monthStart), formatDate(monthEnd));
+  const storedSessions = getSessions();
+  const sessions = getAllSessionsForRange(startStr, endStr, subjects, storedSessions);
 
   return calculateStats(sessions, subjects);
 }
@@ -143,12 +214,18 @@ export function renderReportChart(stats, container) {
 export function getDetailedWeekStats(date = new Date()) {
   const weekStart = getWeekStart(date);
   const subjects = getSubjects();
-  const sessions = getSessions();
+  const storedSessions = getSessions();
 
   const weekDates = [];
   for (let i = 0; i < 7; i++) {
     weekDates.push(formatDate(addDays(weekStart, i)));
   }
+
+  const startStr = weekDates[0];
+  const endStr = weekDates[6];
+
+  // Get all sessions including fixed ones
+  const allSessions = getAllSessionsForRange(startStr, endStr, subjects, storedSessions);
 
   const DAY_NAMES = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
@@ -169,7 +246,8 @@ export function getDetailedWeekStats(date = new Date()) {
       targetSessions = config.targetSessions || 1;
     }
 
-    const subjectSessions = sessions.filter(s =>
+    // Use allSessions instead of just stored sessions
+    const subjectSessions = allSessions.filter(s =>
       s.subjectId === subject.id && weekDates.includes(s.date)
     );
 

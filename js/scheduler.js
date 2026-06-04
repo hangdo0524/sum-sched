@@ -79,26 +79,31 @@ function addHoursToTime(time, hours) {
   return minutesToTime(minutes);
 }
 
-function hasTimeConflict(newStart, newEnd, existingSessions, minGapMinutes = 30) {
+function hasTimeConflict(newStart, newEnd, existingSessions, minGapMinutes = 0) {
   const newStartMins = timeToMinutes(newStart);
   const newEndMins = timeToMinutes(newEnd);
 
   for (const session of existingSessions) {
+    // Skip completed or skipped sessions
+    if (session.status === 'completed' || session.status === 'skipped') continue;
+
     const existStart = timeToMinutes(session.startTime);
     const existEnd = timeToMinutes(session.endTime);
 
-    // Check overlap
+    // Check overlap only (allow consecutive sessions)
     if (newStartMins < existEnd && newEndMins > existStart) {
       return { conflict: true, type: 'overlap', session };
     }
 
-    // Check gap less than minGapMinutes
-    const gapBefore = newStartMins - existEnd;
-    const gapAfter = existStart - newEndMins;
+    // Check gap only if minGapMinutes > 0
+    if (minGapMinutes > 0) {
+      const gapBefore = newStartMins - existEnd;
+      const gapAfter = existStart - newEndMins;
 
-    if ((gapBefore > 0 && gapBefore < minGapMinutes) ||
-        (gapAfter > 0 && gapAfter < minGapMinutes)) {
-      return { conflict: true, type: 'too_close', session, gap: Math.min(gapBefore, gapAfter) };
+      if ((gapBefore > 0 && gapBefore < minGapMinutes) ||
+          (gapAfter > 0 && gapAfter < minGapMinutes)) {
+        return { conflict: true, type: 'too_close', session, gap: Math.min(gapBefore, gapAfter) };
+      }
     }
   }
   return { conflict: false };
@@ -153,43 +158,107 @@ function getFixedSessionsForDate(dateStr, subjects) {
 
 function findFreeSlots(fixedSessions, settings) {
   const slots = [];
-  const dayStart = timeToMinutes(settings.dailyStartTime || '08:00');
-  const dayEnd = timeToMinutes(settings.dailyEndTime || '20:00');
-  const breakDuration = settings.breakDuration || 30;
+  const dayStart = timeToMinutes(SCHEDULE_CONFIG.dayStart);
+  const dayEnd = timeToMinutes(SCHEDULE_CONFIG.dayEnd);
+  const lunchStart = timeToMinutes(SCHEDULE_CONFIG.lunchStart);
+  const lunchEnd = timeToMinutes(SCHEDULE_CONFIG.lunchEnd);
+  const sessionDuration = SCHEDULE_CONFIG.defaultSessionDuration * 60; // in minutes
+
+  // Filter out completed/skipped sessions
+  const activeSessions = fixedSessions.filter(s =>
+    s.status !== 'completed' && s.status !== 'skipped'
+  );
 
   let currentTime = dayStart;
 
-  fixedSessions.forEach(session => {
+  // Sort sessions by start time
+  const sortedSessions = [...activeSessions].sort((a, b) =>
+    timeToMinutes(a.startTime) - timeToMinutes(b.startTime)
+  );
+
+  sortedSessions.forEach(session => {
     const sessionStart = timeToMinutes(session.startTime);
     const sessionEnd = timeToMinutes(session.endTime);
 
-    if (currentTime + 60 < sessionStart) { // At least 1 hour gap
-      slots.push({
-        startTime: minutesToTime(currentTime),
-        endTime: minutesToTime(sessionStart - breakDuration),
-        duration: (sessionStart - breakDuration - currentTime) / 60
-      });
+    // Add free slot before this session (if enough time for 1 session)
+    if (currentTime + sessionDuration <= sessionStart) {
+      // Check if slot crosses lunch break
+      if (currentTime < lunchStart && sessionStart > lunchEnd) {
+        // Morning slot before lunch
+        if (currentTime + sessionDuration <= lunchStart) {
+          slots.push({
+            startTime: minutesToTime(currentTime),
+            endTime: minutesToTime(lunchStart),
+            duration: (lunchStart - currentTime) / 60
+          });
+        }
+        // Afternoon slot after lunch
+        if (lunchEnd + sessionDuration <= sessionStart) {
+          slots.push({
+            startTime: minutesToTime(lunchEnd),
+            endTime: minutesToTime(sessionStart),
+            duration: (sessionStart - lunchEnd) / 60
+          });
+        }
+      } else if (currentTime >= lunchEnd || sessionStart <= lunchStart) {
+        // Slot doesn't cross lunch
+        slots.push({
+          startTime: minutesToTime(currentTime),
+          endTime: minutesToTime(sessionStart),
+          duration: (sessionStart - currentTime) / 60
+        });
+      }
     }
 
-    currentTime = sessionEnd + breakDuration;
+    currentTime = sessionEnd;
   });
 
-  // After last fixed session
-  if (currentTime + 60 < dayEnd) {
-    slots.push({
-      startTime: minutesToTime(currentTime),
-      endTime: minutesToTime(dayEnd),
-      duration: (dayEnd - currentTime) / 60
-    });
+  // Add free slot after last session until day end
+  if (currentTime + sessionDuration <= dayEnd) {
+    // Check if crosses lunch
+    if (currentTime < lunchStart) {
+      // Morning slot before lunch
+      if (currentTime + sessionDuration <= lunchStart) {
+        slots.push({
+          startTime: minutesToTime(currentTime),
+          endTime: minutesToTime(lunchStart),
+          duration: (lunchStart - currentTime) / 60
+        });
+      }
+      // Afternoon slot after lunch
+      if (lunchEnd + sessionDuration <= dayEnd) {
+        slots.push({
+          startTime: minutesToTime(lunchEnd),
+          endTime: minutesToTime(dayEnd),
+          duration: (dayEnd - lunchEnd) / 60
+        });
+      }
+    } else if (currentTime >= lunchEnd) {
+      // Only afternoon slot
+      slots.push({
+        startTime: minutesToTime(currentTime),
+        endTime: minutesToTime(dayEnd),
+        duration: (dayEnd - currentTime) / 60
+      });
+    }
   }
 
   return slots;
 }
 
+// Schedule config: 8:00-17:00, lunch break 12:00-13:30
+const SCHEDULE_CONFIG = {
+  dayStart: '08:00',
+  dayEnd: '17:00',
+  lunchStart: '12:00',
+  lunchEnd: '13:30',
+  defaultSessionDuration: 1.5 // 1h30
+};
+
 const TIME_SLOTS = {
-  morning: { start: '08:00', end: '11:30', label: 'Sáng' },
-  afternoon: { start: '14:00', end: '17:00', label: 'Chiều' },
-  evening: { start: '19:00', end: '21:00', label: 'Tối' }
+  early: { start: '08:00', end: '09:30', label: 'Sáng sớm' },
+  morning: { start: '09:30', end: '12:00', label: 'Sáng' },
+  afternoon: { start: '13:30', end: '17:00', label: 'Chiều' }
 };
 
 // Subject categories for smart scheduling
@@ -445,14 +514,12 @@ export function generateSmartSuggestions(weekStartDate) {
     });
   });
 
-  // Helper: Get time slot category
+  // Helper: Get time slot category (8:00-17:00, lunch 12:00-13:30)
   const getSlotCategory = (minutes) => {
-    if (minutes < timeToMinutes('10:00')) return 'early';
-    if (minutes < timeToMinutes('11:30')) return 'morning';
-    if (minutes < timeToMinutes('13:30')) return 'noon';
-    if (minutes < timeToMinutes('15:30')) return 'early-afternoon';
-    if (minutes < timeToMinutes('17:30')) return 'afternoon';
-    return 'evening';
+    if (minutes < timeToMinutes('09:30')) return 'early';
+    if (minutes < timeToMinutes('12:00')) return 'morning';
+    if (minutes < timeToMinutes('13:30')) return 'lunch'; // Skip lunch
+    return 'afternoon';
   };
 
   // Build day info for each day in the week
