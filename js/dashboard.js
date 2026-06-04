@@ -44,15 +44,21 @@ export function updateDashboard() {
 function getTodaySessions(today, subjects, allSessions) {
   const dayOfWeek = new Date(today + 'T00:00:00').getDay();
   const sessions = [];
+  const addedKeys = new Set();
 
-  // Get fixed sessions from subjects
+  // Only get FIXED sessions (selected=true) from subjects
   subjects.forEach(subject => {
-    if (!['fixed', 'fixed-plus', 'weekly-pick'].includes(subject.type)) return;
+    if (!['fixed', 'fixed-plus'].includes(subject.type)) return;
     if (!subject.schedule) return;
 
     subject.schedule.forEach(slot => {
       if (slot.day !== dayOfWeek) return;
-      if (slot.selected === false && subject.type !== 'weekly-pick') return;
+      // Only include if selected=true (fixed slots)
+      if (slot.selected === false) return;
+
+      const key = `${subject.id}_${slot.startTime}`;
+      if (addedKeys.has(key)) return;
+      addedKeys.add(key);
 
       // Check if this fixed slot is skipped
       const existingSession = allSessions.find(s =>
@@ -77,12 +83,13 @@ function getTodaySessions(today, subjects, allSessions) {
     });
   });
 
-  // Get flexible sessions for today
+  // Get stored sessions for today (flexible + weekly-pick that were scheduled)
   allSessions.forEach(session => {
     if (session.date !== today) return;
 
-    // Skip if already added as fixed
-    if (sessions.some(s => s.id === session.id)) return;
+    const key = `${session.subjectId}_${session.startTime}`;
+    if (addedKeys.has(key)) return;
+    addedKeys.add(key);
 
     const subject = subjects.find(s => s.id === session.subjectId);
     if (!subject) return;

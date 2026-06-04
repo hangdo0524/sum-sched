@@ -70,9 +70,23 @@ function getAllSessionsForRange(startDate, endDate, subjects, storedSessions) {
 }
 
 export function calculateStats(sessions, subjects) {
+  const now = new Date();
+  const currentDate = formatDate(now);
+  const currentTime = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  // Helper to check if session is past due
+  const isPastDue = (session) => {
+    if (session.date < currentDate) return true;
+    if (session.date === currentDate && session.endTime < currentTime) return true;
+    return false;
+  };
+
   const total = sessions.length;
   const completed = sessions.filter(s => s.status === 'completed').length;
-  const skipped = sessions.filter(s => s.status === 'skipped').length;
+  // Count skipped = explicitly skipped OR past due without completion
+  const skipped = sessions.filter(s =>
+    s.status === 'skipped' || (isPastDue(s) && s.status !== 'completed')
+  ).length;
 
   const totalHours = sessions.reduce((sum, s) => {
     const subject = subjects.find(sub => sub.id === s.subjectId);
@@ -111,7 +125,7 @@ export function calculateStats(sessions, subjects) {
     if (session.status === 'completed') {
       subjectStats[session.subjectId].completed++;
       subjectStats[session.subjectId].completedHours += duration;
-    } else if (session.status === 'skipped') {
+    } else if (session.status === 'skipped' || isPastDue(session)) {
       subjectStats[session.subjectId].skipped++;
     }
   });
@@ -189,26 +203,61 @@ export function renderReportChart(stats, container) {
     return;
   }
 
-  stats.bySubject.forEach(subject => {
-    const progress = subject.total > 0 ?
-      Math.round((subject.completed / subject.total) * 100) : 0;
+  // Find max value for scaling
+  const maxValue = Math.max(...stats.bySubject.map(s =>
+    Math.max(s.total, s.completed + s.skipped)
+  ), 5);
 
-    const item = document.createElement('div');
-    item.className = 'chart-item';
-    item.style.setProperty('--chart-color', subject.color);
-
-    item.innerHTML = `
-      <div class="chart-item__header">
-        <span class="chart-item__name">${subject.name}</span>
-        <span class="chart-item__value">${subject.completed}/${subject.total} (${subject.completedHours}h)</span>
+  // Create vertical bar chart
+  let html = `
+    <div class="bar-chart">
+      <div class="bar-chart__legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#94a3b8"></span> Mục tiêu</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span> Đã lên lịch</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#22c55e"></span> Đã học</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> Bỏ qua</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span> Chờ</span>
       </div>
-      <div class="chart-item__bar">
-        <div class="chart-item__progress" style="width: ${progress}%"></div>
+      <div class="bar-chart__container">
+  `;
+
+  stats.bySubject.forEach(subject => {
+    const targetPct = (subject.total / maxValue) * 100;
+    const scheduledPct = (subject.total / maxValue) * 100;
+    const completedPct = (subject.completed / maxValue) * 100;
+    const skippedPct = (subject.skipped / maxValue) * 100;
+    const pendingPct = ((subject.total - subject.completed - subject.skipped) / maxValue) * 100;
+
+    html += `
+      <div class="bar-chart__group">
+        <div class="bar-chart__bars">
+          <div class="bar-chart__bar bar-chart__bar--target" style="height:${targetPct}%" title="Mục tiêu: ${subject.total}">
+            <span class="bar-chart__value">${subject.total}</span>
+          </div>
+          <div class="bar-chart__bar bar-chart__bar--scheduled" style="height:${scheduledPct}%" title="Đã lên lịch: ${subject.total}">
+            <span class="bar-chart__value">${subject.total}</span>
+          </div>
+          <div class="bar-chart__bar bar-chart__bar--completed" style="height:${completedPct}%" title="Đã học: ${subject.completed}">
+            ${subject.completed > 0 ? `<span class="bar-chart__value">${subject.completed}</span>` : ''}
+          </div>
+          <div class="bar-chart__bar bar-chart__bar--skipped" style="height:${skippedPct}%" title="Bỏ qua: ${subject.skipped}">
+            ${subject.skipped > 0 ? `<span class="bar-chart__value">${subject.skipped}</span>` : ''}
+          </div>
+          <div class="bar-chart__bar bar-chart__bar--pending" style="height:${pendingPct}%" title="Chờ: ${subject.total - subject.completed - subject.skipped}">
+            ${(subject.total - subject.completed - subject.skipped) > 0 ? `<span class="bar-chart__value">${subject.total - subject.completed - subject.skipped}</span>` : ''}
+          </div>
+        </div>
+        <div class="bar-chart__label" style="color:${subject.color}">${subject.name}</div>
       </div>
     `;
-
-    container.appendChild(item);
   });
+
+  html += `
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
 }
 
 export function getDetailedWeekStats(date = new Date()) {
