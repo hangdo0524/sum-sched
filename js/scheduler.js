@@ -20,6 +20,25 @@ export function parseDate(dateStr) {
   return new Date(year, month - 1, day);
 }
 
+// Check if a date/time slot is in the past
+export function isSlotInPast(dateStr, startTime) {
+  const now = new Date();
+  const today = formatDate(now);
+
+  // Past date = definitely in past
+  if (dateStr < today) return true;
+
+  // Future date = not in past
+  if (dateStr > today) return false;
+
+  // Same day - check time
+  const [hours, mins] = startTime.split(':').map(Number);
+  const slotMinutes = hours * 60 + mins;
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  return slotMinutes <= currentMinutes;
+}
+
 export function addDays(date, days) {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
@@ -385,6 +404,9 @@ export function generateSmartSuggestions(weekStartDate) {
         const dayOfWeek = getDayOfWeek(dateStr);
         if (slot.day !== dayOfWeek) return;
 
+        // Skip past time slots
+        if (isSlotInPast(dateStr, slot.startTime)) return;
+
         const event = events.find(e => e.date === dateStr);
         if (event && ['holiday', 'trip'].includes(event.type)) return;
 
@@ -646,6 +668,9 @@ export function generateSmartSuggestions(weekStartDate) {
       let scheduled = false;
       for (const slot of dayInfo.freeSlots) {
         if (slot.duration < duration) continue;
+
+        // Skip past time slots
+        if (isSlotInPast(dateStr, slot.startTime)) continue;
 
         const slotCategory = getSlotCategory(timeToMinutes(slot.startTime));
         if (!preferredSlots.includes(slotCategory)) continue;
