@@ -233,10 +233,26 @@
 
       <!-- Reports View -->
       <section class="view" id="view-reports">
-        <div class="report-tabs">
-          <button class="tab-btn tab-btn--active" data-period="day">Ngày</button>
-          <button class="tab-btn" data-period="week">Tuần</button>
-          <button class="tab-btn" data-period="month">Tháng</button>
+        <div class="report-header">
+          <div class="report-tabs">
+            <button class="tab-btn tab-btn--active" data-period="day">Ngày</button>
+            <button class="tab-btn" data-period="week">Tuần</button>
+            <button class="tab-btn" data-period="month">Tháng</button>
+          </div>
+          <div class="report-date-nav">
+            <button class="btn btn--icon btn--icon-sm" id="btn-report-prev" aria-label="Trước">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"/>
+              </svg>
+            </button>
+            <span class="report-date-label" id="report-date-label">Hôm nay</span>
+            <button class="btn btn--icon btn--icon-sm" id="btn-report-next" aria-label="Sau">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"/>
+              </svg>
+            </button>
+            <button class="btn btn--outline btn--xs" id="btn-report-today">Hôm nay</button>
+          </div>
         </div>
 
         <div class="report-summary" id="report-summary">
