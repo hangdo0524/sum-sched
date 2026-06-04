@@ -81,6 +81,7 @@ import {
 
 import { initDashboard, updateDashboard } from './dashboard.js';
 import { setApiKey, hasApiKey } from './ai-service.js';
+import { setupFamilyData, verifySetup } from './setup-family-data.js';
 
 import {
   getCalendars,
@@ -120,6 +121,28 @@ window.resetApp = function() {
     loadSampleData();
     location.reload();
   }
+};
+
+// Manual setup function for console
+window.runFamilySetup = async function() {
+  if (!authUserId || authUserId === 'demo') {
+    console.error('❌ Cần đăng nhập trước khi chạy setup');
+    return;
+  }
+  console.log('🚀 Running setup for:', authUserId);
+  const success = await setupFamilyData(authUserId);
+  if (success) {
+    console.log('✅ Setup hoàn tất! Refreshing...');
+    setTimeout(() => location.reload(), 1000);
+  }
+};
+
+window.verifyFamilySetup = async function() {
+  if (!authUserId || authUserId === 'demo') {
+    console.error('❌ Cần đăng nhập trước');
+    return;
+  }
+  await verifySetup(authUserId);
 };
 
 async function init() {
@@ -435,11 +458,27 @@ async function initFamilyData(authUser, profile) {
     if (!currentFamily) {
       // First time - create family with parent profile
       console.log('Creating new family for:', authUser.email);
-      await saveParentProfile(authUserId, {
-        email: authUser.email,
-        name: profile?.displayName || authUser.displayName || authUser.email.split('@')[0]
-      });
-      currentFamily = await getFamily(authUserId);
+
+      // Special setup for ledobsn@gmail.com with Anna & Ivy data
+      if (authUser.email === 'ledobsn@gmail.com') {
+        console.log('🚀 Setting up family data for ledobsn@gmail.com...');
+        await setupFamilyData(authUserId);
+        currentFamily = await getFamily(authUserId);
+      } else {
+        await saveParentProfile(authUserId, {
+          email: authUser.email,
+          name: profile?.displayName || authUser.displayName || authUser.email.split('@')[0]
+        });
+        currentFamily = await getFamily(authUserId);
+      }
+    } else {
+      // Family exists - check if children exist for ledobsn@gmail.com
+      const children = getChildren(currentFamily);
+      if (authUser.email === 'ledobsn@gmail.com' && children.length === 0) {
+        console.log('🚀 Adding Anna & Ivy data for ledobsn@gmail.com...');
+        await setupFamilyData(authUserId);
+        currentFamily = await getFamily(authUserId);
+      }
     }
 
     // Sync children to localStorage for data.js compatibility

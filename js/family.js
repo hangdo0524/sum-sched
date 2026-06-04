@@ -1,33 +1,17 @@
 /**
  * Family Account System
- * Parent-Child account management with PIN-based child access
+ * Single Google account with multiple children profiles
  */
 
 import { ref, get, set, push, remove, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
 
 let db = null;
-let currentRole = 'parent'; // 'parent' or 'child'
 let currentChildId = null;
 let familyCache = null;
 
 // Initialize with Firebase database reference
 export function initFamily(database) {
   db = database;
-}
-
-// Hash PIN for storage (simple hash for demo - use bcrypt in production)
-async function hashPin(pin) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(pin + 'sumSched_salt');
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-// Verify PIN against stored hash
-async function verifyPin(pin, storedHash) {
-  const inputHash = await hashPin(pin);
-  return inputHash === storedHash;
 }
 
 /**
@@ -93,13 +77,12 @@ export async function saveParentProfile(userId, profile) {
  * Add a new child to the family
  */
 export async function addChild(userId, childData) {
-  const pinHash = await hashPin(childData.pin);
-
   const child = {
     name: childData.name,
+    grade: childData.grade || null,
     birthDate: childData.birthDate || null,
     avatar: childData.avatar || '🧒',
-    pinHash: pinHash,
+    school: childData.school || null,
     createdAt: new Date().toISOString()
   };
 
@@ -127,12 +110,6 @@ export async function addChild(userId, childData) {
  * Update child profile
  */
 export async function updateChild(userId, childId, updates) {
-  // Don't update pinHash unless PIN is changed
-  if (updates.pin) {
-    updates.pinHash = await hashPin(updates.pin);
-    delete updates.pin;
-  }
-
   if (!db || !userId || userId === 'demo') {
     const family = getFamilyFromLocal();
     if (family && family.children[childId]) {
@@ -194,43 +171,41 @@ export function getChildren(family) {
 }
 
 /**
- * Verify child PIN and set current session
+ * Select a child profile to view
  */
-export async function loginAsChild(userId, childId, pin) {
+export async function selectChild(userId, childId) {
   const family = await getFamily(userId);
   if (!family || !family.children || !family.children[childId]) {
     return { success: false, error: 'Không tìm thấy hồ sơ' };
   }
 
   const child = family.children[childId];
-  const isValid = await verifyPin(pin, child.pinHash);
+  currentChildId = childId;
+  sessionStorage.setItem('sumSched_childId', childId);
+  localStorage.setItem('sumSched_defaultChildId', childId);
 
-  if (isValid) {
-    currentRole = 'child';
-    currentChildId = childId;
-    sessionStorage.setItem('sumSched_role', 'child');
-    sessionStorage.setItem('sumSched_childId', childId);
-    return { success: true, child: { id: childId, ...child } };
-  }
-
-  return { success: false, error: 'PIN không đúng' };
+  return { success: true, child: { id: childId, ...child } };
 }
 
+// Alias for backward compatibility
+export const loginAsChild = selectChild;
+
 /**
- * Login as parent (after Google auth)
+ * Clear child selection (show all children / family view)
  */
-export function loginAsParent() {
-  currentRole = 'parent';
+export function clearChildSelection() {
   currentChildId = null;
-  sessionStorage.setItem('sumSched_role', 'parent');
   sessionStorage.removeItem('sumSched_childId');
 }
 
+// Alias for backward compatibility
+export const loginAsParent = clearChildSelection;
+
 /**
- * Get current session role
+ * Get default child ID (last selected)
  */
-export function getCurrentRole() {
-  return sessionStorage.getItem('sumSched_role') || 'parent';
+export function getDefaultChildId() {
+  return localStorage.getItem('sumSched_defaultChildId');
 }
 
 /**
@@ -241,50 +216,16 @@ export function getCurrentChildId() {
 }
 
 /**
- * Check if current user is parent
- */
-export function isParent() {
-  return getCurrentRole() === 'parent';
-}
-
-/**
- * Logout (clear session, return to profile selection)
+ * Logout (clear session)
  */
 export function logout() {
-  currentRole = 'parent';
   currentChildId = null;
-  sessionStorage.removeItem('sumSched_role');
   sessionStorage.removeItem('sumSched_childId');
 }
 
-/**
- * Get UI permissions for current role
- */
-export function getPermissions() {
-  const role = getCurrentRole();
-
-  if (role === 'parent') {
-    return {
-      canEditSubjects: true,
-      canEditSchedule: true,
-      canManageChildren: true,
-      canViewAllChildren: true,
-      canAccessSettings: true,
-      canViewReports: true,
-      canMarkCompleted: true
-    };
-  }
-
-  // Child permissions
-  return {
-    canEditSubjects: false,
-    canEditSchedule: false,
-    canManageChildren: false,
-    canViewAllChildren: false,
-    canAccessSettings: false,
-    canViewReports: true, // Own reports only
-    canMarkCompleted: true // Can mark own sessions
-  };
+// Legacy function - always returns true since no role-based access
+export function isParent() {
+  return true;
 }
 
 /**
@@ -304,12 +245,13 @@ export default {
   updateChild,
   removeChild,
   getChildren,
-  loginAsChild,
-  loginAsParent,
-  getCurrentRole,
+  selectChild,
+  loginAsChild,        // alias for selectChild
+  loginAsParent,       // alias for clearChildSelection
+  clearChildSelection,
   getCurrentChildId,
+  getDefaultChildId,
   isParent,
   logout,
-  getPermissions,
   CHILD_AVATARS
 };
