@@ -450,11 +450,17 @@ export function switchView(viewId) {
     dashboard.style.display = viewId === 'schedule' ? '' : 'none';
   }
 
-  // For schedule view, respect the dashboard tab state
-  if (viewId === 'schedule' && scheduleView) {
-    const weekTab = document.querySelector('.dashboard__tab[data-tab="week"]');
-    const isWeekTabActive = weekTab?.classList.contains('dashboard__tab--active');
-    scheduleView.style.display = isWeekTabActive ? 'block' : 'none';
+  // Handle schedule view visibility
+  if (scheduleView) {
+    if (viewId === 'schedule') {
+      // Respect the dashboard tab state
+      const weekTab = document.querySelector('.dashboard__tab[data-tab="week"]');
+      const isWeekTabActive = weekTab?.classList.contains('dashboard__tab--active');
+      scheduleView.style.display = isWeekTabActive ? 'block' : 'none';
+    } else {
+      // Always hide schedule view when not on schedule tab
+      scheduleView.style.display = 'none';
+    }
   }
 }
 
