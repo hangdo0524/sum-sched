@@ -347,6 +347,15 @@ export function getSessionsByDateRange(startDate, endDate) {
   return sessions.filter(s => s.date >= startDate && s.date <= endDate);
 }
 
+export function getSessionsByWeek(weekId) {
+  const sessions = getSessions();
+  return sessions.filter(s => s.weekId === weekId);
+}
+
+export function getSessionsByWeekDates(startDate, endDate) {
+  return getSessionsByDateRange(startDate, endDate);
+}
+
 export function saveSession(session) {
   const sessions = getSessions();
   const index = sessions.findIndex(s => s.id === session.id);

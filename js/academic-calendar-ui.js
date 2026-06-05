@@ -964,8 +964,11 @@ export async function renderWeekDetail(userId, childId, weekId, container) {
         <button class="btn btn-primary" onclick="window.viewWeekSchedule('${week.startDate}')">
           📅 Xem lịch tuần này
         </button>
+        <button class="btn btn-secondary" onclick="window.generateWeekSessions('${weekId}')">
+          ⚡ Tạo lịch tự động
+        </button>
         ${isPast && !week.result ? `
-          <button class="btn btn-secondary" onclick="window.reviewWeek('${weekId}')">
+          <button class="btn btn-outline" onclick="window.reviewWeek('${weekId}')">
             ✍️ Đánh giá tuần
           </button>
         ` : ''}
@@ -1054,6 +1057,60 @@ window.reviewWeek = async function(weekId) {
     }
   });
   window.showWeekDetail(weekId);
+};
+
+window.generateWeekSessions = async function(weekId) {
+  const childId = window.getCurrentUser ? window.getCurrentUser() : sessionStorage.getItem('sumSched_childId');
+  const { authUserId } = await getAuthContext();
+
+  const { getWeek, getTerm, getLevelFromGrade, generateWeeklySchedule } = await import('./academic-calendar.js');
+  const { saveSession } = await import('./data.js');
+
+  const week = await getWeek(authUserId, childId, weekId);
+  if (!week) {
+    alert('Không tìm thấy tuần');
+    return;
+  }
+
+  const term = await getTerm(authUserId, childId, week.termId);
+  if (!term || !term.subjects || term.subjects.length === 0) {
+    alert('Chưa có môn học trong kỳ. Vui lòng thêm môn học trong wizard.');
+    return;
+  }
+
+  const level = getLevelFromGrade(4); // Default grade 4 - TODO: get from academic year
+
+  if (!confirm(`Tạo lịch tự động cho ${week.name}?\n\nSẽ tạo ${term.subjects.length} môn học theo cấu trúc tuần ${week.type}.`)) {
+    return;
+  }
+
+  try {
+    const sessions = generateWeeklySchedule(week, term, level);
+
+    if (sessions.length === 0) {
+      alert('Không thể tạo lịch (tuần nghỉ hoặc không có ngày khả dụng)');
+      return;
+    }
+
+    // Save sessions
+    let saved = 0;
+    for (const session of sessions) {
+      const result = saveSession({
+        ...session,
+        weekId: week.id
+      });
+      if (result) saved++;
+    }
+
+    alert(`✅ Đã tạo ${saved}/${sessions.length} ca học cho ${week.name}`);
+
+    // Navigate to schedule view
+    window.viewWeekSchedule(week.startDate);
+
+  } catch (error) {
+    console.error('Error generating sessions:', error);
+    alert('Lỗi khi tạo lịch: ' + error.message);
+  }
 };
 
 // Helper to get auth context

@@ -662,6 +662,130 @@ function getWeekName(weekNumber, type) {
   }
 }
 
+/**
+ * Generate weekly schedule (sessions) from term subjects and week type
+ * @param {Object} week - Week object
+ * @param {Object} term - Term object with subjects
+ * @param {Object} level - Academic level with defaults
+ * @returns {Array} Array of session objects
+ */
+export function generateWeeklySchedule(week, term, level) {
+  if (!term.subjects || term.subjects.length === 0) {
+    return [];
+  }
+
+  const sessions = [];
+  const skipDates = new Set(week.adjustments?.skipDates || []);
+
+  // Hour multipliers based on week type
+  const hourMultiplier = {
+    'learning': 1.0,
+    'review': 1.3,   // More study time during review
+    'exam': 0.3,     // Reduced - mostly exams
+    'break': 0
+  };
+
+  if (week.type === 'break') {
+    return [];
+  }
+
+  // Get available days (Mon-Sat, excluding holidays)
+  const availableDays = getWeekDays(week.startDate, week.endDate)
+    .filter(day => !skipDates.has(day) && new Date(day).getDay() !== 0); // Exclude Sundays
+
+  if (availableDays.length === 0) {
+    return [];
+  }
+
+  // Define time slots
+  const timeSlots = {
+    morning: [
+      { start: '08:00', end: '09:30' },
+      { start: '09:45', end: '11:15' }
+    ],
+    afternoon: [
+      { start: '14:00', end: '15:30' },
+      { start: '15:45', end: '17:15' }
+    ],
+    evening: [
+      { start: '19:00', end: '20:30' }
+    ]
+  };
+
+  // Flatten all available slots
+  const allSlots = [...timeSlots.morning, ...timeSlots.afternoon, ...timeSlots.evening];
+  let slotIndex = 0;
+
+  // Sort subjects by priority
+  const sortedSubjects = [...term.subjects].sort((a, b) => {
+    const priorityOrder = { high: 0, medium: 1, low: 2 };
+    return (priorityOrder[a.priority] || 1) - (priorityOrder[b.priority] || 1);
+  });
+
+  // Distribute sessions across days
+  sortedSubjects.forEach(subject => {
+    const adjustedHours = (subject.weeklyHours || 3) * (hourMultiplier[week.type] || 1);
+    const sessionDuration = level?.defaults?.sessionDuration || 90; // minutes
+    const sessionsNeeded = Math.ceil((adjustedHours * 60) / sessionDuration);
+
+    for (let i = 0; i < sessionsNeeded; i++) {
+      const dayIndex = (slotIndex % availableDays.length);
+      const day = availableDays[dayIndex];
+      const slot = allSlots[Math.floor(slotIndex / availableDays.length) % allSlots.length];
+
+      sessions.push({
+        id: `gen_${week.id}_${subject.subjectId || subject.name}_${i}`,
+        weekId: week.id,
+        subjectId: subject.subjectId || subject.name,
+        subjectName: subject.name,
+        date: day,
+        startTime: slot.start,
+        endTime: slot.end,
+        duration: sessionDuration,
+        type: week.type === 'exam' ? 'exam' : 'regular',
+        status: 'planned',
+        generated: true
+      });
+
+      slotIndex++;
+    }
+  });
+
+  // Sort by date and time
+  sessions.sort((a, b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    return a.startTime.localeCompare(b.startTime);
+  });
+
+  return sessions;
+}
+
+/**
+ * Get all days in a week range
+ */
+function getWeekDays(startDate, endDate) {
+  const days = [];
+  const current = new Date(startDate);
+  const end = new Date(endDate);
+
+  while (current <= end) {
+    days.push(formatDateStr(current));
+    current.setDate(current.getDate() + 1);
+  }
+
+  return days;
+}
+
+/**
+ * Apply generated schedule to existing sessions
+ * Merges with existing sessions, avoiding conflicts
+ */
+export async function applyGeneratedSchedule(userId, childId, weekId, generatedSessions) {
+  // This function would integrate with the existing sessions system
+  // For now, return the generated sessions
+  return generatedSessions;
+}
+
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
@@ -764,5 +888,7 @@ export default {
   updateWeek,
   deleteWeek,
   // Generation
-  generateWeeksForTerm
+  generateWeeksForTerm,
+  generateWeeklySchedule,
+  applyGeneratedSchedule
 };
