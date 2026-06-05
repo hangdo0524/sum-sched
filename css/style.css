@@ -4712,6 +4712,28 @@ body {
   color: #1d4ed8;
 }
 
+/* Child info section */
+.child-info-section {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-4);
+  border: 2px solid #22c55e;
+  margin-bottom: var(--spacing-4);
+}
+
+.child-info-section h4 {
+  color: #15803d;
+}
+
+.child-info-section input[type="date"],
+.child-info-section input[type="number"] {
+  max-width: 150px;
+}
+
+.child-info-section select#child-grade {
+  min-width: 120px;
+}
+
 /* Form row - side by side */
 .form-row {
   display: flex;

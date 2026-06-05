@@ -72,6 +72,18 @@ export const SCHOOL_TYPES = {
   specialized: { name: 'Chuyên', desc: 'Trường THPT chuyên, năng khiếu' }
 };
 
+// Curriculum/Program types
+export const CURRICULUM_TYPES = {
+  vn_gdpt: { name: 'Chương trình GDPT 2018', desc: 'Chương trình giáo dục phổ thông mới của Bộ GD&ĐT' },
+  vn_gdpt_old: { name: 'Chương trình GDPT cũ', desc: 'Chương trình trước 2018' },
+  cambridge: { name: 'Cambridge', desc: 'Cambridge IGCSE / A-Level' },
+  ib: { name: 'IB', desc: 'International Baccalaureate (PYP/MYP/DP)' },
+  american: { name: 'American', desc: 'Chương trình Mỹ (AP, Common Core)' },
+  bilingual: { name: 'Song ngữ', desc: 'Kết hợp VN + Quốc tế' },
+  montessori: { name: 'Montessori', desc: 'Phương pháp Montessori' },
+  other: { name: 'Khác', desc: 'Chương trình khác' }
+};
+
 // Family financial capability for study abroad
 export const FINANCIAL_CAPACITY = {
   full_self: { name: 'Tự túc hoàn toàn', desc: 'Có khả năng tài chính du học không cần học bổng' },
@@ -177,6 +189,18 @@ export function createEmptyStudentContext(grade) {
   });
 
   return {
+    // Basic child info
+    basicInfo: {
+      name: '',
+      birthDate: null, // YYYY-MM-DD
+      age: null,
+      currentGrade: grade,
+      schoolName: '',
+      schoolType: 'public',
+      curriculum: 'vn_gdpt', // Chương trình học
+      academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`
+    },
+
     currentGrade: grade,
     academics: subjects,
     skills: skills,
@@ -780,6 +804,7 @@ export default {
   SKILLS,
   // Constants - Enhanced for Australia Scholarship
   SCHOOL_TYPES,
+  CURRICULUM_TYPES,
   FINANCIAL_CAPACITY,
   DEVELOPMENT_STAGES,
   TOP_5_AUSTRALIA_UNIS,

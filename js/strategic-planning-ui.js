@@ -11,6 +11,7 @@ import {
   SUBJECTS_BY_LEVEL,
   SKILLS,
   SCHOOL_TYPES,
+  CURRICULUM_TYPES,
   FINANCIAL_CAPACITY,
   ENGLISH_LEVELS,
   ACHIEVEMENT_CATEGORIES,
@@ -138,15 +139,97 @@ function renderStep1_AcademicAbilities() {
   const body = document.getElementById('planning-body');
   const footer = document.getElementById('planning-footer');
   const { childInfo, studentContext } = planningState;
-  const grade = studentContext.currentGrade || childInfo?.grade || 4;
+  const basicInfo = studentContext.basicInfo || {};
+  const grade = basicInfo.currentGrade || studentContext.currentGrade || childInfo?.grade || 4;
   const level = grade <= 5 ? 'elementary' : grade <= 9 ? 'middle' : 'high';
   const subjects = SUBJECTS_BY_LEVEL[level];
 
+  // Calculate age from birthDate if available
+  const calculateAge = (birthDate) => {
+    if (!birthDate) return null;
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    return age;
+  };
+  const currentAge = basicInfo.age || calculateAge(basicInfo.birthDate);
+
   body.innerHTML = `
     <div class="planning-form">
-      <div class="form-section">
-        <h4>👧 ${childInfo?.name || 'Con'} - Lớp ${grade}</h4>
-        <p class="form-hint">🇦🇺 Lộ trình học bổng Top 5 Úc cần đánh giá toàn diện</p>
+      <div class="form-section child-info-section">
+        <h4>👧 Thông tin cơ bản của con</h4>
+        <p class="form-hint">🇦🇺 Cần thông tin chính xác để lên lộ trình học bổng Top 5 Úc</p>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tên con *</label>
+            <input type="text" id="child-name"
+                   value="${basicInfo.name || childInfo?.name || ''}"
+                   placeholder="Nhập tên con..." required />
+          </div>
+          <div class="form-group">
+            <label>Ngày sinh</label>
+            <input type="date" id="child-birthdate"
+                   value="${basicInfo.birthDate || ''}"
+                   onchange="window.updateChildAge(this.value)" />
+          </div>
+          <div class="form-group">
+            <label>Tuổi</label>
+            <input type="number" id="child-age" min="5" max="20"
+                   value="${currentAge || ''}"
+                   placeholder="VD: 10" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Đang học lớp *</label>
+            <select id="child-grade" onchange="window.updateGradeLevel(this.value)">
+              ${[1,2,3,4,5,6,7,8,9,10,11,12].map(g => `
+                <option value="${g}" ${grade === g ? 'selected' : ''}>Lớp ${g}</option>
+              `).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Năm học</label>
+            <input type="text" id="academic-year"
+                   value="${basicInfo.academicYear || `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`}"
+                   placeholder="VD: 2024-2025" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tên trường đang học</label>
+            <input type="text" id="school-name-basic"
+                   value="${basicInfo.schoolName || ''}"
+                   placeholder="VD: THCS Nguyễn Du, TH Vinschool..." />
+          </div>
+          <div class="form-group">
+            <label>Loại trường</label>
+            <select id="school-type-basic">
+              ${Object.entries(SCHOOL_TYPES).map(([key, type]) => `
+                <option value="${key}" ${basicInfo.schoolType === key ? 'selected' : ''}>${type.name}</option>
+              `).join('')}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Chương trình học</label>
+          <div class="radio-cards compact">
+            ${Object.entries(CURRICULUM_TYPES).map(([key, curr]) => `
+              <label class="radio-card ${(basicInfo.curriculum || 'vn_gdpt') === key ? 'selected' : ''}">
+                <input type="radio" name="curriculum" value="${key}"
+                       ${(basicInfo.curriculum || 'vn_gdpt') === key ? 'checked' : ''}
+                       onchange="window.updateCurriculum('${key}')" />
+                <span class="card-title">${curr.name}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>
       </div>
 
       <div class="form-section">
@@ -1096,6 +1179,73 @@ window.updateScholarshipReq = function(req) {
   });
 };
 
+// Child info handlers
+window.updateChildAge = function(birthDate) {
+  if (!birthDate) return;
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+
+  const ageInput = document.getElementById('child-age');
+  if (ageInput) ageInput.value = age;
+
+  if (!planningState.studentContext.basicInfo) {
+    planningState.studentContext.basicInfo = {};
+  }
+  planningState.studentContext.basicInfo.birthDate = birthDate;
+  planningState.studentContext.basicInfo.age = age;
+};
+
+window.updateGradeLevel = function(grade) {
+  const gradeNum = parseInt(grade);
+  if (!planningState.studentContext.basicInfo) {
+    planningState.studentContext.basicInfo = {};
+  }
+  planningState.studentContext.basicInfo.currentGrade = gradeNum;
+  planningState.studentContext.currentGrade = gradeNum;
+
+  // Update subjects based on new grade level
+  const level = gradeNum <= 5 ? 'elementary' : gradeNum <= 9 ? 'middle' : 'high';
+  const subjects = SUBJECTS_BY_LEVEL[level];
+  const newAcademics = {};
+  subjects.forEach(subj => {
+    newAcademics[subj] = planningState.studentContext.academics?.[subj] || { level: 5, notes: '' };
+  });
+  planningState.studentContext.academics = newAcademics;
+
+  // Re-render the academic abilities section
+  const academicGrid = document.getElementById('academic-abilities');
+  if (academicGrid) {
+    academicGrid.innerHTML = subjects.map(subj => {
+      const val = newAcademics[subj]?.level || 5;
+      return `
+        <div class="ability-item">
+          <label>${subj}</label>
+          <div class="ability-slider">
+            <input type="range" min="1" max="10" value="${val}"
+                   data-subject="${subj}"
+                   oninput="window.updateAbilityValue(this)" />
+            <span class="ability-value">${val}</span>
+          </div>
+          <small class="ability-desc">${SUBJECT_LEVELS[val]}</small>
+        </div>
+      `;
+    }).join('');
+  }
+};
+
+window.updateCurriculum = function(curriculum) {
+  if (!planningState.studentContext.basicInfo) {
+    planningState.studentContext.basicInfo = {};
+  }
+  planningState.studentContext.basicInfo.curriculum = curriculum;
+  document.querySelectorAll('[name="curriculum"]').forEach(el => {
+    el.closest('.radio-card').classList.toggle('selected', el.value === curriculum);
+  });
+};
+
 window.planningNext = async function() {
   await saveCurrentStepData();
 
@@ -1114,7 +1264,20 @@ async function saveCurrentStepData() {
   const { userId, childId, studentContext, familyAspirations } = planningState;
 
   if (planningState.step === 1) {
-    // Save basic academic abilities
+    // Save basic child info
+    studentContext.basicInfo = {
+      name: document.getElementById('child-name')?.value || '',
+      birthDate: document.getElementById('child-birthdate')?.value || null,
+      age: parseInt(document.getElementById('child-age')?.value) || null,
+      currentGrade: parseInt(document.getElementById('child-grade')?.value) || studentContext.currentGrade,
+      schoolName: document.getElementById('school-name-basic')?.value || '',
+      schoolType: document.getElementById('school-type-basic')?.value || 'public',
+      curriculum: document.querySelector('[name="curriculum"]:checked')?.value || 'vn_gdpt',
+      academicYear: document.getElementById('academic-year')?.value || ''
+    };
+    studentContext.currentGrade = studentContext.basicInfo.currentGrade;
+
+    // Save academic abilities
     studentContext.talents = parseCommaSeparated(document.getElementById('talents-input')?.value);
     studentContext.challenges = parseCommaSeparated(document.getElementById('challenges-input')?.value);
     studentContext.interests = parseCommaSeparated(document.getElementById('interests-input')?.value);
