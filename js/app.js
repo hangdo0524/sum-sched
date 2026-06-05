@@ -106,6 +106,9 @@ import {
   renderTermDetail
 } from './academic-calendar-ui.js';
 
+import { initStrategicPlanning, getRoadmap } from './strategic-planning.js';
+import { showStrategicPlanningWizard } from './strategic-planning-ui.js';
+
 // State
 let currentDate = new Date();
 let currentWeekStart = getWeekStart(currentDate);
@@ -185,6 +188,25 @@ window.editAcademicYear = function(yearId) {
   // TODO: Implement edit year
   console.log('Edit year:', yearId);
 };
+
+// Strategic Planning handler
+window.showStrategicPlanning = function() {
+  const childId = getCurrentUser();
+  const family = currentFamily;
+  const child = family?.children?.[childId];
+  const childInfo = {
+    name: child?.name || 'Con',
+    grade: child?.grade || 4
+  };
+  showStrategicPlanningWizard(authUserId, childId, childInfo);
+};
+
+// Listen for roadmap created event
+window.addEventListener('roadmapCreated', (e) => {
+  console.log('Roadmap created:', e.detail);
+  // Refresh academic calendar view if visible
+  window.showCalendarOverview();
+});
 
 // Expose authUserId for academic calendar UI
 Object.defineProperty(window, 'authUserId', {
@@ -514,6 +536,7 @@ async function initFamilyData(authUser, profile) {
     const db = getDb();
     initFamily(db);
     initAcademicCalendar(db);
+    initStrategicPlanning(db);
 
     // Load family from Firebase
     currentFamily = await getFamily(authUserId);
