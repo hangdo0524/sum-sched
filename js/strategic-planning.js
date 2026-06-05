@@ -337,7 +337,7 @@ export const STAGE_RESOURCE_RECOMMENDATIONS = {
 };
 
 // Top 5 Australian universities requirements
-const AUSTRALIAN_UNIS = {
+export const TOP_5_AUSTRALIA_UNIS = {
   melbourne: { name: 'University of Melbourne', ielts: 6.5, gpa: 'Top 10%', extras: 'Leadership, community service' },
   sydney: { name: 'University of Sydney', ielts: 6.5, gpa: 'Top 10%', extras: 'Academic achievements, extracurriculars' },
   unsw: { name: 'UNSW Sydney', ielts: 6.5, gpa: 'Top 15%', extras: 'STEM focus, innovation' },
