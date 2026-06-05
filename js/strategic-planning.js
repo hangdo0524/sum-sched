@@ -130,8 +130,213 @@ export const DEVELOPMENT_STAGES = {
   }
 };
 
+// ============================================
+// LEARNING RESOURCES DATABASE
+// Trung tâm, Gia sư, Ứng dụng tự học
+// ============================================
+
+// Learning Centers in Vietnam (by category)
+export const LEARNING_CENTERS = {
+  english: {
+    name: '🌍 Tiếng Anh',
+    centers: [
+      // Premium International
+      { id: 'british_council', name: 'British Council', type: 'international', locations: ['HCM', 'HN', 'DN'], grades: '1-12', focus: ['IELTS', 'Cambridge', 'General'], rating: 5, priceRange: 'high', scholarshipValue: 'very_high', desc: 'Chuẩn British, tốt cho IELTS/Cambridge' },
+      { id: 'ila', name: 'ILA Vietnam', type: 'international', locations: ['HCM', 'HN', 'nationwide'], grades: '3-12', focus: ['IELTS', 'Communication', 'Academic'], rating: 4.5, priceRange: 'high', scholarshipValue: 'high', desc: 'Chuỗi lớn, chất lượng ổn định' },
+      { id: 'vus', name: 'VUS (Anh Văn Hội Việt Mỹ)', type: 'local_premium', locations: ['HCM', 'nationwide'], grades: '3-12', focus: ['IELTS', 'TOEFL', 'Communication'], rating: 4.5, priceRange: 'medium-high', scholarshipValue: 'high', desc: 'Lâu đời, uy tín tại VN' },
+      { id: 'apax', name: 'Apax English', type: 'local_premium', locations: ['nationwide'], grades: '3-15', focus: ['Communication', 'Academic'], rating: 4, priceRange: 'medium', scholarshipValue: 'medium', desc: 'Chuỗi lớn, công nghệ tốt' },
+      // IELTS Specialists
+      { id: 'ielts_fighter', name: 'IELTS Fighter', type: 'specialist', locations: ['HCM', 'HN', 'online'], grades: '9-12', focus: ['IELTS'], rating: 4.5, priceRange: 'medium', scholarshipValue: 'high', desc: 'Chuyên IELTS, cam kết đầu ra' },
+      { id: 'ielts_ngoc_bach', name: 'IELTS Ngọc Bách', type: 'specialist', locations: ['HN', 'online'], grades: '9-12', focus: ['IELTS'], rating: 4.5, priceRange: 'medium', scholarshipValue: 'high', desc: 'Nổi tiếng IELTS Writing' },
+      { id: 'the_ielts_workshop', name: 'The IELTS Workshop', type: 'specialist', locations: ['HCM', 'HN', 'online'], grades: '9-12', focus: ['IELTS'], rating: 4.5, priceRange: 'medium', scholarshipValue: 'high', desc: 'Phương pháp hiện đại' },
+      // Kids English
+      { id: 'popodoo', name: 'Popodoo', type: 'kids', locations: ['HCM', 'HN'], grades: '3-10', focus: ['Cambridge Young Learners', 'Communication'], rating: 4, priceRange: 'medium', scholarshipValue: 'medium', desc: 'Tốt cho trẻ nhỏ' },
+      { id: 'yola', name: 'YOLA', type: 'local_premium', locations: ['HCM', 'HN'], grades: 'K-12', focus: ['Academic', 'SAT', 'IELTS'], rating: 4, priceRange: 'high', scholarshipValue: 'high', desc: 'Định hướng du học' }
+    ]
+  },
+
+  math: {
+    name: '🔢 Toán học',
+    centers: [
+      { id: 'mathnasium', name: 'Mathnasium', type: 'international', locations: ['HCM', 'HN'], grades: 'K-12', focus: ['Math foundation', 'Problem solving'], rating: 4.5, priceRange: 'high', scholarshipValue: 'high', desc: 'Phương pháp Mỹ, tư duy logic' },
+      { id: 'kumon_math', name: 'Kumon Toán', type: 'international', locations: ['HCM', 'HN', 'DN'], grades: 'K-12', focus: ['Calculation', 'Self-learning'], rating: 4, priceRange: 'medium', scholarshipValue: 'medium', desc: 'Luyện tính toán, tự học' },
+      { id: 'toan_tu_duy', name: 'Toán Tư Duy (POMATH, Finger Math)', type: 'local', locations: ['nationwide'], grades: 'K-6', focus: ['Mental math', 'Logic'], rating: 4, priceRange: 'medium', scholarshipValue: 'medium', desc: 'Toán tư duy cho trẻ nhỏ' },
+      { id: 'hsg_toan', name: 'Các lớp HSG Toán', type: 'olympiad', locations: ['HCM', 'HN'], grades: '6-12', focus: ['Olympiad', 'Competition'], rating: 5, priceRange: 'varies', scholarshipValue: 'very_high', desc: 'Luyện thi HSG, Olympic' }
+    ]
+  },
+
+  stem: {
+    name: '🤖 STEM & Robotics',
+    centers: [
+      { id: 'teky', name: 'TEKY', type: 'local_premium', locations: ['HCM', 'HN', 'nationwide'], grades: '4-16', focus: ['Coding', 'Robotics', 'AI'], rating: 4.5, priceRange: 'medium', scholarshipValue: 'high', desc: 'STEM hàng đầu VN, có WRO team' },
+      { id: 'steam_for_vietnam', name: 'STEAM for Vietnam', type: 'nonprofit', locations: ['online', 'nationwide'], grades: '6-18', focus: ['Coding', 'Entrepreneurship'], rating: 4.5, priceRange: 'free-low', scholarshipValue: 'high', desc: 'Miễn phí/giá rẻ, mentor từ Silicon Valley' },
+      { id: 'codegym', name: 'CodeGym Kids', type: 'local', locations: ['HCM', 'HN'], grades: '6-18', focus: ['Coding', 'Web/App'], rating: 4, priceRange: 'medium', scholarshipValue: 'medium', desc: 'Lập trình ứng dụng' },
+      { id: 'mindx', name: 'MindX', type: 'local_premium', locations: ['HCM', 'HN'], grades: '6-18', focus: ['Coding', 'Technology'], rating: 4, priceRange: 'medium', scholarshipValue: 'medium', desc: 'Công nghệ và khởi nghiệp' },
+      { id: 'lego_education', name: 'LEGO Education Center', type: 'international', locations: ['HCM', 'HN'], grades: 'K-9', focus: ['Robotics', 'STEM basics'], rating: 4.5, priceRange: 'high', scholarshipValue: 'medium', desc: 'LEGO Robotics chính hãng' },
+      { id: 'fpt_young_talent', name: 'FPT Young Talent', type: 'local_premium', locations: ['nationwide'], grades: '9-12', focus: ['Coding', 'AI', 'Competition'], rating: 4.5, priceRange: 'medium', scholarshipValue: 'high', desc: 'Đào tạo IOI, ICPC' }
+    ]
+  },
+
+  science: {
+    name: '🔬 Khoa học',
+    centers: [
+      { id: 'curious_minds', name: 'Curious Minds', type: 'international', locations: ['HCM'], grades: '4-12', focus: ['Science experiments', 'Critical thinking'], rating: 4.5, priceRange: 'high', scholarshipValue: 'high', desc: 'Khoa học thực nghiệm' },
+      { id: 'science_centre', name: 'Science Centre Vietnam', type: 'local', locations: ['HCM', 'HN'], grades: 'K-12', focus: ['Science fair', 'Projects'], rating: 4, priceRange: 'medium', scholarshipValue: 'medium', desc: 'Dự án khoa học' },
+      { id: 'hsg_khtn', name: 'Lớp HSG Lý/Hóa/Sinh', type: 'olympiad', locations: ['HCM', 'HN'], grades: '9-12', focus: ['Olympiad'], rating: 5, priceRange: 'varies', scholarshipValue: 'very_high', desc: 'Luyện thi Olympic KHTN' }
+    ]
+  },
+
+  soft_skills: {
+    name: '💼 Kỹ năng mềm',
+    centers: [
+      { id: 'vie_debate', name: 'VIE Debate', type: 'specialist', locations: ['HCM', 'HN', 'online'], grades: '6-12', focus: ['Debate', 'Public speaking', 'MUN'], rating: 4.5, priceRange: 'medium', scholarshipValue: 'very_high', desc: 'Tranh biện, MUN hàng đầu' },
+      { id: 'toastmasters_youth', name: 'Toastmasters Youth', type: 'international', locations: ['HCM', 'HN'], grades: '9-18', focus: ['Public speaking', 'Leadership'], rating: 4.5, priceRange: 'low', scholarshipValue: 'high', desc: 'Thuyết trình, lãnh đạo' },
+      { id: 'kyna', name: 'Kyna for Kids', type: 'local', locations: ['online'], grades: 'K-12', focus: ['Life skills', 'Communication'], rating: 4, priceRange: 'low', scholarshipValue: 'medium', desc: 'Kỹ năng sống online' },
+      { id: 'junior_achievement', name: 'Junior Achievement Vietnam', type: 'nonprofit', locations: ['HCM', 'HN'], grades: '9-12', focus: ['Business', 'Entrepreneurship', 'Financial literacy'], rating: 4.5, priceRange: 'free', scholarshipValue: 'high', desc: 'Kinh doanh, khởi nghiệp' }
+    ]
+  },
+
+  arts: {
+    name: '🎨 Nghệ thuật',
+    centers: [
+      { id: 'yamaha_music', name: 'Yamaha Music School', type: 'international', locations: ['nationwide'], grades: '4+', focus: ['Piano', 'Keyboard', 'Music theory'], rating: 4.5, priceRange: 'medium-high', scholarshipValue: 'medium', desc: 'Âm nhạc chuẩn quốc tế' },
+      { id: 'soul_music', name: 'Soul Music Academy', type: 'local_premium', locations: ['HCM', 'HN'], grades: '6+', focus: ['Instruments', 'Vocal'], rating: 4.5, priceRange: 'high', scholarshipValue: 'medium', desc: 'Đào tạo chuyên sâu' },
+      { id: 'fine_arts', name: 'Trung tâm Mỹ thuật (VFA, Art Studio)', type: 'local', locations: ['nationwide'], grades: 'K-18', focus: ['Drawing', 'Painting', 'Portfolio'], rating: 4, priceRange: 'medium', scholarshipValue: 'medium', desc: 'Mỹ thuật, xây portfolio' }
+    ]
+  }
+};
+
+// Self-Learning Apps & Platforms (by subject and stage)
+export const SELF_LEARNING_APPS = {
+  english: {
+    name: '🌍 Tiếng Anh',
+    apps: [
+      // Premium
+      { id: 'elsa', name: 'ELSA Speak', type: 'app', platform: 'iOS/Android', grades: '1-12', focus: ['Pronunciation', 'Speaking'], pricing: 'freemium', scholarshipValue: 'high', desc: 'AI phát âm, made in VN' },
+      { id: 'duolingo', name: 'Duolingo', type: 'app', platform: 'all', grades: 'K-12', focus: ['Vocabulary', 'Grammar', 'Gamification'], pricing: 'freemium', scholarshipValue: 'medium', desc: 'Học qua game, phổ biến nhất' },
+      { id: 'cake', name: 'Cake - Learn English', type: 'app', platform: 'iOS/Android', grades: '6-12', focus: ['Listening', 'Speaking', 'Video'], pricing: 'freemium', scholarshipValue: 'medium', desc: 'Học qua video ngắn' },
+      // IELTS specific
+      { id: 'ielts_liz', name: 'IELTS Liz', type: 'website', platform: 'web', grades: '9-12', focus: ['IELTS all skills'], pricing: 'free', scholarshipValue: 'very_high', desc: 'Tài liệu IELTS miễn phí hàng đầu' },
+      { id: 'ielts_simon', name: 'IELTS Simon', type: 'website', platform: 'web', grades: '9-12', focus: ['IELTS Writing', 'Speaking'], pricing: 'free', scholarshipValue: 'very_high', desc: 'Writing band 9 samples' },
+      { id: 'road_to_ielts', name: 'Road to IELTS (British Council)', type: 'platform', platform: 'web', grades: '9-12', focus: ['IELTS preparation'], pricing: 'free-paid', scholarshipValue: 'very_high', desc: 'Luyện thi chính thức' },
+      // Reading
+      { id: 'epic', name: 'Epic! Kids Books', type: 'app', platform: 'iOS/Android', grades: 'K-6', focus: ['Reading', 'Vocabulary'], pricing: 'subscription', scholarshipValue: 'medium', desc: '40,000+ sách tiếng Anh' },
+      { id: 'newsela', name: 'Newsela', type: 'platform', platform: 'web', grades: '3-12', focus: ['Reading', 'Current events'], pricing: 'freemium', scholarshipValue: 'high', desc: 'Đọc tin tức theo level' }
+    ]
+  },
+
+  math: {
+    name: '🔢 Toán học',
+    apps: [
+      { id: 'khan_academy', name: 'Khan Academy', type: 'platform', platform: 'all', grades: 'K-12', focus: ['All math', 'Video lessons'], pricing: 'free', scholarshipValue: 'very_high', desc: 'Miễn phí, đầy đủ chương trình' },
+      { id: 'brilliant', name: 'Brilliant.org', type: 'platform', platform: 'all', grades: '6-12', focus: ['Problem solving', 'Logic', 'STEM'], pricing: 'subscription', scholarshipValue: 'very_high', desc: 'Tư duy giải quyết vấn đề' },
+      { id: 'photomath', name: 'Photomath', type: 'app', platform: 'iOS/Android', grades: '3-12', focus: ['Solving', 'Step-by-step'], pricing: 'freemium', scholarshipValue: 'medium', desc: 'Giải toán bằng camera' },
+      { id: 'ixl_math', name: 'IXL Math', type: 'platform', platform: 'web', grades: 'K-12', focus: ['Practice', 'Adaptive'], pricing: 'subscription', scholarshipValue: 'high', desc: 'Luyện tập adaptive' },
+      // Competition prep
+      { id: 'aops', name: 'Art of Problem Solving (AoPS)', type: 'platform', platform: 'web', grades: '5-12', focus: ['Olympiad', 'Competition math'], pricing: 'paid', scholarshipValue: 'very_high', desc: 'Tốt nhất cho thi Toán quốc tế' },
+      { id: 'mathcounts', name: 'MATHCOUNTS Trainer', type: 'app', platform: 'web', grades: '6-9', focus: ['Competition'], pricing: 'free', scholarshipValue: 'high', desc: 'Luyện đề thi' }
+    ]
+  },
+
+  coding: {
+    name: '💻 Lập trình',
+    apps: [
+      // For beginners (K-6)
+      { id: 'scratch', name: 'Scratch', type: 'platform', platform: 'web', grades: 'K-6', focus: ['Block coding', 'Logic'], pricing: 'free', scholarshipValue: 'medium', desc: 'MIT, nhập môn lập trình' },
+      { id: 'code_org', name: 'Code.org', type: 'platform', platform: 'web', grades: 'K-12', focus: ['CS fundamentals'], pricing: 'free', scholarshipValue: 'medium', desc: 'Hour of Code, cơ bản' },
+      // Intermediate (6-9)
+      { id: 'codecademy', name: 'Codecademy', type: 'platform', platform: 'web', grades: '6-12', focus: ['Python', 'Web', 'Data'], pricing: 'freemium', scholarshipValue: 'high', desc: 'Học ngôn ngữ lập trình' },
+      { id: 'replit', name: 'Replit', type: 'platform', platform: 'web', grades: '6-12', focus: ['Coding practice', 'Projects'], pricing: 'freemium', scholarshipValue: 'high', desc: 'Code online, dự án thực tế' },
+      // Competition (9-12)
+      { id: 'leetcode', name: 'LeetCode', type: 'platform', platform: 'web', grades: '9-12', focus: ['Algorithms', 'Interview prep'], pricing: 'freemium', scholarshipValue: 'very_high', desc: 'Luyện thuật toán' },
+      { id: 'codeforces', name: 'Codeforces', type: 'platform', platform: 'web', grades: '9-12', focus: ['Competitive programming'], pricing: 'free', scholarshipValue: 'very_high', desc: 'Thi đấu lập trình, IOI prep' },
+      { id: 'usaco_guide', name: 'USACO Guide', type: 'platform', platform: 'web', grades: '9-12', focus: ['USACO preparation'], pricing: 'free', scholarshipValue: 'very_high', desc: 'Chuẩn bị thi USACO' }
+    ]
+  },
+
+  science: {
+    name: '🔬 Khoa học',
+    apps: [
+      { id: 'khan_science', name: 'Khan Academy Science', type: 'platform', platform: 'all', grades: '6-12', focus: ['Physics', 'Chemistry', 'Biology'], pricing: 'free', scholarshipValue: 'high', desc: 'Video bài giảng miễn phí' },
+      { id: 'phet', name: 'PhET Simulations', type: 'platform', platform: 'web', grades: '3-12', focus: ['Interactive simulations'], pricing: 'free', scholarshipValue: 'high', desc: 'Mô phỏng thí nghiệm' },
+      { id: 'labxchange', name: 'LabXchange (Harvard)', type: 'platform', platform: 'web', grades: '9-12', focus: ['Virtual labs', 'Research'], pricing: 'free', scholarshipValue: 'very_high', desc: 'Lab ảo từ Harvard' },
+      { id: 'crash_course', name: 'CrashCourse (YouTube)', type: 'video', platform: 'YouTube', grades: '6-12', focus: ['All sciences'], pricing: 'free', scholarshipValue: 'medium', desc: 'Video ngắn, dễ hiểu' }
+    ]
+  },
+
+  soft_skills: {
+    name: '💼 Kỹ năng mềm',
+    apps: [
+      { id: 'coursera_leadership', name: 'Coursera - Leadership courses', type: 'platform', platform: 'web', grades: '9-12', focus: ['Leadership', 'Management'], pricing: 'freemium', scholarshipValue: 'high', desc: 'Khóa học từ ĐH hàng đầu' },
+      { id: 'linkedin_learning', name: 'LinkedIn Learning', type: 'platform', platform: 'all', grades: '9-12', focus: ['Professional skills'], pricing: 'subscription', scholarshipValue: 'medium', desc: 'Kỹ năng chuyên nghiệp' },
+      { id: 'ted_ed', name: 'TED-Ed', type: 'video', platform: 'web/YouTube', grades: '6-12', focus: ['Critical thinking', 'Ideas'], pricing: 'free', scholarshipValue: 'high', desc: 'Video học tập hay' },
+      { id: 'debate_app', name: 'Kialo Edu', type: 'platform', platform: 'web', grades: '6-12', focus: ['Critical thinking', 'Debate'], pricing: 'free', scholarshipValue: 'high', desc: 'Luyện tranh luận logic' }
+    ]
+  },
+
+  test_prep: {
+    name: '📝 Luyện thi chuẩn hóa',
+    apps: [
+      { id: 'khan_sat', name: 'Khan Academy SAT Prep', type: 'platform', platform: 'web', grades: '10-12', focus: ['SAT'], pricing: 'free', scholarshipValue: 'very_high', desc: 'Official SAT prep miễn phí' },
+      { id: 'magoosh', name: 'Magoosh', type: 'platform', platform: 'all', grades: '10-12', focus: ['SAT', 'GRE', 'IELTS'], pricing: 'subscription', scholarshipValue: 'very_high', desc: 'Video + practice tests' },
+      { id: 'testglider', name: 'TestGlider', type: 'platform', platform: 'web', grades: '10-12', focus: ['Digital SAT'], pricing: 'freemium', scholarshipValue: 'very_high', desc: 'Mock tests Digital SAT' }
+    ]
+  },
+
+  vietnamese: {
+    name: '📚 Học tập VN',
+    apps: [
+      { id: 'hocmai', name: 'Hocmai.vn', type: 'platform', platform: 'web', grades: '1-12', focus: ['All VN curriculum'], pricing: 'subscription', scholarshipValue: 'medium', desc: 'Học theo chương trình VN' },
+      { id: 'vietjack', name: 'VietJack', type: 'platform', platform: 'web', grades: '1-12', focus: ['Practice', 'Exams'], pricing: 'freemium', scholarshipValue: 'medium', desc: 'Đề thi, bài tập' },
+      { id: 'olm', name: 'OLM.vn', type: 'platform', platform: 'web', grades: '1-12', focus: ['Math', 'Exercises'], pricing: 'freemium', scholarshipValue: 'medium', desc: 'Toán online' },
+      { id: 'zalo_hoc', name: 'Zalo Học (Kiến Guru, Monkey)', type: 'app', platform: 'iOS/Android', grades: 'K-6', focus: ['Interactive learning'], pricing: 'subscription', scholarshipValue: 'medium', desc: 'Học tương tác cho trẻ nhỏ' }
+    ]
+  }
+};
+
+// Stage-based recommendations
+export const STAGE_RESOURCE_RECOMMENDATIONS = {
+  elementary: {
+    name: 'Tiểu học (Lớp 1-5)',
+    priority: ['foundation', 'interest', 'habits'],
+    recommended: {
+      english: ['duolingo', 'elsa', 'epic', 'popodoo'],
+      math: ['khan_academy', 'kumon_math', 'toan_tu_duy'],
+      coding: ['scratch', 'code_org'],
+      stem: ['lego_education', 'teky'],
+      reading: ['epic', 'vietjack']
+    },
+    goals: ['Build strong foundation', 'Develop love for learning', 'Good study habits']
+  },
+  middle: {
+    name: 'THCS (Lớp 6-9)',
+    priority: ['academic_excellence', 'competitions', 'english_proficiency'],
+    recommended: {
+      english: ['ila', 'vus', 'ielts_liz', 'cake'],
+      math: ['brilliant', 'aops', 'mathcounts'],
+      coding: ['codecademy', 'replit', 'teky'],
+      science: ['phet', 'khan_science'],
+      stem: ['teky', 'steam_for_vietnam', 'fpt_young_talent'],
+      soft_skills: ['vie_debate', 'ted_ed']
+    },
+    goals: ['IELTS 6.0+', 'Win competitions', 'Build portfolio', 'Identify spike']
+  },
+  high: {
+    name: 'THPT (Lớp 10-12)',
+    priority: ['scholarship_ready', 'test_scores', 'leadership', 'unique_story'],
+    recommended: {
+      english: ['british_council', 'ielts_fighter', 'road_to_ielts'],
+      math: ['aops', 'brilliant'],
+      coding: ['leetcode', 'codeforces', 'usaco_guide'],
+      science: ['labxchange', 'khan_science'],
+      test_prep: ['khan_sat', 'magoosh'],
+      soft_skills: ['vie_debate', 'coursera_leadership', 'junior_achievement']
+    },
+    goals: ['IELTS 7.5+', 'SAT 1400+', 'Major awards', 'Strong leadership evidence']
+  }
+};
+
 // Top 5 Australian universities requirements
-export const TOP_5_AUSTRALIA_UNIS = {
   melbourne: { name: 'University of Melbourne', ielts: 6.5, gpa: 'Top 10%', extras: 'Leadership, community service' },
   sydney: { name: 'University of Sydney', ielts: 6.5, gpa: 'Top 10%', extras: 'Academic achievements, extracurriculars' },
   unsw: { name: 'UNSW Sydney', ielts: 6.5, gpa: 'Top 15%', extras: 'STEM focus, innovation' },
@@ -927,6 +1132,9 @@ export default {
   ACHIEVEMENT_LEVELS,
   ACTIVITY_DEPTH,
   POPULAR_COMPETITIONS,
+  LEARNING_CENTERS,
+  SELF_LEARNING_APPS,
+  STAGE_RESOURCE_RECOMMENDATIONS,
   // Student Context
   createEmptyStudentContext,
   saveStudentContext,
