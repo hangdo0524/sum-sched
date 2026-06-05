@@ -68,13 +68,14 @@ function showPlanningModal() {
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'strategic-planning-modal';
-    modal.className = 'modal';
+    modal.className = 'planning-modal-overlay';
     document.body.appendChild(modal);
   }
   modal.style.display = 'flex';
   modal.innerHTML = `
-    <div class="modal-content modal-content--wide modal-content--tall">
-      <div class="modal-header">
+    <div class="planning-modal-backdrop" onclick="window.closeStrategicPlanning()"></div>
+    <div class="planning-modal-content">
+      <div class="planning-modal-header">
         <h3>🎯 Định Hướng Chiến Lược</h3>
         <div class="planning-steps" id="planning-steps">
           <span class="step active" data-step="1">1. Năng lực</span>
@@ -82,12 +83,12 @@ function showPlanningModal() {
           <span class="step" data-step="3">3. AI Phân tích</span>
           <span class="step" data-step="4">4. Lộ trình</span>
         </div>
-        <button class="modal-close" onclick="window.closeStrategicPlanning()">✕</button>
+        <button class="planning-modal-close" onclick="window.closeStrategicPlanning()">✕</button>
       </div>
-      <div class="modal-body modal-body--scroll" id="planning-body">
+      <div class="planning-modal-body" id="planning-body">
         <!-- Content rendered by renderPlanningStep -->
       </div>
-      <div class="modal-footer" id="planning-footer">
+      <div class="planning-modal-footer" id="planning-footer">
         <!-- Buttons rendered by renderPlanningStep -->
       </div>
     </div>
