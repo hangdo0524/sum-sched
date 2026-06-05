@@ -137,8 +137,13 @@ const subjectList = document.getElementById('subject-list');
 const reportChart = document.getElementById('report-chart');
 const currentWeekEl = document.getElementById('current-week');
 
-// Initialize
-document.addEventListener('DOMContentLoaded', init);
+// Initialize - handle case where DOMContentLoaded already fired (ES modules are deferred)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  // DOM already ready, call init immediately
+  init();
+}
 
 // Expose reset function globally for debugging
 window.resetApp = function() {
