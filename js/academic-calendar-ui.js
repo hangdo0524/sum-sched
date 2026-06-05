@@ -34,22 +34,34 @@ let wizardState = {
 
 /**
  * Show Academic Calendar Setup Wizard
+ * @param {string} userId
+ * @param {string} childId
+ * @param {string} childName
+ * @param {object} existingYear - Existing year data to edit
+ * @param {object} roadmapContext - Context from Strategic Planning roadmap
  */
-export function showAcademicCalendarWizard(userId, childId, childName, existingYear = null) {
+export function showAcademicCalendarWizard(userId, childId, childName, existingYear = null, roadmapContext = null) {
   // Reset wizard state
   wizardState = {
     step: 1,
     userId,
     childId,
     childName,
+    roadmapContext, // Store roadmap context for use in wizard
     yearData: existingYear || {
       startDate: '',
       endDate: '',
-      studentGrade: 1,
+      studentGrade: roadmapContext?.grade || 1,
       school: '',
       termsCount: 2,
       holidays: [],
-      events: []
+      events: [],
+      // Pre-fill from roadmap
+      focusSubjects: roadmapContext?.focusSubjects || [],
+      focusSkills: roadmapContext?.focusSkills || [],
+      activities: roadmapContext?.activities || [],
+      selectedPath: roadmapContext?.selectedPath || '',
+      ultimateGoal: roadmapContext?.ultimateGoal || ''
     },
     terms: []
   };
@@ -115,13 +127,36 @@ function renderWizardStep(step) {
 function renderWizardStep1() {
   const body = document.getElementById('wizard-body');
   const footer = document.getElementById('wizard-footer');
-  const { yearData, childName } = wizardState;
+  const { yearData, childName, roadmapContext } = wizardState;
 
   const level = getLevelFromGrade(yearData.studentGrade || 1);
   const startYear = yearData.startDate ? yearData.startDate.substring(0, 4) : new Date().getFullYear();
 
+  // Roadmap summary if available
+  const roadmapSummary = roadmapContext ? `
+    <div class="roadmap-context-box">
+      <div class="roadmap-context-header">
+        <span>🎯</span>
+        <strong>Từ Lộ trình Định hướng</strong>
+      </div>
+      <div class="roadmap-context-content">
+        ${roadmapContext.selectedPath ? `<div><strong>Lộ trình:</strong> ${roadmapContext.selectedPath}</div>` : ''}
+        ${roadmapContext.focusSubjects?.length ? `<div><strong>Môn tập trung:</strong> ${roadmapContext.focusSubjects.join(', ')}</div>` : ''}
+        ${roadmapContext.focusSkills?.length ? `<div><strong>Kỹ năng:</strong> ${roadmapContext.focusSkills.join(', ')}</div>` : ''}
+        ${roadmapContext.activities?.length ? `<div><strong>Hoạt động:</strong> ${roadmapContext.activities.join(', ')}</div>` : ''}
+      </div>
+    </div>
+  ` : `
+    <div class="no-roadmap-box">
+      <span>⚠️</span>
+      <span>Chưa có lộ trình định hướng. <a href="#" onclick="window.closeAcademicWizard(); setTimeout(() => document.querySelector('[data-view=strategy]').click(), 100);">Tạo lộ trình trước</a> để có gợi ý môn học phù hợp.</span>
+    </div>
+  `;
+
   body.innerHTML = `
     <div class="wizard-form">
+      ${roadmapSummary}
+
       <div class="form-section">
         <label>👧 Học sinh: <strong>${childName || 'Con'}</strong></label>
       </div>

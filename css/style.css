@@ -3198,6 +3198,50 @@ body {
   margin-right: var(--spacing-4);
 }
 
+/* Roadmap Context Box in Academic Wizard */
+.roadmap-context-box {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border: 2px solid #3b82f6;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-3);
+  margin-bottom: var(--spacing-4);
+}
+
+.roadmap-context-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-2);
+  color: #1d4ed8;
+}
+
+.roadmap-context-content {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-700);
+}
+
+.roadmap-context-content div {
+  margin-bottom: var(--spacing-1);
+}
+
+.no-roadmap-box {
+  background: #fef3c7;
+  border: 2px solid #f59e0b;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-3);
+  margin-bottom: var(--spacing-4);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--font-size-sm);
+  color: #92400e;
+}
+
+.no-roadmap-box a {
+  color: #b45309;
+  text-decoration: underline;
+}
+
 .wizard-form {
   padding: var(--spacing-2);
 }

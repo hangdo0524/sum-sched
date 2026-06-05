@@ -161,12 +161,36 @@ window.verifyFamilySetup = async function() {
 };
 
 // Academic Calendar global handlers
-window.showAcademicWizard = function() {
+window.showAcademicWizard = async function() {
   const childId = getCurrentUser();
   const family = currentFamily;
-  const childName = family?.children?.[childId]?.name || 'Con';
-  showAcademicCalendarWizard(authUserId, childId, childName);
+  const child = family?.children?.[childId];
+  const childName = child?.name || 'Con';
+  const childGrade = child?.grade || 4;
+
+  // Get roadmap from Strategic Planning to pre-fill data
+  const roadmap = await getRoadmap(authUserId, childId);
+
+  // Prepare context from roadmap
+  const roadmapContext = roadmap ? {
+    grade: roadmap.assessment?.currentGrade || childGrade,
+    focusSubjects: getCurrentPhaseFocus(roadmap, childGrade)?.subjects || [],
+    focusSkills: getCurrentPhaseFocus(roadmap, childGrade)?.skills || [],
+    activities: getCurrentPhaseFocus(roadmap, childGrade)?.activities || [],
+    selectedPath: roadmap.selectedPathName || '',
+    ultimateGoal: roadmap.ultimateGoal || ''
+  } : null;
+
+  showAcademicCalendarWizard(authUserId, childId, childName, null, roadmapContext);
 };
+
+// Helper to get current phase focus from roadmap
+function getCurrentPhaseFocus(roadmap, grade) {
+  if (!roadmap?.phases) return null;
+  if (grade <= 5) return roadmap.phases.elementary;
+  if (grade <= 9) return roadmap.phases.middle;
+  return roadmap.phases.high;
+}
 
 window.showCalendarOverview = function() {
   const childId = getCurrentUser();
