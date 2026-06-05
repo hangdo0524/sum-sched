@@ -82,6 +82,8 @@
 
       <nav class="header__nav">
         <button class="nav-btn" data-view="strategy">🎯 Định hướng</button>
+        <button class="nav-btn" data-view="curriculum">📖 Giáo trình</button>
+        <button class="nav-btn" data-view="tutor">🤖 Gia sư</button>
         <button class="nav-btn" data-view="academic">📅 Năm học</button>
         <button class="nav-btn" data-view="subjects">📚 Môn học</button>
         <button class="nav-btn nav-btn--active" data-view="schedule">📆 Lịch học</button>
@@ -107,6 +109,10 @@
           <button class="user-dropdown__add" id="btn-add-user">
             <span>👶</span> Thêm bé
           </button>
+          <button class="user-dropdown__item" id="btn-ai-settings" onclick="window.showAISettings()">
+            <span>🤖</span> Cài đặt AI
+          </button>
+          <div class="user-dropdown__divider"></div>
           <button class="user-dropdown__logout" id="btn-logout">
             <span>🚪</span> Đăng xuất
           </button>
@@ -263,6 +269,78 @@
               <div class="flow-step">
                 <span class="step-num">4</span>
                 <span class="step-text">Lộ trình 12 năm</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Curriculum View -->
+      <section class="view" id="view-curriculum">
+        <div id="curriculum-view">
+          <!-- Content rendered by JS -->
+          <div class="empty-state">
+            <div class="empty-icon">📖</div>
+            <h3>Giáo Trình AI</h3>
+            <p>AI tự động tạo giáo trình chi tiết từ lộ trình và chương trình chuẩn</p>
+            <button class="btn btn-primary btn-lg" onclick="window.showCurriculumPanel()">
+              📚 Tạo giáo trình
+            </button>
+            <div class="strategy-flow">
+              <div class="flow-step">
+                <span class="step-num">1</span>
+                <span class="step-text">Chọn môn học</span>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-step">
+                <span class="step-num">2</span>
+                <span class="step-text">Chọn nguồn</span>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-step">
+                <span class="step-num">3</span>
+                <span class="step-text">AI tạo giáo trình</span>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-step">
+                <span class="step-num">4</span>
+                <span class="step-text">Xếp lịch học</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- AI Tutor View -->
+      <section class="view" id="view-tutor">
+        <div id="tutor-view">
+          <!-- Content rendered by JS -->
+          <div class="empty-state">
+            <div class="empty-icon">🤖</div>
+            <h3>Gia Sư AI</h3>
+            <p>Gia sư AI thông minh, đồng hành cùng con trong mọi môn học</p>
+            <button class="btn btn-primary btn-lg" onclick="window.showTutorPanel()">
+              🎓 Bắt đầu học
+            </button>
+            <div class="strategy-flow">
+              <div class="flow-step">
+                <span class="step-num">1</span>
+                <span class="step-text">Chọn môn học</span>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-step">
+                <span class="step-num">2</span>
+                <span class="step-text">Chat với gia sư</span>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-step">
+                <span class="step-num">3</span>
+                <span class="step-text">Tự động ghi nhớ</span>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-step">
+                <span class="step-num">4</span>
+                <span class="step-text">Ôn tập thông minh</span>
               </div>
             </div>
           </div>

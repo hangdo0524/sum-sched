@@ -1,0 +1,542 @@
+{
+  "_metadata": {
+    "version": "1.0.0",
+    "lastUpdated": "2026-06-05",
+    "updatedBy": "system",
+    "notes": "Database trường học mục tiêu theo từng cấp"
+  },
+
+  "elementary": {
+    "name": "Tiểu học (Lớp 1-5)",
+    "schools": [
+      {
+        "id": "vinschool",
+        "name": "Vinschool",
+        "type": "private_premium",
+        "locations": ["HCM", "HN", "HP", "DN", "nationwide"],
+        "curriculum": ["bilingual_cambridge", "vn_gdpt"],
+        "languages": ["Vietnamese", "English"],
+        "scale": { "students": 50000, "campuses": 40 },
+        "tuition": { "range": "150-250M/year", "currency": "VND" },
+        "pros": [
+          "Cơ sở vật chất hiện đại",
+          "Chương trình Cambridge chuẩn",
+          "Nhiều hoạt động ngoại khóa",
+          "Hệ thống toàn quốc"
+        ],
+        "cons": [
+          "Học phí cao",
+          "Áp lực học tập",
+          "Lớp đông"
+        ],
+        "admission": {
+          "requirements": ["Phỏng vấn", "Test đầu vào tiếng Anh/Toán"],
+          "deadline": "March-May",
+          "acceptance_rate": "70%"
+        },
+        "scholarships": [
+          {
+            "name": "Học bổng Vinschool",
+            "coverage": "20-100%",
+            "criteria": ["Học lực giỏi", "Năng khiếu đặc biệt", "Hoàn cảnh khó khăn"],
+            "deadline": "April"
+          }
+        ],
+        "alumni_outcomes": {
+          "top_high_schools": "80%",
+          "international_schools": "30%"
+        },
+        "contact": {
+          "website": "https://vinschool.edu.vn",
+          "hotline": "1900 6083"
+        }
+      },
+      {
+        "id": "ais",
+        "name": "Australian International School (AIS)",
+        "type": "international",
+        "locations": ["HCM"],
+        "curriculum": ["ib_pyp", "cambridge_primary"],
+        "languages": ["English", "Vietnamese"],
+        "scale": { "students": 2000, "campuses": 3 },
+        "tuition": { "range": "350-500M/year", "currency": "VND" },
+        "pros": [
+          "Chương trình IB chuẩn quốc tế",
+          "Giáo viên native speakers",
+          "Pathway thẳng du học Úc",
+          "Môi trường đa văn hóa"
+        ],
+        "cons": [
+          "Học phí rất cao",
+          "Tiếng Việt có thể yếu",
+          "Chỉ có tại HCM"
+        ],
+        "admission": {
+          "requirements": ["English proficiency test", "Interview", "School records"],
+          "deadline": "Year-round",
+          "acceptance_rate": "60%"
+        },
+        "scholarships": [
+          {
+            "name": "AIS Academic Excellence",
+            "coverage": "25-50%",
+            "criteria": ["Academic excellence", "Leadership"],
+            "deadline": "February"
+          }
+        ],
+        "alumni_outcomes": {
+          "australia_unis": "60%",
+          "top_unis_worldwide": "40%"
+        },
+        "contact": {
+          "website": "https://www.aisvietnam.com",
+          "hotline": "028 3742 4040"
+        }
+      },
+      {
+        "id": "bvis",
+        "name": "British Vietnamese International School (BVIS)",
+        "type": "international",
+        "locations": ["HCM", "HN"],
+        "curriculum": ["cambridge_primary", "bilingual_cambridge"],
+        "languages": ["English", "Vietnamese"],
+        "scale": { "students": 1500, "campuses": 2 },
+        "tuition": { "range": "280-450M/year", "currency": "VND" },
+        "pros": [
+          "Chương trình Cambridge chuẩn UK",
+          "Cân bằng Việt-Anh tốt",
+          "Giáo viên chất lượng",
+          "Nord Anglia network"
+        ],
+        "cons": [
+          "Học phí cao",
+          "Cạnh tranh đầu vào"
+        ],
+        "admission": {
+          "requirements": ["Assessment test", "Interview"],
+          "deadline": "October-March",
+          "acceptance_rate": "65%"
+        },
+        "scholarships": [
+          {
+            "name": "BVIS Scholarship",
+            "coverage": "10-50%",
+            "criteria": ["Academic", "Performing Arts", "Sports"],
+            "deadline": "January"
+          }
+        ],
+        "contact": {
+          "website": "https://www.bvisvietnam.com",
+          "hotline": "028 3898 9100"
+        }
+      },
+      {
+        "id": "vas",
+        "name": "Vietnam Australia School (VAS)",
+        "type": "bilingual",
+        "locations": ["HCM"],
+        "curriculum": ["bilingual_cambridge", "vn_gdpt"],
+        "languages": ["Vietnamese", "English"],
+        "scale": { "students": 8000, "campuses": 8 },
+        "tuition": { "range": "120-180M/year", "currency": "VND" },
+        "pros": [
+          "Song ngữ cân bằng",
+          "Học phí hợp lý hơn trường quốc tế",
+          "Nhiều campus tiện lợi",
+          "Chương trình Cambridge"
+        ],
+        "cons": [
+          "Chất lượng không đồng đều giữa các campus",
+          "Lớp có thể đông"
+        ],
+        "admission": {
+          "requirements": ["Đánh giá năng lực", "Phỏng vấn"],
+          "deadline": "March-June",
+          "acceptance_rate": "75%"
+        },
+        "scholarships": [
+          {
+            "name": "VAS Scholarship",
+            "coverage": "20-100%",
+            "criteria": ["Học giỏi", "Tài năng đặc biệt"],
+            "deadline": "April"
+          }
+        ],
+        "contact": {
+          "website": "https://vas.edu.vn",
+          "hotline": "028 5413 1313"
+        }
+      }
+    ]
+  },
+
+  "middle": {
+    "name": "THCS (Lớp 6-9)",
+    "schools": [
+      {
+        "id": "chuyen_tran_dai_nghia",
+        "name": "THCS Chuyên Trần Đại Nghĩa",
+        "type": "specialized_public",
+        "locations": ["HCM"],
+        "curriculum": ["vn_gdpt"],
+        "languages": ["Vietnamese"],
+        "scale": { "students": 1500, "campuses": 1 },
+        "tuition": { "range": "Free (công lập)", "currency": "VND" },
+        "pros": [
+          "Trường chuyên hàng đầu phía Nam",
+          "Miễn học phí",
+          "Học sinh giỏi, môi trường cạnh tranh lành mạnh",
+          "Tỷ lệ đậu chuyên THPT cao"
+        ],
+        "cons": [
+          "Thi tuyển rất khó",
+          "Áp lực học tập cao",
+          "Cơ sở vật chất cũ"
+        ],
+        "admission": {
+          "requirements": ["Thi tuyển Toán + Tiếng Việt", "Học bạ xuất sắc"],
+          "deadline": "June",
+          "acceptance_rate": "5-10%",
+          "exam_subjects": ["Toán", "Tiếng Việt"]
+        },
+        "scholarships": [
+          {
+            "name": "Không có (miễn học phí)",
+            "coverage": "100%",
+            "criteria": ["Đậu thi tuyển"]
+          }
+        ],
+        "alumni_outcomes": {
+          "specialized_high_schools": "90%",
+          "national_olympiad": "50%"
+        },
+        "contact": {
+          "website": "https://trandainghia.hcm.edu.vn"
+        }
+      },
+      {
+        "id": "ams_hn",
+        "name": "THCS Chuyên Hà Nội - Amsterdam",
+        "type": "specialized_public",
+        "locations": ["HN"],
+        "curriculum": ["vn_gdpt"],
+        "languages": ["Vietnamese", "English"],
+        "scale": { "students": 2000, "campuses": 1 },
+        "tuition": { "range": "Free (công lập)", "currency": "VND" },
+        "pros": [
+          "Trường chuyên số 1 Hà Nội",
+          "Môi trường học thuật xuất sắc",
+          "Nhiều cựu học sinh thành đạt",
+          "Hoạt động ngoại khóa phong phú"
+        ],
+        "cons": [
+          "Cạnh tranh cực kỳ cao",
+          "Áp lực lớn"
+        ],
+        "admission": {
+          "requirements": ["Thi tuyển", "Học bạ giỏi/xuất sắc"],
+          "deadline": "June",
+          "acceptance_rate": "3-5%"
+        },
+        "alumni_outcomes": {
+          "international_olympiad": "30%",
+          "top_universities": "95%"
+        },
+        "contact": {
+          "website": "https://hn-ams.edu.vn"
+        }
+      },
+      {
+        "id": "ssis",
+        "name": "Saigon South International School (SSIS)",
+        "type": "international",
+        "locations": ["HCM"],
+        "curriculum": ["american_common", "ib_myp"],
+        "languages": ["English"],
+        "scale": { "students": 1200, "campuses": 1 },
+        "tuition": { "range": "500-700M/year", "currency": "VND" },
+        "pros": [
+          "Chương trình Mỹ + IB",
+          "100% giáo viên native",
+          "Cơ sở vật chất hàng đầu",
+          "Kết nối alumni mạnh"
+        ],
+        "cons": [
+          "Học phí rất cao",
+          "Tiếng Việt yếu"
+        ],
+        "admission": {
+          "requirements": ["English proficiency", "Academic records", "Interview"],
+          "deadline": "Rolling",
+          "acceptance_rate": "50%"
+        },
+        "scholarships": [
+          {
+            "name": "SSIS Merit Scholarship",
+            "coverage": "10-50%",
+            "criteria": ["Academic excellence", "Special talents"]
+          }
+        ],
+        "alumni_outcomes": {
+          "us_top_universities": "40%",
+          "ivy_league": "10%"
+        },
+        "contact": {
+          "website": "https://www.ssis.edu.vn"
+        }
+      }
+    ]
+  },
+
+  "high": {
+    "name": "THPT (Lớp 10-12)",
+    "schools": [
+      {
+        "id": "ptnk",
+        "name": "THPT Chuyên ĐHQG (Phổ Thông Năng Khiếu)",
+        "type": "specialized_public",
+        "locations": ["HCM"],
+        "curriculum": ["vn_gdpt"],
+        "languages": ["Vietnamese", "English"],
+        "scale": { "students": 2500, "campuses": 1 },
+        "tuition": { "range": "Free + nominal fees", "currency": "VND" },
+        "pros": [
+          "Trường chuyên hàng đầu VN",
+          "Tỷ lệ đậu ĐH top rất cao",
+          "Nhiều giải Olympic quốc tế",
+          "Network alumni mạnh"
+        ],
+        "cons": [
+          "Thi tuyển cực kỳ khó",
+          "Áp lực học tập rất cao",
+          "Ít thời gian cho hoạt động ngoại khóa"
+        ],
+        "admission": {
+          "requirements": ["Thi tuyển 3 môn", "Học bạ THCS giỏi/xuất sắc"],
+          "deadline": "June",
+          "acceptance_rate": "5%",
+          "exam_subjects": ["Toán", "Văn", "Anh/Lý/Hóa/Sinh"]
+        },
+        "scholarships": [
+          {
+            "name": "Học bổng tài năng",
+            "coverage": "Full support",
+            "criteria": ["Top đầu vào", "HSG Quốc gia"]
+          }
+        ],
+        "alumni_outcomes": {
+          "international_olympiad_medals": "50+ yearly",
+          "study_abroad_scholarship": "30%",
+          "top_vn_universities": "95%"
+        },
+        "contact": {
+          "website": "https://ptnk.edu.vn",
+          "admission_hotline": "028 3724 2181"
+        }
+      },
+      {
+        "id": "lhp",
+        "name": "THPT Chuyên Lê Hồng Phong",
+        "type": "specialized_public",
+        "locations": ["HCM"],
+        "curriculum": ["vn_gdpt"],
+        "languages": ["Vietnamese"],
+        "scale": { "students": 2000, "campuses": 1 },
+        "tuition": { "range": "Free", "currency": "VND" },
+        "pros": [
+          "Truyền thống lâu đời",
+          "Nhiều HSG Quốc gia",
+          "Môi trường học tập tốt"
+        ],
+        "cons": [
+          "Cơ sở vật chất cũ",
+          "Thiếu chương trình quốc tế"
+        ],
+        "admission": {
+          "requirements": ["Thi tuyển chuyên"],
+          "deadline": "June",
+          "acceptance_rate": "10%"
+        },
+        "contact": {
+          "website": "https://thptchuyenlhp.edu.vn"
+        }
+      },
+      {
+        "id": "uwcsea_vn",
+        "name": "UWC Vietnam (pending)",
+        "type": "international",
+        "locations": ["HCM (planned)"],
+        "curriculum": ["ib_dp"],
+        "languages": ["English"],
+        "tuition": { "range": "600-800M/year", "currency": "VND" },
+        "pros": [
+          "UWC network toàn cầu",
+          "Full IB Diploma",
+          "100% học bổng có sẵn",
+          "Pathway du học xuất sắc"
+        ],
+        "cons": [
+          "Số lượng rất hạn chế",
+          "Cạnh tranh cực cao"
+        ],
+        "scholarships": [
+          {
+            "name": "UWC National Committee Scholarship",
+            "coverage": "Full tuition + living",
+            "criteria": ["Academic excellence", "Leadership", "Service commitment"],
+            "deadline": "October"
+          }
+        ],
+        "alumni_outcomes": {
+          "top_100_world_unis": "90%"
+        },
+        "contact": {
+          "website": "https://uwcvietnam.org"
+        }
+      }
+    ]
+  },
+
+  "australia_universities": {
+    "name": "Đại học Úc - Top 5",
+    "schools": [
+      {
+        "id": "unimelb",
+        "name": "University of Melbourne",
+        "ranking": { "world": 14, "australia": 1 },
+        "location": "Melbourne, VIC",
+        "popular_majors": ["Medicine", "Law", "Engineering", "Business", "Arts"],
+        "admission": {
+          "ielts_min": 6.5,
+          "ielts_recommended": 7.0,
+          "gpa_min": "85%",
+          "gpa_competitive": "90%+",
+          "sat_optional": true,
+          "sat_recommended": 1400
+        },
+        "tuition": { "range": "45,000-75,000 AUD/year" },
+        "scholarships": [
+          {
+            "name": "Melbourne International Undergraduate Scholarship",
+            "coverage": "50-100% tuition",
+            "criteria": ["Academic excellence", "Top 3% of cohort"],
+            "deadline": "October 31"
+          },
+          {
+            "name": "Australia Awards (Government)",
+            "coverage": "Full tuition + living + airfare",
+            "criteria": ["Leadership", "Development impact"],
+            "deadline": "April"
+          }
+        ],
+        "vietnamese_students": 3000,
+        "contact": {
+          "website": "https://www.unimelb.edu.au",
+          "vietnam_rep": "IDP, ACET"
+        }
+      },
+      {
+        "id": "usyd",
+        "name": "University of Sydney",
+        "ranking": { "world": 19, "australia": 2 },
+        "location": "Sydney, NSW",
+        "popular_majors": ["Medicine", "Engineering", "Business", "Law", "Science"],
+        "admission": {
+          "ielts_min": 6.5,
+          "ielts_recommended": 7.0,
+          "gpa_min": "83%",
+          "gpa_competitive": "88%+"
+        },
+        "tuition": { "range": "44,000-70,000 AUD/year" },
+        "scholarships": [
+          {
+            "name": "Sydney Scholars Awards",
+            "coverage": "$6,000-40,000/year",
+            "criteria": ["Top academic results", "Leadership"]
+          },
+          {
+            "name": "Vice-Chancellor's International Scholarships",
+            "coverage": "Full tuition",
+            "criteria": ["Exceptional academic + extracurricular"]
+          }
+        ],
+        "contact": {
+          "website": "https://www.sydney.edu.au"
+        }
+      },
+      {
+        "id": "unsw",
+        "name": "UNSW Sydney",
+        "ranking": { "world": 19, "australia": 2 },
+        "location": "Sydney, NSW",
+        "popular_majors": ["Engineering", "Business", "Science", "IT", "Design"],
+        "admission": {
+          "ielts_min": 6.5,
+          "gpa_min": "80%",
+          "gpa_competitive": "85%+"
+        },
+        "tuition": { "range": "42,000-65,000 AUD/year" },
+        "scholarships": [
+          {
+            "name": "UNSW International Scientia Coursework Scholarship",
+            "coverage": "$20,000/year",
+            "criteria": ["Academic merit"]
+          }
+        ],
+        "contact": {
+          "website": "https://www.unsw.edu.au"
+        }
+      },
+      {
+        "id": "anu",
+        "name": "Australian National University",
+        "ranking": { "world": 34, "australia": 4 },
+        "location": "Canberra, ACT",
+        "popular_majors": ["Politics", "Science", "Engineering", "Asian Studies"],
+        "admission": {
+          "ielts_min": 6.5,
+          "gpa_min": "80%"
+        },
+        "tuition": { "range": "40,000-55,000 AUD/year" },
+        "scholarships": [
+          {
+            "name": "ANU Chancellor's International Scholarship",
+            "coverage": "$25,000/year",
+            "criteria": ["Outstanding academic achievement"]
+          }
+        ],
+        "contact": {
+          "website": "https://www.anu.edu.au"
+        }
+      },
+      {
+        "id": "monash",
+        "name": "Monash University",
+        "ranking": { "world": 42, "australia": 5 },
+        "location": "Melbourne, VIC",
+        "popular_majors": ["Pharmacy", "Engineering", "Business", "IT", "Medicine"],
+        "admission": {
+          "ielts_min": 6.5,
+          "gpa_min": "75%",
+          "gpa_competitive": "83%+"
+        },
+        "tuition": { "range": "38,000-60,000 AUD/year" },
+        "scholarships": [
+          {
+            "name": "Monash International Leadership Scholarship",
+            "coverage": "$10,000/year",
+            "criteria": ["Leadership", "Community involvement"]
+          },
+          {
+            "name": "Monash International Merit Scholarship",
+            "coverage": "$10,000 one-time",
+            "criteria": ["Academic excellence"]
+          }
+        ],
+        "contact": {
+          "website": "https://www.monash.edu"
+        }
+      }
+    ]
+  }
+}

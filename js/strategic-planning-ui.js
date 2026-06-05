@@ -31,7 +31,14 @@ import {
   getAIRecommendation,
   saveRoadmap,
   getRoadmap,
-  generateRoadmapFromRecommendation
+  generateRoadmapFromRecommendation,
+  // Dynamic data loading
+  fetchSchoolsData,
+  getSchoolsByLevel,
+  searchSchools,
+  refreshAllExternalData,
+  getResourcesForStage,
+  getDataStatus
 } from './strategic-planning.js';
 
 // State
@@ -234,9 +241,14 @@ function renderStep1_AcademicAbilities() {
         <div class="form-row">
           <div class="form-group">
             <label>Tên trường đang học</label>
-            <input type="text" id="school-name-basic"
-                   value="${basicInfo.schoolName || ''}"
-                   placeholder="VD: THCS Nguyễn Du, TH Vinschool..." />
+            <div class="input-with-button">
+              <input type="text" id="school-name-basic"
+                     value="${basicInfo.schoolName || ''}"
+                     placeholder="VD: THCS Nguyễn Du, TH Vinschool..." />
+              <button type="button" class="btn-browse-school" onclick="window.openSchoolBrowser('current')">
+                📚 Tìm trường
+              </button>
+            </div>
           </div>
           <div class="form-group">
             <label>Loại trường</label>
@@ -1497,6 +1509,227 @@ window.saveAndApplyRoadmap = async function() {
 function parseCommaSeparated(str) {
   if (!str) return [];
   return str.split(',').map(s => s.trim()).filter(s => s.length > 0);
+}
+
+// ============================================
+// SCHOOL BROWSER
+// ============================================
+
+let schoolBrowserTarget = null;
+
+window.openSchoolBrowser = async function(targetInput = 'current') {
+  schoolBrowserTarget = targetInput;
+
+  const modal = document.createElement('div');
+  modal.id = 'school-browser-modal';
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal-content school-browser">
+      <div class="modal-header">
+        <h3>📚 Kho dữ liệu trường học</h3>
+        <button class="btn-close" onclick="window.closeSchoolBrowser()">&times;</button>
+      </div>
+
+      <div class="browser-filters">
+        <select id="school-level-filter" onchange="window.filterSchools()">
+          <option value="">-- Tất cả cấp --</option>
+          <option value="elementary">Tiểu học</option>
+          <option value="middle">THCS</option>
+          <option value="high">THPT</option>
+          <option value="australia">ĐH Úc</option>
+        </select>
+
+        <select id="school-curriculum-filter" onchange="window.filterSchools()">
+          <option value="">-- Tất cả chương trình --</option>
+          ${Object.entries(CURRICULUM_TYPES).map(([key, curr]) =>
+            `<option value="${key}">${curr.name}</option>`
+          ).join('')}
+        </select>
+
+        <input type="text" id="school-search" placeholder="Tìm theo tên..."
+               oninput="window.filterSchools()" />
+
+        <button class="btn-refresh" onclick="window.refreshSchoolData()">🔄 Cập nhật dữ liệu</button>
+      </div>
+
+      <div class="data-status" id="school-data-status"></div>
+
+      <div class="school-list" id="school-list">
+        <div class="loading">Đang tải...</div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  await loadSchoolList();
+  updateDataStatusDisplay();
+};
+
+window.closeSchoolBrowser = function() {
+  const modal = document.getElementById('school-browser-modal');
+  if (modal) modal.remove();
+};
+
+async function loadSchoolList(filters = {}) {
+  const listEl = document.getElementById('school-list');
+  if (!listEl) return;
+
+  listEl.innerHTML = '<div class="loading">Đang tải...</div>';
+
+  try {
+    const schools = await searchSchools(filters);
+
+    if (!schools || schools.length === 0) {
+      listEl.innerHTML = '<div class="no-results">Không tìm thấy trường nào</div>';
+      return;
+    }
+
+    listEl.innerHTML = schools.map(school => {
+      const curriculums = Array.isArray(school.curriculum) ? school.curriculum : [school.curriculum];
+      const curriculumNames = curriculums.map(c => CURRICULUM_TYPES[c]?.name || c).join(', ');
+      const scale = typeof school.scale === 'object' ? `${school.scale.students || '?'} HS` : (school.scale || 'N/A');
+      const tuition = typeof school.tuition === 'object' ? school.tuition.range : (school.tuition || 'N/A');
+
+      return `
+      <div class="school-card" onclick="window.selectSchool('${school.id}')">
+        <div class="school-header">
+          <h4>${school.name}</h4>
+          <span class="school-level">${getLevelLabel(school.level)}</span>
+        </div>
+        <div class="school-meta">
+          <span>📖 ${curriculumNames}</span>
+          <span>👥 ${scale}</span>
+          <span>💰 ${tuition}</span>
+        </div>
+        <p class="school-desc">${school.description || ''}</p>
+        ${school.pros ? `<div class="school-pros">✅ ${school.pros.slice(0, 2).join(', ')}</div>` : ''}
+        ${school.scholarships?.length ? `<div class="school-scholarship">🎓 Có ${school.scholarships.length} chương trình học bổng</div>` : ''}
+      </div>
+    `;}).join('');
+  } catch (error) {
+    console.error('Error loading schools:', error);
+    listEl.innerHTML = `<div class="error">Lỗi tải dữ liệu: ${error.message}</div>`;
+  }
+}
+
+function getLevelLabel(level) {
+  const labels = {
+    elementary: 'Tiểu học',
+    middle: 'THCS',
+    high: 'THPT',
+    australia: 'ĐH Úc'
+  };
+  return labels[level] || level;
+}
+
+window.filterSchools = async function() {
+  const level = document.getElementById('school-level-filter')?.value;
+  const curriculum = document.getElementById('school-curriculum-filter')?.value;
+  const keyword = document.getElementById('school-search')?.value;
+
+  await loadSchoolList({ level, curriculum, keyword });
+};
+
+window.selectSchool = async function(schoolId) {
+  const schools = await searchSchools({});
+  const school = schools.find(s => s.id === schoolId);
+
+  if (!school) return;
+
+  if (schoolBrowserTarget === 'current') {
+    const nameInput = document.getElementById('school-name-basic');
+    const typeSelect = document.getElementById('school-type-basic');
+
+    if (nameInput) nameInput.value = school.name;
+    if (typeSelect) {
+      const mappedType = mapSchoolType(school);
+      typeSelect.value = mappedType;
+    }
+
+    // Handle curriculum as array - use first one
+    const curriculums = Array.isArray(school.curriculum) ? school.curriculum : [school.curriculum];
+    const primaryCurriculum = curriculums[0];
+    if (primaryCurriculum) {
+      const currRadio = document.querySelector(`input[name="curriculum"][value="${primaryCurriculum}"]`);
+      if (currRadio) {
+        currRadio.checked = true;
+        window.updateCurriculum(primaryCurriculum);
+      }
+    }
+  }
+
+  window.closeSchoolBrowser();
+  showSchoolDetailToast(school);
+};
+
+function mapSchoolType(school) {
+  const curriculums = Array.isArray(school.curriculum) ? school.curriculum : [school.curriculum || ''];
+  const currStr = curriculums.join(' ');
+
+  if (currStr.includes('cambridge') || currStr.includes('ib') ||
+      currStr.includes('oxford') || currStr.includes('american') ||
+      school.type === 'international') {
+    return 'international';
+  }
+  if (school.name?.includes('Chuyên') || school.name?.includes('PTNK') ||
+      school.type === 'specialized') {
+    return 'specialized';
+  }
+  if (school.name?.includes('Vinschool') || school.name?.includes('VAS') ||
+      school.name?.includes('TH School') || school.type?.includes('private')) {
+    return 'private';
+  }
+  return 'public';
+}
+
+function showSchoolDetailToast(school) {
+  const toast = document.createElement('div');
+  toast.className = 'school-toast';
+
+  let admissionStr = '';
+  if (school.admission) {
+    if (typeof school.admission === 'object') {
+      admissionStr = school.admission.requirements?.join(', ') || '';
+      if (school.admission.deadline) admissionStr += ` (${school.admission.deadline})`;
+    } else {
+      admissionStr = school.admission;
+    }
+  }
+
+  toast.innerHTML = `
+    <strong>✅ Đã chọn: ${school.name}</strong>
+    <p>${school.description || ''}</p>
+    ${admissionStr ? `<small>📝 Đầu vào: ${admissionStr}</small>` : ''}
+  `;
+  document.body.appendChild(toast);
+
+  setTimeout(() => toast.remove(), 4000);
+}
+
+window.refreshSchoolData = async function() {
+  const statusEl = document.getElementById('school-data-status');
+  if (statusEl) statusEl.innerHTML = '<span class="refreshing">🔄 Đang cập nhật...</span>';
+
+  try {
+    await refreshAllExternalData();
+    await loadSchoolList();
+    updateDataStatusDisplay();
+    alert('✅ Đã cập nhật dữ liệu trường học thành công!');
+  } catch (error) {
+    alert('❌ Lỗi cập nhật: ' + error.message);
+  }
+};
+
+function updateDataStatusDisplay() {
+  const statusEl = document.getElementById('school-data-status');
+  if (!statusEl) return;
+
+  const status = getDataStatus();
+
+  statusEl.innerHTML = `
+    <span>📊 ${status.schools.count} trường trong kho</span>
+    <span>⏱️ Cập nhật: ${status.schools.lastUpdate ? new Date(status.schools.lastUpdate).toLocaleString('vi-VN') : 'Chưa load'}</span>
+  `;
 }
 
 // ============================================

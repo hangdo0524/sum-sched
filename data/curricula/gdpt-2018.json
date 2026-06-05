@@ -1,0 +1,172 @@
+{
+  "_metadata": {
+    "id": "gdpt_2018",
+    "name": "Chương trình GDPT 2018",
+    "country": "Vietnam",
+    "version": "1.0.0",
+    "lastUpdated": "2026-06-05"
+  },
+
+  "elementary": {
+    "grades": [1, 2, 3, 4, 5],
+    "subjects": {
+      "math": {
+        "name": "Toán",
+        "weeklyHours": 5,
+        "outline": {
+          "1": ["Số học 0-100", "Phép cộng trừ cơ bản", "Hình học đơn giản", "Đo lường cơ bản"],
+          "2": ["Số học 0-1000", "Phép nhân chia cơ bản", "Hình học phẳng", "Đo độ dài, khối lượng"],
+          "3": ["Số có nhiều chữ số", "Nhân chia nâng cao", "Chu vi, diện tích", "Phân số đơn giản"],
+          "4": ["Số thập phân", "Phân số", "Hình học không gian đơn giản", "Thống kê cơ bản"],
+          "5": ["Số thập phân nâng cao", "Tỉ số, tỉ lệ", "Hình học tổng hợp", "Giải toán có lời văn"]
+        }
+      },
+      "vietnamese": {
+        "name": "Tiếng Việt",
+        "weeklyHours": 7,
+        "outline": {
+          "1": ["Học vần", "Tập đọc", "Tập viết", "Kể chuyện"],
+          "2": ["Đọc hiểu", "Chính tả", "Tập làm văn miêu tả", "Luyện từ và câu"],
+          "3": ["Đọc văn bản", "Viết đoạn văn", "Ngữ pháp cơ bản", "Từ vựng"],
+          "4": ["Đọc hiểu nâng cao", "Viết bài văn", "Ngữ pháp nâng cao", "Nghị luận đơn giản"],
+          "5": ["Phân tích văn bản", "Viết các thể loại", "Ngữ pháp tổng hợp", "Nghị luận"]
+        }
+      },
+      "english": {
+        "name": "Tiếng Anh",
+        "weeklyHours": 4,
+        "outline": {
+          "3": ["Alphabet, Phonics", "Basic vocabulary", "Simple sentences", "Listening & Speaking basics"],
+          "4": ["Grammar basics", "Vocabulary expansion", "Reading comprehension", "Writing sentences"],
+          "5": ["Grammar intermediate", "Topic-based learning", "Reading & Writing paragraphs", "Communication skills"]
+        }
+      },
+      "science": {
+        "name": "Tự nhiên và Xã hội / Khoa học",
+        "weeklyHours": 2,
+        "outline": {
+          "1": ["Bản thân và gia đình", "Trường học", "Thiên nhiên xung quanh"],
+          "2": ["Cơ thể người", "Động vật, thực vật", "Môi trường sống"],
+          "3": ["Sức khỏe", "Sinh vật và môi trường", "Trái đất và bầu trời"],
+          "4": ["Vật chất và năng lượng", "Sinh vật", "Môi trường và tài nguyên"],
+          "5": ["Con người và sức khỏe", "Vật chất", "Năng lượng", "Sinh vật và môi trường"]
+        }
+      }
+    }
+  },
+
+  "middle": {
+    "grades": [6, 7, 8, 9],
+    "subjects": {
+      "math": {
+        "name": "Toán",
+        "weeklyHours": 4,
+        "outline": {
+          "6": ["Số tự nhiên, số nguyên", "Phân số", "Hình học cơ bản", "Thống kê"],
+          "7": ["Số hữu tỉ, số thực", "Tỉ lệ thức", "Tam giác", "Thống kê nâng cao"],
+          "8": ["Đại số: Đa thức, phương trình", "Hình học: Tứ giác", "Định lý Pytago"],
+          "9": ["Căn bậc hai", "Hàm số bậc nhất", "Đường tròn", "Hình học không gian"]
+        }
+      },
+      "literature": {
+        "name": "Ngữ văn",
+        "weeklyHours": 4,
+        "outline": {
+          "6": ["Văn học dân gian", "Truyện", "Thơ", "Văn bản nhật dụng"],
+          "7": ["Văn học trung đại", "Nghị luận", "Biểu cảm", "Tiếng Việt"],
+          "8": ["Văn học hiện đại", "Văn bản nghị luận", "Thuyết minh", "Tiếng Việt nâng cao"],
+          "9": ["Văn học Việt Nam", "Văn học nước ngoài", "Nghị luận văn học", "Nghị luận xã hội"]
+        }
+      },
+      "english": {
+        "name": "Tiếng Anh",
+        "weeklyHours": 3,
+        "outline": {
+          "6": ["Present tenses", "Past simple", "Vocabulary: Daily life", "A1 level"],
+          "7": ["Future tenses", "Comparisons", "Vocabulary: Environment", "A2 level"],
+          "8": ["Perfect tenses", "Passive voice", "Vocabulary: Technology", "A2+ level"],
+          "9": ["Conditionals", "Reported speech", "Vocabulary: Career", "B1 level"]
+        }
+      },
+      "physics": {
+        "name": "Vật lý",
+        "weeklyHours": 2,
+        "outline": {
+          "6": ["Cơ học đơn giản", "Nhiệt học cơ bản"],
+          "7": ["Quang học", "Âm học"],
+          "8": ["Cơ học nâng cao", "Nhiệt học nâng cao"],
+          "9": ["Điện học", "Điện từ học"]
+        }
+      },
+      "chemistry": {
+        "name": "Hóa học",
+        "weeklyHours": 2,
+        "outline": {
+          "8": ["Chất, nguyên tử, phân tử", "Phản ứng hóa học", "Mol, tính toán hóa học"],
+          "9": ["Kim loại", "Phi kim", "Hiđrocacbon", "Hợp chất hữu cơ"]
+        }
+      },
+      "biology": {
+        "name": "Sinh học",
+        "weeklyHours": 2,
+        "outline": {
+          "6": ["Tế bào", "Vi sinh vật", "Thực vật"],
+          "7": ["Động vật không xương sống", "Động vật có xương sống"],
+          "8": ["Cơ thể người"],
+          "9": ["Di truyền học", "Sinh thái học", "Tiến hóa"]
+        }
+      }
+    }
+  },
+
+  "high": {
+    "grades": [10, 11, 12],
+    "subjects": {
+      "math": {
+        "name": "Toán",
+        "weeklyHours": 4,
+        "outline": {
+          "10": ["Mệnh đề, tập hợp", "Hàm số", "Phương trình, bất phương trình", "Vector"],
+          "11": ["Lượng giác", "Tổ hợp, xác suất", "Dãy số, cấp số", "Giới hạn"],
+          "12": ["Đạo hàm", "Nguyên hàm, tích phân", "Số phức", "Hình học không gian"]
+        }
+      },
+      "literature": {
+        "name": "Ngữ văn",
+        "weeklyHours": 3,
+        "outline": {
+          "10": ["Văn học dân gian", "Văn học trung đại", "Nghị luận xã hội"],
+          "11": ["Văn học Việt Nam hiện đại", "Văn học nước ngoài", "Nghị luận văn học"],
+          "12": ["Văn học Việt Nam 1945-nay", "Văn học nước ngoài", "Tổng ôn nghị luận"]
+        }
+      },
+      "english": {
+        "name": "Tiếng Anh",
+        "weeklyHours": 3,
+        "outline": {
+          "10": ["All tenses review", "Relative clauses", "B1 consolidation"],
+          "11": ["Advanced grammar", "Essay writing", "B1+ to B2"],
+          "12": ["IELTS preparation", "Academic writing", "B2 level"]
+        }
+      },
+      "physics": {
+        "name": "Vật lý",
+        "weeklyHours": 2,
+        "outline": {
+          "10": ["Động học", "Động lực học", "Công và năng lượng"],
+          "11": ["Dao động và sóng", "Điện xoay chiều", "Quang học sóng"],
+          "12": ["Vật lý hạt nhân", "Vật lý lượng tử", "Thiên văn học"]
+        }
+      },
+      "chemistry": {
+        "name": "Hóa học",
+        "weeklyHours": 2,
+        "outline": {
+          "10": ["Nguyên tử", "Bảng tuần hoàn", "Liên kết hóa học", "Phản ứng oxi hóa khử"],
+          "11": ["Sự điện li", "Nitơ, Photpho", "Cacbon, Silic", "Hóa học hữu cơ"],
+          "12": ["Este, Lipit", "Cacbohiđrat", "Amin, Amino axit", "Polime"]
+        }
+      }
+    }
+  }
+}

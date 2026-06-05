@@ -109,6 +109,17 @@ import {
 import { initStrategicPlanning, getRoadmap } from './strategic-planning.js';
 import { showStrategicPlanningWizard } from './strategic-planning-ui.js';
 
+// AI Provider
+import { aiProvider, setDemoKeys } from './ai/index.js';
+import { showAISettings } from './ai/ui/ai-settings.js';
+
+// Curriculum Engine
+import { initCurriculum } from './curriculum/index.js';
+import { showCurriculumView } from './curriculum/ui/curriculum-ui.js';
+
+// AI Tutor
+import { initTutorUI, showTutorView } from './tutor/ui/tutor-ui.js';
+
 // State
 let currentDate = new Date();
 let currentWeekStart = getWeekStart(currentDate);
@@ -567,6 +578,15 @@ async function initFamilyData(authUser, profile) {
     initAcademicCalendar(db);
     initStrategicPlanning(db);
 
+    // Initialize AI Provider
+    await initAIProvider(db, authUserId);
+
+    // Initialize Curriculum Engine
+    initCurriculum(db);
+
+    // Store db reference for tutor initialization
+    window._appDb = db;
+
     // Load family from Firebase
     currentFamily = await getFamily(authUserId);
 
@@ -635,6 +655,52 @@ function getColorForAvatar(avatar) {
     '🐸': '#22c55e', '🐵': '#92400e', '🦄': '#d946ef'
   };
   return colorMap[avatar] || '#6366f1';
+}
+
+/**
+ * Initialize AI Provider
+ */
+async function initAIProvider(db, userId) {
+  try {
+    // Set demo keys from localStorage (owner can set these)
+    const demoGeminiKey = localStorage.getItem('sumSched_demoGeminiKey');
+    const demoClaudeKey = localStorage.getItem('sumSched_demoClaudeKey');
+
+    if (demoGeminiKey || demoClaudeKey) {
+      setDemoKeys({
+        gemini: demoGeminiKey,
+        claude: demoClaudeKey
+      });
+    }
+
+    // Get user PIN from session (if BYOK mode)
+    const sessionPIN = sessionStorage.getItem('sumSched_userPIN');
+
+    // Initialize AI Provider
+    await aiProvider.init(userId, sessionPIN, db);
+
+    console.log('✅ AI Provider initialized:', aiProvider.getStatus());
+  } catch (error) {
+    console.error('Error initializing AI Provider:', error);
+  }
+}
+
+// Expose AI settings to window
+window.showAISettings = showAISettings;
+
+// Helper to set user PIN for BYOK mode
+window.setAIPIN = function(pin) {
+  if (pin && pin.length >= 4) {
+    sessionStorage.setItem('sumSched_userPIN', pin);
+    console.log('✅ AI PIN set for this session');
+    // Reinitialize AI Provider with PIN
+    import('./auth.js').then(({ getDb }) => {
+      initAIProvider(getDb(), authUserId);
+    });
+  } else {
+    console.error('PIN must be at least 4 characters');
+  }
+};
 }
 
 async function loadCalendars() {
@@ -909,6 +975,14 @@ function setupNavigation() {
       if (btn.dataset.view === 'strategy') {
         refreshStrategyView();
       }
+
+      if (btn.dataset.view === 'curriculum') {
+        refreshCurriculumView();
+      }
+
+      if (btn.dataset.view === 'tutor') {
+        refreshTutorView();
+      }
     });
   });
 }
@@ -935,6 +1009,70 @@ async function refreshStrategyView() {
     // Otherwise show empty state (already in HTML)
   }
 }
+
+// Refresh Curriculum View
+async function refreshCurriculumView() {
+  const childId = getCurrentUser();
+  const container = document.getElementById('curriculum-view');
+  if (container && authUserId) {
+    const roadmap = await getRoadmap(authUserId, childId);
+    await showCurriculumView(authUserId, childId, roadmap, container);
+  }
+}
+
+// Refresh Tutor View
+function refreshTutorView() {
+  const childId = getCurrentUser();
+  const child = currentFamily?.children?.[childId];
+  const childName = child?.name || 'Con';
+  const childGrade = child?.grade || 4;
+  const db = window._appDb;
+
+  if (!db || !authUserId) {
+    console.log('Tutor: waiting for auth...');
+    return;
+  }
+
+  // Initialize and show tutor
+  initTutorUI(db, authUserId, childId, childName, childGrade);
+  const container = document.getElementById('tutor-view');
+  if (container) {
+    showTutorView(container);
+  }
+}
+
+// Expose curriculum view to window
+window.showCurriculumPanel = async function() {
+  const childId = getCurrentUser();
+  const roadmap = await getRoadmap(authUserId, childId);
+  const container = document.getElementById('curriculum-view');
+  if (container) {
+    await showCurriculumView(authUserId, childId, roadmap, container);
+  }
+};
+
+// Expose tutor view to window
+window.showTutorPanel = function() {
+  const childId = getCurrentUser();
+  const child = currentFamily?.children?.[childId];
+  const childName = child?.name || 'Con';
+  const childGrade = child?.grade || 4;
+  const db = window._appDb;
+
+  if (!db) {
+    console.error('Database not initialized');
+    return;
+  }
+
+  // Initialize tutor with current child info
+  initTutorUI(db, authUserId, childId, childName, childGrade);
+
+  // Show tutor view
+  const container = document.getElementById('tutor-view');
+  if (container) {
+    showTutorView(container);
+  }
+};
 
 // Render roadmap summary in strategy view
 function renderRoadmapSummary(roadmap, container) {

@@ -492,6 +492,237 @@ export const ACTIVITY_DEPTH = {
 };
 
 // ============================================
+// DYNAMIC DATA LOADING (External JSON)
+// ============================================
+
+let dynamicSchoolsData = null;
+let dynamicResourcesData = null;
+let lastSchoolsUpdate = null;
+let lastResourcesUpdate = null;
+
+/**
+ * Fetch schools database from external JSON
+ * @param {boolean} forceRefresh - Force reload even if cached
+ * @returns {Promise<Object>} Schools data by level
+ */
+export async function fetchSchoolsData(forceRefresh = false) {
+  const CACHE_DURATION = 1000 * 60 * 60; // 1 hour cache
+
+  if (!forceRefresh && dynamicSchoolsData && lastSchoolsUpdate) {
+    const age = Date.now() - lastSchoolsUpdate;
+    if (age < CACHE_DURATION) {
+      console.log('Using cached schools data');
+      return dynamicSchoolsData;
+    }
+  }
+
+  try {
+    const response = await fetch('./data/schools.json?t=' + Date.now());
+    if (!response.ok) {
+      throw new Error(`Failed to fetch schools: ${response.status}`);
+    }
+    dynamicSchoolsData = await response.json();
+    lastSchoolsUpdate = Date.now();
+    console.log('Schools data loaded:', Object.keys(dynamicSchoolsData));
+    return dynamicSchoolsData;
+  } catch (error) {
+    console.error('Error loading schools data:', error);
+    return null;
+  }
+}
+
+/**
+ * Get schools by level (elementary, middle, high, australia)
+ * Handles nested structure: data.elementary.schools[]
+ */
+export async function getSchoolsByLevel(level) {
+  const data = await fetchSchoolsData();
+  if (!data || !data[level]) return [];
+
+  // Handle nested structure: level.schools array
+  return data[level].schools || data[level] || [];
+}
+
+/**
+ * Get school by ID
+ */
+export async function getSchoolById(schoolId) {
+  const data = await fetchSchoolsData();
+  if (!data) return null;
+
+  for (const level of Object.keys(data)) {
+    if (level === '_metadata') continue;
+    const schools = data[level].schools || data[level] || [];
+    if (!Array.isArray(schools)) continue;
+    const school = schools.find(s => s.id === schoolId);
+    if (school) return { ...school, level };
+  }
+  return null;
+}
+
+/**
+ * Search schools by criteria
+ */
+export async function searchSchools(criteria = {}) {
+  const data = await fetchSchoolsData();
+  if (!data) return [];
+
+  const results = [];
+  const { level, curriculum, minTuition, maxTuition, hasScholarship, keyword } = criteria;
+
+  const allLevels = Object.keys(data).filter(k => k !== '_metadata');
+  const levelsToSearch = level ? [level] : allLevels;
+
+  for (const lvl of levelsToSearch) {
+    if (!data[lvl]) continue;
+    const schools = data[lvl].schools || data[lvl] || [];
+    if (!Array.isArray(schools)) continue;
+
+    for (const school of schools) {
+      let match = true;
+
+      // Curriculum can be array or string
+      if (curriculum) {
+        const schoolCurrs = Array.isArray(school.curriculum) ? school.curriculum : [school.curriculum];
+        if (!schoolCurrs.includes(curriculum)) match = false;
+      }
+
+      if (hasScholarship && (!school.scholarships || school.scholarships.length === 0)) match = false;
+
+      if (keyword) {
+        const curriculumStr = Array.isArray(school.curriculum) ? school.curriculum.join(' ') : school.curriculum;
+        const searchStr = `${school.name} ${school.description || ''} ${curriculumStr || ''} ${school.type || ''}`.toLowerCase();
+        if (!searchStr.includes(keyword.toLowerCase())) match = false;
+      }
+
+      if (match) {
+        results.push({ ...school, level: lvl });
+      }
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Fetch learning resources from external JSON (if exists)
+ * Falls back to built-in LEARNING_CENTERS and SELF_LEARNING_APPS
+ */
+export async function fetchLearningResources(forceRefresh = false) {
+  const CACHE_DURATION = 1000 * 60 * 60;
+
+  if (!forceRefresh && dynamicResourcesData && lastResourcesUpdate) {
+    const age = Date.now() - lastResourcesUpdate;
+    if (age < CACHE_DURATION) {
+      return dynamicResourcesData;
+    }
+  }
+
+  try {
+    const response = await fetch('./data/learning-resources.json?t=' + Date.now());
+    if (response.ok) {
+      dynamicResourcesData = await response.json();
+      lastResourcesUpdate = Date.now();
+      console.log('External learning resources loaded');
+      return dynamicResourcesData;
+    }
+  } catch (error) {
+    console.log('No external resources file, using built-in data');
+  }
+
+  // Fallback to built-in
+  return {
+    centers: LEARNING_CENTERS,
+    apps: SELF_LEARNING_APPS,
+    recommendations: STAGE_RESOURCE_RECOMMENDATIONS
+  };
+}
+
+/**
+ * Refresh all external data - call this when user wants to update
+ */
+export async function refreshAllExternalData() {
+  console.log('Refreshing all external data...');
+
+  const results = {
+    schools: null,
+    resources: null,
+    timestamp: new Date().toISOString()
+  };
+
+  try {
+    results.schools = await fetchSchoolsData(true);
+    results.resources = await fetchLearningResources(true);
+    console.log('All external data refreshed successfully');
+  } catch (error) {
+    console.error('Error refreshing data:', error);
+  }
+
+  return results;
+}
+
+/**
+ * Get recommended resources for a specific stage and goal
+ */
+export async function getResourcesForStage(stage, goals = []) {
+  const resources = await fetchLearningResources();
+  if (!resources) return null;
+
+  const stageRecs = resources.recommendations?.[stage] || STAGE_RESOURCE_RECOMMENDATIONS[stage];
+  if (!stageRecs) return null;
+
+  const result = {
+    stage,
+    stageName: stageRecs.name,
+    priority: stageRecs.priority,
+    goals: stageRecs.goals,
+    recommended: {}
+  };
+
+  // Get detailed app info for each recommended category
+  for (const [category, appIds] of Object.entries(stageRecs.recommended || {})) {
+    result.recommended[category] = appIds.map(appId => {
+      // Search in all app categories
+      for (const catData of Object.values(resources.apps || SELF_LEARNING_APPS)) {
+        const app = catData.apps?.find(a => a.id === appId);
+        if (app) return app;
+      }
+      return { id: appId, name: appId };
+    }).filter(Boolean);
+  }
+
+  return result;
+}
+
+/**
+ * Get data status - for UI display
+ */
+export function getDataStatus() {
+  let schoolCount = 0;
+  if (dynamicSchoolsData) {
+    for (const level of Object.keys(dynamicSchoolsData)) {
+      if (level === '_metadata') continue;
+      const schools = dynamicSchoolsData[level]?.schools || dynamicSchoolsData[level] || [];
+      if (Array.isArray(schools)) schoolCount += schools.length;
+    }
+  }
+
+  return {
+    schools: {
+      loaded: !!dynamicSchoolsData,
+      lastUpdate: lastSchoolsUpdate ? new Date(lastSchoolsUpdate).toISOString() : null,
+      count: schoolCount,
+      version: dynamicSchoolsData?._metadata?.version || 'N/A'
+    },
+    resources: {
+      loaded: !!dynamicResourcesData,
+      lastUpdate: lastResourcesUpdate ? new Date(lastResourcesUpdate).toISOString() : null,
+      usingExternal: !!dynamicResourcesData
+    }
+  };
+}
+
+// ============================================
 // STUDENT CONTEXT (Step 1a)
 // ============================================
 
@@ -937,36 +1168,40 @@ Trả lời bằng tiếng Việt, format JSON theo cấu trúc trên.
 
 /**
  * Call AI service for analysis
+ * Uses unified AI Provider with auto fallback
  */
 export async function analyzeWithAI(prompt) {
-  // Get API key from settings (same key as ai-service.js)
-  const apiKey = localStorage.getItem('sumSched_geminiApiKey');
-  if (!apiKey) {
-    return {
-      error: 'Chưa cấu hình Gemini API key. Vào Cài đặt → API Key để thêm.'
-    };
-  }
-
   try {
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + apiKey, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 4096
-        }
-      })
-    });
+    // Dynamic import to avoid circular dependency
+    const { aiProvider } = await import('./ai/index.js');
 
-    const data = await response.json();
-
-    if (data.error) {
-      return { error: data.error.message };
+    // Check if AI Provider is initialized
+    const status = aiProvider.getStatus();
+    if (!status.initialized) {
+      return {
+        error: 'AI chưa được khởi tạo. Vui lòng đăng nhập lại.'
+      };
     }
 
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (status.availableProviders.length === 0) {
+      return {
+        error: 'Chưa có AI provider khả dụng. Vào Cài đặt AI để cấu hình.'
+      };
+    }
+
+    // Call AI with roadmap_analysis task type for smart routing
+    const response = await aiProvider.chat({
+      task: 'roadmap_analysis',
+      messages: [{ role: 'user', content: prompt }],
+      maxTokens: 4096,
+      temperature: 0.7
+    });
+
+    if (!response.success) {
+      return { error: response.error?.message || 'AI request failed' };
+    }
+
+    const text = response.content;
     if (!text) {
       return { error: 'Không nhận được phản hồi từ AI' };
     }
@@ -981,7 +1216,15 @@ export async function analyzeWithAI(prompt) {
 
   } catch (error) {
     console.error('AI analysis error:', error);
-    return { error: error.message };
+
+    // Handle quota exceeded
+    if (error.code === 'QUOTA_EXCEEDED') {
+      return {
+        error: `${error.message}. Hãy thêm API key của bạn trong Cài đặt AI.`
+      };
+    }
+
+    return { error: error.message || 'Lỗi không xác định' };
   }
 }
 
@@ -1135,6 +1378,15 @@ export default {
   LEARNING_CENTERS,
   SELF_LEARNING_APPS,
   STAGE_RESOURCE_RECOMMENDATIONS,
+  // Dynamic Data Loading
+  fetchSchoolsData,
+  getSchoolsByLevel,
+  getSchoolById,
+  searchSchools,
+  fetchLearningResources,
+  refreshAllExternalData,
+  getResourcesForStage,
+  getDataStatus,
   // Student Context
   createEmptyStudentContext,
   saveStudentContext,

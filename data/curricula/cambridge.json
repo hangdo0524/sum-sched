@@ -1,0 +1,198 @@
+{
+  "_metadata": {
+    "id": "cambridge",
+    "name": "Cambridge International Curriculum",
+    "organization": "Cambridge Assessment International Education",
+    "version": "1.0.0",
+    "lastUpdated": "2026-06-05"
+  },
+
+  "primary": {
+    "name": "Cambridge Primary",
+    "ages": "5-11",
+    "stages": [1, 2, 3, 4, 5, 6],
+    "subjects": {
+      "english": {
+        "name": "English",
+        "strands": ["Reading", "Writing", "Speaking and Listening"],
+        "outline": {
+          "1-2": ["Phonics", "Basic reading", "Simple writing", "Oral communication"],
+          "3-4": ["Reading comprehension", "Paragraph writing", "Grammar basics", "Vocabulary building"],
+          "5-6": ["Text analysis", "Essay writing", "Advanced grammar", "Critical thinking"]
+        }
+      },
+      "mathematics": {
+        "name": "Mathematics",
+        "strands": ["Number", "Geometry", "Measure", "Statistics"],
+        "outline": {
+          "1-2": ["Counting to 100", "Basic operations", "Shapes", "Measurement intro"],
+          "3-4": ["Place value", "Fractions", "Area & perimeter", "Data handling"],
+          "5-6": ["Decimals & percentages", "Algebra intro", "Volume", "Probability"]
+        }
+      },
+      "science": {
+        "name": "Science",
+        "strands": ["Biology", "Chemistry", "Physics", "Earth and Space"],
+        "outline": {
+          "1-2": ["Living things", "Materials", "Forces", "Earth and Space basics"],
+          "3-4": ["Plants & animals", "States of matter", "Light & sound", "Rocks & soil"],
+          "5-6": ["Human body", "Chemical changes", "Electricity", "Solar system"]
+        }
+      },
+      "global_perspectives": {
+        "name": "Global Perspectives",
+        "strands": ["Research", "Analysis", "Evaluation", "Reflection", "Collaboration", "Communication"],
+        "outline": {
+          "1-6": ["Personal & local issues", "Global challenges", "Research skills", "Teamwork projects"]
+        }
+      }
+    }
+  },
+
+  "secondary1": {
+    "name": "Cambridge Lower Secondary",
+    "ages": "11-14",
+    "stages": [7, 8, 9],
+    "subjects": {
+      "english": {
+        "name": "English",
+        "outline": {
+          "7": ["Reading strategies", "Narrative writing", "Grammar consolidation"],
+          "8": ["Analytical reading", "Persuasive writing", "Complex sentences"],
+          "9": ["Critical analysis", "Argumentative essays", "Advanced grammar"]
+        }
+      },
+      "mathematics": {
+        "name": "Mathematics",
+        "outline": {
+          "7": ["Integers", "Algebraic expressions", "Geometry basics", "Statistics"],
+          "8": ["Fractions & decimals", "Equations", "Transformations", "Probability"],
+          "9": ["Indices & standard form", "Simultaneous equations", "Trigonometry intro", "Data analysis"]
+        }
+      },
+      "science": {
+        "name": "Science",
+        "outline": {
+          "7": ["Cells", "Elements & compounds", "Forces & motion"],
+          "8": ["Reproduction", "Chemical reactions", "Energy"],
+          "9": ["Genetics", "Rates of reaction", "Electricity & magnetism"]
+        }
+      }
+    }
+  },
+
+  "igcse": {
+    "name": "Cambridge IGCSE",
+    "ages": "14-16",
+    "grades": [10, 11],
+    "subjects": {
+      "english_first_language": {
+        "name": "English - First Language (0500)",
+        "components": ["Reading", "Directed Writing", "Composition"],
+        "outline": {
+          "10-11": [
+            "Comprehension & summary",
+            "Argument & persuasion",
+            "Narrative & descriptive writing",
+            "Analysis of texts"
+          ]
+        }
+      },
+      "mathematics": {
+        "name": "Mathematics (0580)",
+        "tiers": ["Core", "Extended"],
+        "outline": {
+          "core": ["Number", "Algebra basics", "Geometry", "Statistics"],
+          "extended": ["Advanced algebra", "Functions", "Calculus intro", "Vectors"]
+        }
+      },
+      "physics": {
+        "name": "Physics (0625)",
+        "outline": {
+          "10-11": [
+            "Motion, forces & energy",
+            "Thermal physics",
+            "Waves",
+            "Electricity & magnetism",
+            "Atomic physics"
+          ]
+        }
+      },
+      "chemistry": {
+        "name": "Chemistry (0620)",
+        "outline": {
+          "10-11": [
+            "States of matter",
+            "Atoms, elements & compounds",
+            "Stoichiometry",
+            "Electrochemistry",
+            "Chemical energetics",
+            "Organic chemistry"
+          ]
+        }
+      },
+      "biology": {
+        "name": "Biology (0610)",
+        "outline": {
+          "10-11": [
+            "Cell structure",
+            "Biological molecules",
+            "Enzymes",
+            "Plant & human nutrition",
+            "Transport",
+            "Reproduction",
+            "Inheritance",
+            "Ecology"
+          ]
+        }
+      }
+    }
+  },
+
+  "aLevel": {
+    "name": "Cambridge A Level",
+    "ages": "16-18",
+    "grades": [12, 13],
+    "subjects": {
+      "mathematics": {
+        "name": "Mathematics (9709)",
+        "components": ["Pure Mathematics", "Mechanics", "Probability & Statistics"],
+        "outline": {
+          "pure1": ["Quadratics", "Functions", "Coordinate geometry", "Trigonometry", "Vectors"],
+          "pure2": ["Algebra", "Logarithms", "Differentiation", "Integration"],
+          "pure3": ["Further algebra", "Further calculus", "Differential equations", "Complex numbers"],
+          "mechanics": ["Forces", "Kinematics", "Momentum", "Energy"],
+          "statistics": ["Representation of data", "Probability", "Distributions", "Hypothesis testing"]
+        }
+      },
+      "physics": {
+        "name": "Physics (9702)",
+        "outline": {
+          "as": ["Physical quantities", "Kinematics", "Dynamics", "Forces", "Work & energy", "Waves"],
+          "a2": ["Motion in a circle", "Gravitational fields", "Electric fields", "Capacitance", "Magnetic fields", "Quantum physics"]
+        }
+      },
+      "chemistry": {
+        "name": "Chemistry (9701)",
+        "outline": {
+          "as": ["Atoms & bonding", "Stoichiometry", "Chemical energetics", "Electrochemistry", "Equilibria", "Organic basics"],
+          "a2": ["Lattice energy", "Electrode potentials", "Reaction kinetics", "Organic synthesis", "Analytical techniques"]
+        }
+      }
+    }
+  },
+
+  "assessmentInfo": {
+    "gradingScale": {
+      "igcse": ["A*", "A", "B", "C", "D", "E", "F", "G", "U"],
+      "aLevel": ["A*", "A", "B", "C", "D", "E", "U"]
+    },
+    "examSessions": ["May/June", "October/November"],
+    "scholarshipRelevance": {
+      "australia": {
+        "minimumGrades": "A/A* for top universities",
+        "notes": "Cambridge qualifications are highly recognized in Australia"
+      }
+    }
+  }
+}
