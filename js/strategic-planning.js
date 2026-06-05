@@ -64,6 +64,53 @@ export const SUBJECTS_BY_LEVEL = {
   high: ['Toán', 'Ngữ văn', 'Tiếng Anh', 'Vật lý', 'Hóa học', 'Sinh học', 'Lịch sử', 'Địa lý', 'GDCD', 'Tin học']
 };
 
+// School types
+export const SCHOOL_TYPES = {
+  public: { name: 'Công lập', desc: 'Trường công lập theo chương trình Bộ GD&ĐT' },
+  private: { name: 'Tư thục', desc: 'Trường tư thục Việt Nam' },
+  international: { name: 'Quốc tế', desc: 'Trường quốc tế, song ngữ' },
+  specialized: { name: 'Chuyên', desc: 'Trường THPT chuyên, năng khiếu' }
+};
+
+// Family financial capability for study abroad
+export const FINANCIAL_CAPACITY = {
+  full_self: { name: 'Tự túc hoàn toàn', desc: 'Có khả năng tài chính du học không cần học bổng' },
+  partial_scholarship: { name: 'Cần học bổng bán phần', desc: 'Cần 30-50% học bổng để du học' },
+  high_scholarship: { name: 'Cần học bổng cao', desc: 'Cần 70-100% học bổng để du học' },
+  full_scholarship: { name: 'Chỉ đi khi có học bổng toàn phần', desc: 'Bắt buộc có full scholarship' }
+};
+
+// Stage-based development priorities (Australia scholarship profile building)
+export const DEVELOPMENT_STAGES = {
+  elementary: {
+    name: 'Tiểu học (Lớp 1-5)',
+    academic: { weight: 30, focus: 'Nền tảng Toán-Anh, yêu thích học tập' },
+    softSkills: { weight: 40, focus: 'Giao tiếp, sáng tạo, tò mò, tự tin' },
+    character: { weight: 30, focus: 'Kỷ luật tự giác, trung thực, empathy' }
+  },
+  middle: {
+    name: 'THCS (Lớp 6-9)',
+    academic: { weight: 40, focus: 'Academic excellence, IELTS 6.0+, competitions' },
+    softSkills: { weight: 35, focus: 'Leadership, teamwork, public speaking, critical thinking' },
+    character: { weight: 25, focus: 'Resilience, goal-setting, social responsibility' }
+  },
+  high: {
+    name: 'THPT (Lớp 10-12)',
+    academic: { weight: 50, focus: 'GPA 8.5+, IELTS 7.5+, SAT/IB/A-Level, research' },
+    softSkills: { weight: 30, focus: 'Project management, entrepreneurship, mentoring' },
+    character: { weight: 20, focus: 'Global citizenship, unique story, impact' }
+  }
+};
+
+// Top 5 Australian universities requirements
+export const TOP_5_AUSTRALIA_UNIS = {
+  melbourne: { name: 'University of Melbourne', ielts: 6.5, gpa: 'Top 10%', extras: 'Leadership, community service' },
+  sydney: { name: 'University of Sydney', ielts: 6.5, gpa: 'Top 10%', extras: 'Academic achievements, extracurriculars' },
+  unsw: { name: 'UNSW Sydney', ielts: 6.5, gpa: 'Top 15%', extras: 'STEM focus, innovation' },
+  anu: { name: 'Australian National University', ielts: 6.5, gpa: 'Top 10%', extras: 'Research potential' },
+  monash: { name: 'Monash University', ielts: 6.5, gpa: 'Top 15%', extras: 'Global experience' }
+};
+
 export const SKILLS = [
   { id: 'problemSolving', name: 'Giải quyết vấn đề' },
   { id: 'creativity', name: 'Sáng tạo' },
@@ -145,25 +192,45 @@ export async function getStudentContext(userId, childId) {
 
 export function createEmptyFamilyAspirations() {
   return {
+    // Current context
+    currentContext: {
+      schoolName: '',
+      schoolType: 'public',
+      currentPerformance: 'average', // top5, top10, top20, average, below_average
+      recentGrades: [], // [{term: 'HK1-2024', subjects: {}, gpa: 8.5}]
+      englishLevel: 'basic' // basic, elementary, intermediate, upper_intermediate, advanced
+    },
+    // Academic goals
     academicGoals: {
       targetHighSchool: '',
       targetUniversity: '',
       targetMajor: '',
-      targetCareer: ''
+      targetCareer: '',
+      studyAbroadIntent: true,
+      targetCountry: 'australia',
+      targetUniRank: 'top5', // top5, top20, top50, any
+      scholarshipRequirement: 'full_scholarship' // full_self, partial_scholarship, high_scholarship, full_scholarship
     },
+    // Development focus
     developmentFocus: {
       academicPriority: 'balanced',
       extracurricular: [],
       softSkills: [],
-      values: []
+      values: [],
+      uniqueStrengths: [], // What makes this child unique?
+      passions: [] // Deep interests that could become unique story
     },
+    // Family resources
     resources: {
       studyTimePerDay: 3,
       budget: 'moderate',
       parentInvolvement: 'medium',
       tutoringAvailable: false,
-      onlineResourcesAccess: true
+      onlineResourcesAccess: true,
+      networkConnections: [], // Alumni, mentors, references
+      studyAbroadBudget: 'scholarship_dependent' // self_funded, partial_support, scholarship_dependent
     },
+    // Constraints
     constraints: {
       healthIssues: [],
       familyCommitments: [],
@@ -213,10 +280,17 @@ export async function getFamilyAspirations(userId, childId) {
 
 /**
  * Generate AI analysis prompt from collected data
+ * 5 Expert Perspectives:
+ * 1. Australian Study Abroad Specialist (scholarship pathway to top 5)
+ * 2. Holistic Development Expert (academic + soft skills + character by stage)
+ * 3. Current Context Analyst (school, performance, family capability)
+ * 4. Human Potential Development Specialist (psychology, IKIGAI)
+ * 5. Scholarship Profile Builder (admission requirements)
  */
 export function generateAnalysisPrompt(studentContext, familyAspirations, childInfo) {
   const grade = studentContext.currentGrade;
   const level = grade <= 5 ? 'Tiểu học' : grade <= 9 ? 'THCS' : 'THPT';
+  const yearsToGrad12 = 12 - grade;
 
   // Calculate average academic level
   const academicLevels = Object.values(studentContext.academics).map(a => a.level);
@@ -230,87 +304,218 @@ export function generateAnalysisPrompt(studentContext, familyAspirations, childI
     .filter(([_, v]) => v.level <= 4)
     .map(([k, _]) => k);
 
+  // Current context from family aspirations
+  const currentContext = familyAspirations.currentContext || {};
+  const schoolType = SCHOOL_TYPES[currentContext.schoolType]?.name || 'Chưa xác định';
+  const financialCapacity = FINANCIAL_CAPACITY[familyAspirations.academicGoals?.scholarshipRequirement]?.name || 'Chưa xác định';
+
   const prompt = `
-Bạn là chuyên gia giáo dục Việt Nam với 20 năm kinh nghiệm tư vấn định hướng học tập.
+Bạn là HỘI ĐỒNG CHUYÊN GIA gồm 5 vai trò, cùng phân tích và đề xuất LỘ TRÌNH HỌC BỔNG TOÀN PHẦN DU HỌC ÚC cho học sinh.
 
-## THÔNG TIN HỌC SINH
+═══════════════════════════════════════════════════════════════════
+📋 THÔNG TIN HỌC SINH
+═══════════════════════════════════════════════════════════════════
+
+## 1. Thông tin cơ bản
 - Tên: ${childInfo.name}
-- Lớp: ${grade} (${level})
+- Lớp hiện tại: ${grade} (${level})
+- Số năm đến lớp 12: ${yearsToGrad12} năm
+- Trường đang học: ${currentContext.schoolName || 'Chưa cung cấp'}
+- Loại trường: ${schoolType}
+- Xếp loại hiện tại: ${currentContext.currentPerformance || 'Chưa xác định'}
+
+## 2. Năng lực học thuật
 - Điểm năng lực trung bình: ${avgAcademic}/10
-- Môn mạnh (≥7): ${strengths.join(', ') || 'Chưa xác định'}
-- Môn yếu (≤4): ${weaknesses.join(', ') || 'Không có'}
-- Năng khiếu: ${studentContext.talents.join(', ') || 'Chưa xác định'}
-- Thành tích: ${studentContext.achievements.join(', ') || 'Chưa có'}
-- Khó khăn: ${studentContext.challenges.join(', ') || 'Không có'}
+- Môn mạnh (≥7/10): ${strengths.join(', ') || 'Chưa xác định'}
+- Môn cần cải thiện (≤4/10): ${weaknesses.join(', ') || 'Không có'}
+- Trình độ tiếng Anh: ${currentContext.englishLevel || 'Chưa đánh giá'}
 - Phong cách học: ${LEARNING_STYLES[studentContext.learningStyle]?.name}
-- Sở thích: ${studentContext.interests.join(', ') || 'Chưa xác định'}
 
-## MỤC TIÊU GIA ĐÌNH
-- Trường THPT mục tiêu: ${familyAspirations.academicGoals.targetHighSchool || 'Chưa xác định'}
-- Trường ĐH mục tiêu: ${familyAspirations.academicGoals.targetUniversity || 'Chưa xác định'}
-- Ngành học: ${familyAspirations.academicGoals.targetMajor || 'Chưa xác định'}
-- Nghề nghiệp: ${familyAspirations.academicGoals.targetCareer || 'Chưa xác định'}
-- Định hướng: ${ACADEMIC_PRIORITIES[familyAspirations.developmentFocus.academicPriority]?.name}
-- Thời gian học/ngày: ${familyAspirations.resources.studyTimePerDay}h
-- Ngân sách: ${familyAspirations.resources.budget === 'limited' ? 'Hạn chế' : familyAspirations.resources.budget === 'moderate' ? 'Vừa phải' : 'Linh hoạt'}
+## 3. Điểm nổi bật & Thách thức
+- Năng khiếu: ${studentContext.talents?.join(', ') || 'Chưa xác định'}
+- Thành tích: ${studentContext.achievements?.join(', ') || 'Chưa có'}
+- Sở thích/Đam mê: ${studentContext.interests?.join(', ') || 'Chưa xác định'}
+- Khó khăn: ${studentContext.challenges?.join(', ') || 'Không có'}
+- Điểm độc đáo: ${familyAspirations.developmentFocus?.uniqueStrengths?.join(', ') || 'Chưa xác định'}
 
-## YÊU CẦU
-Hãy phân tích và đề xuất:
+## 4. Mục tiêu gia đình
+- Mục tiêu cuối cùng: HỌC BỔNG TOÀN PHẦN đại học TOP 5 ÚC
+- Trường ĐH mục tiêu: ${familyAspirations.academicGoals?.targetUniversity || 'Top 5 Australia'}
+- Ngành học: ${familyAspirations.academicGoals?.targetMajor || 'Chưa xác định'}
+- Nghề nghiệp: ${familyAspirations.academicGoals?.targetCareer || 'Chưa xác định'}
+- Yêu cầu học bổng: ${financialCapacity}
 
-1. **ĐÁNH GIÁ TỔNG QUAN** (200 từ)
-   - Năng lực hiện tại so với mục tiêu
-   - Điểm mạnh cần phát huy
-   - Điểm yếu cần cải thiện
-   - Khả năng đạt mục tiêu (%)
+## 5. Nguồn lực gia đình
+- Thời gian học/ngày: ${familyAspirations.resources?.studyTimePerDay || 3}h
+- Mức độ hỗ trợ phụ huynh: ${familyAspirations.resources?.parentInvolvement || 'medium'}
+- Khả năng tài chính du học: ${familyAspirations.resources?.studyAbroadBudget || 'Phụ thuộc học bổng'}
 
-2. **ĐỀ XUẤT 3 LỘ TRÌNH** (mỗi option 100 từ)
-   Mỗi lộ trình gồm:
-   - Tên lộ trình
-   - Mô tả ngắn
-   - Độ phù hợp (%)
-   - Ưu điểm
-   - Nhược điểm
-   - Yêu cầu
+═══════════════════════════════════════════════════════════════════
+🎯 YÊU CẦU PHÂN TÍCH (5 GÓC NHÌN CHUYÊN GIA)
+═══════════════════════════════════════════════════════════════════
 
-3. **CÁC MỐC QUAN TRỌNG** từ lớp ${grade} đến lớp 12
-   Mỗi cấp học (Tiểu học/THCS/THPT) cần:
-   - Mục tiêu chính
-   - Môn cần tập trung
-   - Kỹ năng cần phát triển
-   - Hoạt động ngoại khóa
+### 👨‍🎓 GÓC NHÌN 1: CHUYÊN GIA DU HỌC ÚC (Australian Education Consultant)
+Đánh giá từ góc độ chuyên gia tư vấn du học Úc với 15+ năm kinh nghiệm:
+- Yêu cầu thực tế của Top 5 Úc (Melbourne, Sydney, UNSW, ANU, Monash)
+- Học bổng khả dụng: chính phủ Úc, chính phủ VN, scholarship từ trường
+- Timeline apply học bổng (khi nào bắt đầu, deadline quan trọng)
+- Hồ sơ cạnh tranh cần những gì? (GPA, IELTS, extracurriculars, essays)
+- So sánh con đường: Direct entry vs Foundation/Pathway
 
-4. **KHUYẾN NGHỊ HÀNH ĐỘNG NGAY** (3-5 items)
-   Những việc cần làm trong 3 tháng tới
+### 👨‍🏫 GÓC NHÌN 2: CHUYÊN GIA PHÁT TRIỂN TOÀN DIỆN (Holistic Development)
+Đánh giá phát triển 3 trụ cột theo giai đoạn:
 
-Trả lời bằng tiếng Việt, format JSON theo cấu trúc sau:
+**Tiểu học (Lớp 1-5):** Trọng số: Học thuật 30% | Kỹ năng mềm 40% | Nhân cách 30%
+- Focus: Nền tảng Toán-Anh, yêu thích học tập, tò mò khám phá
+
+**THCS (Lớp 6-9):** Trọng số: Học thuật 40% | Kỹ năng mềm 35% | Nhân cách 25%
+- Focus: Academic excellence, IELTS 6.0+, leadership, critical thinking
+
+**THPT (Lớp 10-12):** Trọng số: Học thuật 50% | Kỹ năng mềm 30% | Nhân cách 20%
+- Focus: GPA 8.5+, IELTS 7.5+, research, unique story, impact
+
+### 👨‍👩‍👧 GÓC NHÌN 3: PHÂN TÍCH BỐI CẢNH THỰC TẾ (Current Context)
+Đánh giá dựa trên:
+- Trường đang học có phù hợp với mục tiêu không?
+- Khoảng cách giữa năng lực hiện tại và yêu cầu top 5 Úc
+- Khả năng tài chính của gia đình - chiến lược học bổng phù hợp
+- Nguồn lực có sẵn (thời gian, người hỗ trợ, mạng lưới)
+- Rủi ro và cách giảm thiểu
+
+### 👨‍🔬 GÓC NHÌN 4: CHUYÊN GIA TIỀM NĂNG CON NGƯỜI (Human Potential)
+Đánh giá từ góc độ tâm lý học phát triển và IKIGAI:
+- Điểm mạnh bẩm sinh (What you're good at)
+- Đam mê thực sự (What you love)
+- Thế giới cần gì từ con? (What the world needs)
+- Con có thể làm nghề gì? (What you can be paid for)
+- Động lực nội tại vs áp lực bên ngoài
+- Stress tolerance và resilience
+- Unique story tiềm năng cho application
+
+### 📝 GÓC NHÌN 5: PROFILE BUILDER (Scholarship Application)
+Đánh giá hồ sơ theo chuẩn admission top 5 Úc:
+
+**Academic Profile:**
+- GPA requirement: 8.5+/10 (thực tế 9.0+ để cạnh tranh)
+- English: IELTS 7.0-7.5+ hoặc PTE 65+
+- Standardized tests: SAT (nếu cần)
+
+**Extracurricular Profile (SPIKE approach):**
+- Một lĩnh vực XUẤT SẮC (spike) quan trọng hơn giỏi đều
+- Leadership evidence (không chỉ title, mà impact)
+- Community service (sustained commitment, measurable impact)
+- Awards & Recognition (Olympic, competitions)
+
+**Personal Story:**
+- Unique angle - điều gì làm con khác biệt?
+- Growth narrative - con đã vượt qua khó khăn gì?
+- Vision & Goals - con muốn đóng góp gì cho thế giới?
+
+═══════════════════════════════════════════════════════════════════
+📊 OUTPUT FORMAT (JSON)
+═══════════════════════════════════════════════════════════════════
+
 {
-  "assessment": {
-    "currentLevel": "above_average|average|below_average",
-    "goalFeasibility": "highly_achievable|achievable|challenging|very_challenging",
-    "feasibilityPercent": number,
-    "summary": "string",
-    "strengths": ["string"],
-    "weaknesses": ["string"],
-    "risks": ["string"]
+  "expertAssessment": {
+    "australiaExpert": {
+      "scholarshipReadiness": "not_ready|early_stage|developing|competitive|highly_competitive",
+      "feasibilityPercent": number,
+      "primaryPathway": "direct_entry|foundation|pathway_program",
+      "targetScholarships": ["string"],
+      "criticalGaps": ["string"],
+      "timelineAlert": "string"
+    },
+    "holisticDevelopment": {
+      "academicScore": number,
+      "softSkillsScore": number,
+      "characterScore": number,
+      "currentStageBalance": "balanced|academic_heavy|soft_skills_heavy|needs_rebalance",
+      "stagePriorities": {
+        "immediate": { "academic": number, "softSkills": number, "character": number },
+        "nextStage": { "academic": number, "softSkills": number, "character": number }
+      }
+    },
+    "contextAnalysis": {
+      "schoolFit": "excellent|good|adequate|poor",
+      "resourceAdequacy": "sufficient|needs_supplement|insufficient",
+      "financialStrategy": "string",
+      "riskLevel": "low|medium|high",
+      "riskFactors": ["string"]
+    },
+    "humanPotential": {
+      "innateStrengths": ["string"],
+      "passionAlignment": "clear|emerging|unclear",
+      "ikigaiInsight": "string",
+      "motivationType": "intrinsic|extrinsic|mixed",
+      "uniqueAngle": "string",
+      "burnoutRisk": "low|medium|high"
+    },
+    "profileGaps": {
+      "academicGaps": ["string"],
+      "extracurricularGaps": ["string"],
+      "storyGaps": ["string"],
+      "overallReadiness": number
+    }
   },
   "pathOptions": [
     {
       "id": "path_1",
       "name": "string",
+      "targetUni": "melbourne|sydney|unsw|anu|monash",
+      "scholarshipType": "government|university|foundation",
       "description": "string",
       "suitabilityPercent": number,
       "pros": ["string"],
       "cons": ["string"],
-      "requirements": ["string"]
+      "requirements": ["string"],
+      "timeline": "string"
     }
   ],
-  "milestones": {
-    "elementary": { "focus": "string", "subjects": ["string"], "skills": ["string"], "activities": ["string"] },
-    "middle": { "focus": "string", "subjects": ["string"], "skills": ["string"], "activities": ["string"] },
-    "high": { "focus": "string", "subjects": ["string"], "skills": ["string"], "activities": ["string"] }
+  "developmentRoadmap": {
+    "elementary": {
+      "academicFocus": ["string"],
+      "softSkillsFocus": ["string"],
+      "characterFocus": ["string"],
+      "activities": ["string"],
+      "milestones": ["string"],
+      "parentRole": "string"
+    },
+    "middle": {
+      "academicFocus": ["string"],
+      "softSkillsFocus": ["string"],
+      "characterFocus": ["string"],
+      "activities": ["string"],
+      "milestones": ["string"],
+      "englishTarget": "string",
+      "competitionsTarget": ["string"]
+    },
+    "high": {
+      "academicFocus": ["string"],
+      "softSkillsFocus": ["string"],
+      "characterFocus": ["string"],
+      "activities": ["string"],
+      "milestones": ["string"],
+      "applicationTimeline": {
+        "grade10": ["string"],
+        "grade11": ["string"],
+        "grade12": ["string"]
+      }
+    }
   },
-  "immediateActions": ["string"]
+  "immediateActions": {
+    "next30days": ["string"],
+    "next3months": ["string"],
+    "next6months": ["string"],
+    "parentActions": ["string"]
+  },
+  "warningsAndRisks": {
+    "criticalWarnings": ["string"],
+    "commonMistakes": ["string"],
+    "planBOptions": ["string"]
+  }
 }
+
+Trả lời bằng tiếng Việt, format JSON theo cấu trúc trên.
 `;
 
   return prompt;
