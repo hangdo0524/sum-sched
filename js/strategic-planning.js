@@ -122,6 +122,44 @@ export const SKILLS = [
   { id: 'resilience', name: 'Kiên trì' }
 ];
 
+// English proficiency levels with IELTS equivalent
+export const ENGLISH_LEVELS = {
+  beginner: { name: 'Beginner', ielts: '< 3.0', desc: 'Mới bắt đầu học' },
+  elementary: { name: 'Elementary', ielts: '3.0-4.0', desc: 'Giao tiếp cơ bản' },
+  pre_intermediate: { name: 'Pre-Intermediate', ielts: '4.0-5.0', desc: 'Hiểu nội dung đơn giản' },
+  intermediate: { name: 'Intermediate', ielts: '5.0-6.0', desc: 'Giao tiếp tốt trong nhiều tình huống' },
+  upper_intermediate: { name: 'Upper-Intermediate', ielts: '6.0-7.0', desc: 'Sử dụng thành thạo học thuật' },
+  advanced: { name: 'Advanced', ielts: '7.0+', desc: 'Gần như native speaker' }
+};
+
+// Achievement/Competition categories
+export const ACHIEVEMENT_CATEGORIES = {
+  academic_olympiad: { name: 'Olympic/HSG', weight: 5, examples: ['Olympic Toán', 'HSG Quốc gia', 'Khoa học kỹ thuật'] },
+  stem_competition: { name: 'STEM', weight: 4, examples: ['Robotics', 'Coding', 'Science Fair'] },
+  arts_culture: { name: 'Nghệ thuật', weight: 3, examples: ['Âm nhạc', 'Mỹ thuật', 'Viết văn'] },
+  sports: { name: 'Thể thao', weight: 3, examples: ['Giải vô địch', 'Đại hội TDTT'] },
+  leadership: { name: 'Lãnh đạo', weight: 4, examples: ['MUN', 'Student Council', 'Club President'] },
+  community_service: { name: 'Cộng đồng', weight: 4, examples: ['Volunteer', 'Social project', 'Charity'] },
+  entrepreneurship: { name: 'Khởi nghiệp', weight: 4, examples: ['Startup', 'Business competition'] }
+};
+
+export const ACHIEVEMENT_LEVELS = {
+  international: { name: 'Quốc tế', points: 100 },
+  national: { name: 'Quốc gia', points: 80 },
+  regional: { name: 'Vùng/Tỉnh', points: 50 },
+  city: { name: 'Thành phố', points: 30 },
+  school: { name: 'Trường', points: 10 }
+};
+
+// Extracurricular depth levels
+export const ACTIVITY_DEPTH = {
+  explorer: { name: 'Khám phá', years: '< 1 năm', level: 'Thử nghiệm' },
+  committed: { name: 'Cam kết', years: '1-2 năm', level: 'Tham gia đều đặn' },
+  dedicated: { name: 'Chuyên tâm', years: '2-4 năm', level: 'Vai trò quan trọng' },
+  expert: { name: 'Chuyên sâu', years: '4+ năm', level: 'Thành tích nổi bật' },
+  spike: { name: 'SPIKE', years: '3+ năm', level: 'Xuất sắc, độc đáo, có impact' }
+};
+
 // ============================================
 // STUDENT CONTEXT (Step 1a)
 // ============================================
@@ -143,11 +181,35 @@ export function createEmptyStudentContext(grade) {
     academics: subjects,
     skills: skills,
     talents: [],
-    achievements: [],
     challenges: [],
     learningStyle: 'mixed',
     interests: [],
-    hobbies: []
+    hobbies: [],
+
+    // Enhanced: English proficiency details
+    englishProfile: {
+      currentLevel: 'elementary',
+      ieltsScore: null, // null if not tested
+      yearsLearning: 0,
+      learningMethod: [], // ['school', 'center', 'online', 'native_teacher', 'self_study']
+      dailyExposure: 'low' // 'low', 'medium', 'high'
+    },
+
+    // Enhanced: Achievement history with categories and levels
+    achievements: [], // [{category, level, title, year, description, impact}]
+
+    // Enhanced: Extracurricular activities with depth
+    extracurriculars: [], // [{activity, category, yearsInvolved, depth, role, achievements}]
+
+    // Enhanced: Leadership evidence
+    leadershipHistory: [], // [{role, organization, duration, impact, description}]
+
+    // Enhanced: Potential "spike" - the unique strength
+    potentialSpike: {
+      area: '', // What area could be their spike?
+      evidence: [], // What evidence supports this?
+      developmentPlan: '' // How to develop further?
+    }
   };
 }
 
@@ -235,6 +297,15 @@ export function createEmptyFamilyAspirations() {
       healthIssues: [],
       familyCommitments: [],
       otherResponsibilities: []
+    },
+
+    // Enhanced: Application timeline
+    applicationTimeline: {
+      targetApplyYear: null, // Year planning to apply (e.g., 2030)
+      gapYearConsidered: false,
+      preferredPathway: 'direct_entry', // 'direct_entry', 'foundation', 'pathway'
+      earlyDecision: false,
+      backupCountries: [] // ['uk', 'usa', 'singapore', 'japan']
     }
   };
 }
