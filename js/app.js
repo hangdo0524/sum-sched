@@ -701,7 +701,6 @@ window.setAIPIN = function(pin) {
     console.error('PIN must be at least 4 characters');
   }
 };
-}
 
 async function loadCalendars() {
   currentCalendars = await getCalendars(authUserId);
