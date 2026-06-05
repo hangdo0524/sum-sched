@@ -620,11 +620,11 @@ Trả lời bằng tiếng Việt, format JSON theo cấu trúc trên.
  * Call AI service for analysis
  */
 export async function analyzeWithAI(prompt) {
-  // Get API key from settings
-  const apiKey = localStorage.getItem('sumSched_apiKey');
+  // Get API key from settings (same key as ai-service.js)
+  const apiKey = localStorage.getItem('sumSched_geminiApiKey');
   if (!apiKey) {
     return {
-      error: 'Chưa cấu hình API key. Vào Cài đặt → API Key để thêm.'
+      error: 'Chưa cấu hình Gemini API key. Vào Cài đặt → API Key để thêm.'
     };
   }
 
