@@ -771,12 +771,22 @@ export function generateRoadmapFromRecommendation(recommendation, selectedPathId
 
 export default {
   initStrategicPlanning,
+  // Constants - Basic
   SUBJECT_LEVELS,
   SKILL_LEVELS,
   LEARNING_STYLES,
   ACADEMIC_PRIORITIES,
   SUBJECTS_BY_LEVEL,
   SKILLS,
+  // Constants - Enhanced for Australia Scholarship
+  SCHOOL_TYPES,
+  FINANCIAL_CAPACITY,
+  DEVELOPMENT_STAGES,
+  TOP_5_AUSTRALIA_UNIS,
+  ENGLISH_LEVELS,
+  ACHIEVEMENT_CATEGORIES,
+  ACHIEVEMENT_LEVELS,
+  ACTIVITY_DEPTH,
   // Student Context
   createEmptyStudentContext,
   saveStudentContext,

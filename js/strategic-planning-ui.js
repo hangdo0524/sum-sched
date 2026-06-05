@@ -10,6 +10,13 @@ import {
   ACADEMIC_PRIORITIES,
   SUBJECTS_BY_LEVEL,
   SKILLS,
+  SCHOOL_TYPES,
+  FINANCIAL_CAPACITY,
+  ENGLISH_LEVELS,
+  ACHIEVEMENT_CATEGORIES,
+  ACHIEVEMENT_LEVELS,
+  ACTIVITY_DEPTH,
+  TOP_5_AUSTRALIA_UNIS,
   createEmptyStudentContext,
   saveStudentContext,
   getStudentContext,
@@ -76,12 +83,14 @@ function showPlanningModal() {
     <div class="planning-modal-backdrop" onclick="window.closeStrategicPlanning()"></div>
     <div class="planning-modal-content">
       <div class="planning-modal-header">
-        <h3>🎯 Định Hướng Chiến Lược</h3>
+        <h3>🎯 Định Hướng Du Học Úc - Top 5</h3>
         <div class="planning-steps" id="planning-steps">
-          <span class="step active" data-step="1">1. Năng lực</span>
-          <span class="step" data-step="2">2. Mục tiêu</span>
-          <span class="step" data-step="3">3. AI Phân tích</span>
-          <span class="step" data-step="4">4. Lộ trình</span>
+          <span class="step active" data-step="1">1. Học lực</span>
+          <span class="step" data-step="2">2. Anh văn</span>
+          <span class="step" data-step="3">3. Hoạt động</span>
+          <span class="step" data-step="4">4. Mục tiêu</span>
+          <span class="step" data-step="5">5. AI</span>
+          <span class="step" data-step="6">6. Lộ trình</span>
         </div>
         <button class="planning-modal-close" onclick="window.closeStrategicPlanning()">✕</button>
       </div>
@@ -105,10 +114,12 @@ function renderPlanningStep(step) {
   updateStepIndicator(step);
 
   switch (step) {
-    case 1: renderStep1_StudentContext(); break;
-    case 2: renderStep2_FamilyAspirations(); break;
-    case 3: renderStep3_AIAnalysis(); break;
-    case 4: renderStep4_Roadmap(); break;
+    case 1: renderStep1_AcademicAbilities(); break;
+    case 2: renderStep2_EnglishProfile(); break;
+    case 3: renderStep3_Activities(); break;
+    case 4: renderStep4_GoalsContext(); break;
+    case 5: renderStep5_AIAnalysis(); break;
+    case 6: renderStep6_Roadmap(); break;
   }
 }
 
@@ -120,10 +131,10 @@ function updateStepIndicator(currentStep) {
 }
 
 // ============================================
-// STEP 1: STUDENT CONTEXT (Năng lực)
+// STEP 1: ACADEMIC ABILITIES (Học lực cơ bản)
 // ============================================
 
-function renderStep1_StudentContext() {
+function renderStep1_AcademicAbilities() {
   const body = document.getElementById('planning-body');
   const footer = document.getElementById('planning-footer');
   const { childInfo, studentContext } = planningState;
@@ -135,12 +146,12 @@ function renderStep1_StudentContext() {
     <div class="planning-form">
       <div class="form-section">
         <h4>👧 ${childInfo?.name || 'Con'} - Lớp ${grade}</h4>
-        <p class="form-hint">Đánh giá năng lực hiện tại để AI đề xuất lộ trình phù hợp</p>
+        <p class="form-hint">🇦🇺 Lộ trình học bổng Top 5 Úc cần đánh giá toàn diện</p>
       </div>
 
       <div class="form-section">
         <h4>📚 Năng lực môn học</h4>
-        <p class="form-hint">Kéo thanh trượt để đánh giá (1-10)</p>
+        <p class="form-hint">Kéo thanh trượt để đánh giá (1-10). Top 5 Úc yêu cầu GPA 8.5+</p>
         <div class="ability-grid" id="academic-abilities">
           ${subjects.map(subj => {
             const val = studentContext.academics?.[subj]?.level || 5;
@@ -161,7 +172,8 @@ function renderStep1_StudentContext() {
       </div>
 
       <div class="form-section">
-        <h4>💪 Kỹ năng</h4>
+        <h4>💪 Kỹ năng mềm</h4>
+        <p class="form-hint">Scholarship profile cần kỹ năng toàn diện</p>
         <div class="ability-grid" id="skill-abilities">
           ${SKILLS.map(skill => {
             const val = studentContext.skills?.[skill.id] || 5;
@@ -196,21 +208,15 @@ function renderStep1_StudentContext() {
       </div>
 
       <div class="form-section">
-        <h4>🌟 Năng khiếu & Thành tích</h4>
+        <h4>⚡ Năng khiếu & Khó khăn</h4>
         <div class="form-group">
-          <label>Năng khiếu đặc biệt</label>
+          <label>Năng khiếu đặc biệt (có thể trở thành SPIKE)</label>
           <input type="text" id="talents-input"
                  value="${(studentContext.talents || []).join(', ')}"
-                 placeholder="VD: Vẽ, Piano, Bơi lội..." />
+                 placeholder="VD: Vẽ, Piano, Coding, Toán tư duy..." />
         </div>
         <div class="form-group">
-          <label>Thành tích đã đạt</label>
-          <input type="text" id="achievements-input"
-                 value="${(studentContext.achievements || []).join(', ')}"
-                 placeholder="VD: Giải 3 Toán cấp trường..." />
-        </div>
-        <div class="form-group">
-          <label>Khó khăn gặp phải</label>
+          <label>Khó khăn cần cải thiện</label>
           <input type="text" id="challenges-input"
                  value="${(studentContext.challenges || []).join(', ')}"
                  placeholder="VD: Hay mất tập trung, sợ nói trước đám đông..." />
@@ -218,18 +224,19 @@ function renderStep1_StudentContext() {
       </div>
 
       <div class="form-section">
-        <h4>❤️ Sở thích</h4>
+        <h4>❤️ Đam mê & Sở thích</h4>
+        <p class="form-hint">Đam mê thực sự sẽ tạo "unique story" cho application</p>
         <div class="form-group">
           <label>Sở thích học tập</label>
           <input type="text" id="interests-input"
                  value="${(studentContext.interests || []).join(', ')}"
-                 placeholder="VD: Khoa học, Lập trình, Đọc sách..." />
+                 placeholder="VD: Khoa học, Lập trình, Đọc sách lịch sử..." />
         </div>
         <div class="form-group">
           <label>Hoạt động yêu thích</label>
           <input type="text" id="hobbies-input"
                  value="${(studentContext.hobbies || []).join(', ')}"
-                 placeholder="VD: Đá bóng, Chơi game, Xem phim..." />
+                 placeholder="VD: Đá bóng, Chơi game, Làm video YouTube..." />
         </div>
       </div>
     </div>
@@ -242,84 +249,390 @@ function renderStep1_StudentContext() {
 }
 
 // ============================================
-// STEP 2: FAMILY ASPIRATIONS (Mục tiêu)
+// STEP 2: ENGLISH PROFILE (Anh văn & Thành tích)
 // ============================================
 
-function renderStep2_FamilyAspirations() {
+function renderStep2_EnglishProfile() {
   const body = document.getElementById('planning-body');
   const footer = document.getElementById('planning-footer');
-  const { familyAspirations } = planningState;
+  const { studentContext } = planningState;
+  const englishProfile = studentContext.englishProfile || {};
+  const achievements = studentContext.achievements || [];
 
   body.innerHTML = `
     <div class="planning-form">
       <div class="form-section">
-        <h4>🎯 Mục tiêu học tập</h4>
-        <p class="form-hint">Để trống nếu chưa xác định - AI sẽ đề xuất</p>
+        <h4>🌏 Trình độ tiếng Anh</h4>
+        <p class="form-hint">Top 5 Úc yêu cầu IELTS 6.5-7.0+ (Academic)</p>
 
         <div class="form-group">
-          <label>Trường THPT mục tiêu</label>
-          <input type="text" id="target-highschool"
-                 value="${familyAspirations.academicGoals?.targetHighSchool || ''}"
-                 placeholder="VD: THPT Chuyên Lê Hồng Phong, THPT Nguyễn Thượng Hiền..." />
+          <label>Trình độ hiện tại</label>
+          <div class="radio-cards compact">
+            ${Object.entries(ENGLISH_LEVELS).map(([key, level]) => `
+              <label class="radio-card ${englishProfile.currentLevel === key ? 'selected' : ''}">
+                <input type="radio" name="englishLevel" value="${key}"
+                       ${englishProfile.currentLevel === key ? 'checked' : ''}
+                       onchange="window.updateEnglishLevel('${key}')" />
+                <span class="card-title">${level.name}</span>
+                <span class="card-desc">IELTS ${level.ielts}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Điểm IELTS/TOEFL (nếu đã thi)</label>
+            <input type="number" id="ielts-score" step="0.5" min="0" max="9"
+                   value="${englishProfile.ieltsScore || ''}"
+                   placeholder="VD: 6.5" />
+          </div>
+          <div class="form-group">
+            <label>Số năm học tiếng Anh</label>
+            <input type="number" id="years-learning" min="0" max="15"
+                   value="${englishProfile.yearsLearning || 0}" />
+          </div>
         </div>
 
         <div class="form-group">
-          <label>Trường Đại học mục tiêu</label>
-          <input type="text" id="target-university"
-                 value="${familyAspirations.academicGoals?.targetUniversity || ''}"
-                 placeholder="VD: ĐH Bách khoa, ĐH Y Dược, FPT..." />
-        </div>
-
-        <div class="form-group">
-          <label>Ngành học dự kiến</label>
-          <input type="text" id="target-major"
-                 value="${familyAspirations.academicGoals?.targetMajor || ''}"
-                 placeholder="VD: Công nghệ thông tin, Y khoa, Kinh tế..." />
-        </div>
-
-        <div class="form-group">
-          <label>Nghề nghiệp mơ ước</label>
-          <input type="text" id="target-career"
-                 value="${familyAspirations.academicGoals?.targetCareer || ''}"
-                 placeholder="VD: Bác sĩ, Kỹ sư, Doanh nhân, Nhà khoa học..." />
-        </div>
-      </div>
-
-      <div class="form-section">
-        <h4>📈 Định hướng phát triển</h4>
-
-        <div class="form-group">
-          <label>Ưu tiên học tập</label>
-          <div class="radio-cards">
-            ${Object.entries(ACADEMIC_PRIORITIES).map(([key, priority]) => `
-              <label class="radio-card ${familyAspirations.developmentFocus?.academicPriority === key ? 'selected' : ''}">
-                <input type="radio" name="academicPriority" value="${key}"
-                       ${familyAspirations.developmentFocus?.academicPriority === key ? 'checked' : ''}
-                       onchange="window.updateAcademicPriority('${key}')" />
-                <span class="card-title">${priority.name}</span>
-                <span class="card-desc">${priority.desc}</span>
+          <label>Phương pháp học (chọn nhiều)</label>
+          <div class="checkbox-group">
+            ${[
+              { id: 'school', label: 'Trường học' },
+              { id: 'center', label: 'Trung tâm Anh ngữ' },
+              { id: 'online', label: 'Online courses' },
+              { id: 'native_teacher', label: 'Giáo viên bản ngữ' },
+              { id: 'self_study', label: 'Tự học' }
+            ].map(method => `
+              <label class="checkbox-item">
+                <input type="checkbox" name="learningMethod" value="${method.id}"
+                       ${(englishProfile.learningMethod || []).includes(method.id) ? 'checked' : ''} />
+                ${method.label}
               </label>
             `).join('')}
           </div>
         </div>
 
         <div class="form-group">
-          <label>Hoạt động ngoại khóa mong muốn</label>
-          <input type="text" id="extracurricular"
-                 value="${(familyAspirations.developmentFocus?.extracurricular || []).join(', ')}"
-                 placeholder="VD: CLB Toán, Đội bóng, Ban nhạc..." />
-        </div>
-
-        <div class="form-group">
-          <label>Kỹ năng mềm muốn phát triển</label>
-          <input type="text" id="soft-skills"
-                 value="${(familyAspirations.developmentFocus?.softSkills || []).join(', ')}"
-                 placeholder="VD: Lãnh đạo, Thuyết trình, Làm việc nhóm..." />
+          <label>Mức độ tiếp xúc tiếng Anh hàng ngày</label>
+          <select id="daily-exposure">
+            <option value="low" ${englishProfile.dailyExposure === 'low' ? 'selected' : ''}>Thấp - Chỉ ở trường</option>
+            <option value="medium" ${englishProfile.dailyExposure === 'medium' ? 'selected' : ''}>Trung bình - Có xem phim/đọc sách</option>
+            <option value="high" ${englishProfile.dailyExposure === 'high' ? 'selected' : ''}>Cao - Môi trường song ngữ</option>
+          </select>
         </div>
       </div>
 
       <div class="form-section">
-        <h4>⏰ Nguồn lực & Điều kiện</h4>
+        <h4>🏆 Thành tích & Giải thưởng</h4>
+        <p class="form-hint">Giải thưởng quốc tế/quốc gia rất có giá trị cho hồ sơ</p>
+
+        <div id="achievements-list">
+          ${achievements.length > 0 ? achievements.map((ach, i) => renderAchievementItem(ach, i)).join('') : `
+            <p class="empty-hint">Chưa có thành tích. Nhấn "Thêm" để bổ sung.</p>
+          `}
+        </div>
+
+        <button type="button" class="btn btn-outline btn-sm" onclick="window.addAchievement()">
+          + Thêm thành tích
+        </button>
+      </div>
+    </div>
+  `;
+
+  footer.innerHTML = `
+    <button class="btn btn-secondary" onclick="window.planningPrev()">◀ Quay lại</button>
+    <button class="btn btn-primary" onclick="window.planningNext()">Tiếp theo ▶</button>
+  `;
+}
+
+function renderAchievementItem(ach, index) {
+  const achObj = typeof ach === 'string' ? { title: ach, category: 'academic_olympiad', level: 'school' } : ach;
+  return `
+    <div class="achievement-item" data-index="${index}">
+      <div class="form-row">
+        <select class="ach-category" onchange="window.updateAchievement(${index}, 'category', this.value)">
+          ${Object.entries(ACHIEVEMENT_CATEGORIES).map(([key, cat]) => `
+            <option value="${key}" ${achObj.category === key ? 'selected' : ''}>${cat.name}</option>
+          `).join('')}
+        </select>
+        <select class="ach-level" onchange="window.updateAchievement(${index}, 'level', this.value)">
+          ${Object.entries(ACHIEVEMENT_LEVELS).map(([key, lv]) => `
+            <option value="${key}" ${achObj.level === key ? 'selected' : ''}>${lv.name}</option>
+          `).join('')}
+        </select>
+        <input type="text" class="ach-title" placeholder="Tên giải thưởng"
+               value="${achObj.title || ''}"
+               onchange="window.updateAchievement(${index}, 'title', this.value)" />
+        <button type="button" class="btn-icon" onclick="window.removeAchievement(${index})">🗑️</button>
+      </div>
+    </div>
+  `;
+}
+
+// ============================================
+// STEP 3: ACTIVITIES (Hoạt động ngoại khóa + Leadership)
+// ============================================
+
+function renderStep3_Activities() {
+  const body = document.getElementById('planning-body');
+  const footer = document.getElementById('planning-footer');
+  const { studentContext } = planningState;
+  const extracurriculars = studentContext.extracurriculars || [];
+  const leadershipHistory = studentContext.leadershipHistory || [];
+  const potentialSpike = studentContext.potentialSpike || {};
+
+  body.innerHTML = `
+    <div class="planning-form">
+      <div class="form-section">
+        <h4>🎯 Hoạt động ngoại khóa</h4>
+        <p class="form-hint">Top 5 Úc cần thấy "depth over breadth" - chuyên sâu hơn là dàn trải</p>
+
+        <div id="extracurricular-list">
+          ${extracurriculars.length > 0 ? extracurriculars.map((act, i) => renderActivityItem(act, i)).join('') : `
+            <p class="empty-hint">Chưa có hoạt động. Nhấn "Thêm" để bổ sung.</p>
+          `}
+        </div>
+
+        <button type="button" class="btn btn-outline btn-sm" onclick="window.addActivity()">
+          + Thêm hoạt động
+        </button>
+      </div>
+
+      <div class="form-section">
+        <h4>👑 Vai trò lãnh đạo</h4>
+        <p class="form-hint">Leadership với impact đo lường được rất quan trọng</p>
+
+        <div id="leadership-list">
+          ${leadershipHistory.length > 0 ? leadershipHistory.map((lead, i) => renderLeadershipItem(lead, i)).join('') : `
+            <p class="empty-hint">Chưa có vai trò lãnh đạo. Nhấn "Thêm" để bổ sung.</p>
+          `}
+        </div>
+
+        <button type="button" class="btn btn-outline btn-sm" onclick="window.addLeadership()">
+          + Thêm vai trò
+        </button>
+      </div>
+
+      <div class="form-section spike-section">
+        <h4>⭐ SPIKE - Điểm nổi bật độc đáo</h4>
+        <p class="form-hint">
+          "Spike" = lĩnh vực con XUẤT SẮC và khác biệt. Đây là yếu tố quan trọng nhất trong hồ sơ học bổng.
+          VD: Robotics champion, Published author, Social project founder...
+        </p>
+
+        <div class="form-group">
+          <label>Lĩnh vực SPIKE tiềm năng</label>
+          <input type="text" id="spike-area"
+                 value="${potentialSpike.area || ''}"
+                 placeholder="VD: Robotics, Âm nhạc cổ điển, Viết sáng tạo, Khởi nghiệp xã hội..." />
+        </div>
+
+        <div class="form-group">
+          <label>Bằng chứng/Thành tích trong lĩnh vực này</label>
+          <textarea id="spike-evidence" rows="2"
+                    placeholder="VD: Giải 3 Robotics quốc gia, Biểu diễn piano 50+ buổi, Xuất bản 2 truyện ngắn...">${(potentialSpike.evidence || []).join('\n')}</textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Kế hoạch phát triển SPIKE</label>
+          <textarea id="spike-plan" rows="2"
+                    placeholder="VD: Tham gia đội tuyển, Học chuyên sâu với mentor, Mở rộng dự án...">${potentialSpike.developmentPlan || ''}</textarea>
+        </div>
+      </div>
+    </div>
+  `;
+
+  footer.innerHTML = `
+    <button class="btn btn-secondary" onclick="window.planningPrev()">◀ Quay lại</button>
+    <button class="btn btn-primary" onclick="window.planningNext()">Tiếp theo ▶</button>
+  `;
+}
+
+function renderActivityItem(act, index) {
+  const actObj = typeof act === 'object' ? act : { activity: act };
+  return `
+    <div class="activity-item" data-index="${index}">
+      <div class="form-row">
+        <input type="text" class="act-name" placeholder="Tên hoạt động"
+               value="${actObj.activity || ''}"
+               onchange="window.updateActivity(${index}, 'activity', this.value)" />
+        <select class="act-depth" onchange="window.updateActivity(${index}, 'depth', this.value)">
+          ${Object.entries(ACTIVITY_DEPTH).map(([key, depth]) => `
+            <option value="${key}" ${actObj.depth === key ? 'selected' : ''}>${depth.name} (${depth.years})</option>
+          `).join('')}
+        </select>
+        <input type="text" class="act-role" placeholder="Vai trò"
+               value="${actObj.role || ''}"
+               onchange="window.updateActivity(${index}, 'role', this.value)" />
+        <button type="button" class="btn-icon" onclick="window.removeActivity(${index})">🗑️</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderLeadershipItem(lead, index) {
+  const leadObj = typeof lead === 'object' ? lead : { role: lead };
+  return `
+    <div class="leadership-item" data-index="${index}">
+      <div class="form-row">
+        <input type="text" class="lead-role" placeholder="Vai trò (VD: Lớp trưởng)"
+               value="${leadObj.role || ''}"
+               onchange="window.updateLeadership(${index}, 'role', this.value)" />
+        <input type="text" class="lead-org" placeholder="Tổ chức"
+               value="${leadObj.organization || ''}"
+               onchange="window.updateLeadership(${index}, 'organization', this.value)" />
+        <input type="text" class="lead-impact" placeholder="Impact (VD: Tổ chức 5 sự kiện)"
+               value="${leadObj.impact || ''}"
+               onchange="window.updateLeadership(${index}, 'impact', this.value)" />
+        <button type="button" class="btn-icon" onclick="window.removeLeadership(${index})">🗑️</button>
+      </div>
+    </div>
+  `;
+}
+
+// ============================================
+// STEP 4: GOALS & CONTEXT (Bối cảnh + Mục tiêu)
+// ============================================
+
+function renderStep4_GoalsContext() {
+  const body = document.getElementById('planning-body');
+  const footer = document.getElementById('planning-footer');
+  const { familyAspirations, childInfo } = planningState;
+  const currentContext = familyAspirations.currentContext || {};
+  const academicGoals = familyAspirations.academicGoals || {};
+  const applicationTimeline = familyAspirations.applicationTimeline || {};
+
+  body.innerHTML = `
+    <div class="planning-form">
+      <div class="form-section">
+        <h4>🏫 Bối cảnh hiện tại</h4>
+        <p class="form-hint">Thông tin trường đang học giúp AI đánh giá chính xác hơn</p>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tên trường đang học</label>
+            <input type="text" id="school-name"
+                   value="${currentContext.schoolName || ''}"
+                   placeholder="VD: THCS Nguyễn Du, Trường Quốc tế ABC..." />
+          </div>
+          <div class="form-group">
+            <label>Loại trường</label>
+            <select id="school-type">
+              ${Object.entries(SCHOOL_TYPES).map(([key, type]) => `
+                <option value="${key}" ${currentContext.schoolType === key ? 'selected' : ''}>${type.name}</option>
+              `).join('')}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Xếp loại trong lớp/trường</label>
+          <select id="current-performance">
+            <option value="top5" ${currentContext.currentPerformance === 'top5' ? 'selected' : ''}>Top 5% - Xuất sắc</option>
+            <option value="top10" ${currentContext.currentPerformance === 'top10' ? 'selected' : ''}>Top 10% - Giỏi</option>
+            <option value="top20" ${currentContext.currentPerformance === 'top20' ? 'selected' : ''}>Top 20% - Khá giỏi</option>
+            <option value="average" ${currentContext.currentPerformance === 'average' ? 'selected' : ''}>Trung bình</option>
+            <option value="below_average" ${currentContext.currentPerformance === 'below_average' ? 'selected' : ''}>Dưới trung bình</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-section australia-goal">
+        <h4>🇦🇺 Mục tiêu du học Úc - Top 5</h4>
+        <p class="form-hint">Melbourne, Sydney, UNSW, ANU, Monash - IELTS 6.5+, GPA 8.5+</p>
+
+        <div class="form-group">
+          <label>Trường ĐH mục tiêu tại Úc</label>
+          <select id="target-university">
+            <option value="">-- Chọn trường --</option>
+            ${Object.entries(TOP_5_AUSTRALIA_UNIS).map(([key, uni]) => `
+              <option value="${key}" ${academicGoals.targetUniversity === key ? 'selected' : ''}>${uni.name}</option>
+            `).join('')}
+            <option value="any_top5" ${academicGoals.targetUniversity === 'any_top5' ? 'selected' : ''}>Bất kỳ trường Top 5</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Ngành học dự kiến</label>
+            <input type="text" id="target-major"
+                   value="${academicGoals.targetMajor || ''}"
+                   placeholder="VD: Computer Science, Medicine, Business..." />
+          </div>
+          <div class="form-group">
+            <label>Nghề nghiệp mơ ước</label>
+            <input type="text" id="target-career"
+                   value="${academicGoals.targetCareer || ''}"
+                   placeholder="VD: AI Engineer, Doctor, Entrepreneur..." />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Yêu cầu học bổng</label>
+          <div class="radio-cards compact">
+            ${Object.entries(FINANCIAL_CAPACITY).map(([key, cap]) => `
+              <label class="radio-card ${academicGoals.scholarshipRequirement === key ? 'selected' : ''}">
+                <input type="radio" name="scholarshipReq" value="${key}"
+                       ${academicGoals.scholarshipRequirement === key ? 'checked' : ''}
+                       onchange="window.updateScholarshipReq('${key}')" />
+                <span class="card-title">${cap.name}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>📅 Timeline Apply</h4>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Năm dự định apply đại học</label>
+            <input type="number" id="target-apply-year" min="2025" max="2040"
+                   value="${applicationTimeline.targetApplyYear || (new Date().getFullYear() + (12 - (childInfo?.grade || 4)))}"
+                   placeholder="VD: 2030" />
+          </div>
+          <div class="form-group">
+            <label>Pathway ưu tiên</label>
+            <select id="preferred-pathway">
+              <option value="direct_entry" ${applicationTimeline.preferredPathway === 'direct_entry' ? 'selected' : ''}>Direct Entry (vào thẳng)</option>
+              <option value="foundation" ${applicationTimeline.preferredPathway === 'foundation' ? 'selected' : ''}>Foundation Year</option>
+              <option value="pathway" ${applicationTimeline.preferredPathway === 'pathway' ? 'selected' : ''}>Pathway Program</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="gap-year"
+                   ${applicationTimeline.gapYearConsidered ? 'checked' : ''} />
+            Có thể xem xét Gap Year
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label>Quốc gia backup (nếu không đậu Úc)</label>
+          <div class="checkbox-group">
+            ${[
+              { id: 'uk', label: '🇬🇧 UK' },
+              { id: 'usa', label: '🇺🇸 USA' },
+              { id: 'singapore', label: '🇸🇬 Singapore' },
+              { id: 'japan', label: '🇯🇵 Japan' },
+              { id: 'korea', label: '🇰🇷 Korea' }
+            ].map(country => `
+              <label class="checkbox-item">
+                <input type="checkbox" name="backupCountry" value="${country.id}"
+                       ${(applicationTimeline.backupCountries || []).includes(country.id) ? 'checked' : ''} />
+                ${country.label}
+              </label>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>⏰ Nguồn lực gia đình</h4>
 
         <div class="form-row">
           <div class="form-group">
@@ -334,20 +647,11 @@ function renderStep2_FamilyAspirations() {
           </div>
 
           <div class="form-group">
-            <label>Ngân sách</label>
-            <select id="budget">
-              <option value="limited" ${familyAspirations.resources?.budget === 'limited' ? 'selected' : ''}>Hạn chế</option>
-              <option value="moderate" ${familyAspirations.resources?.budget === 'moderate' ? 'selected' : ''}>Vừa phải</option>
-              <option value="flexible" ${familyAspirations.resources?.budget === 'flexible' ? 'selected' : ''}>Linh hoạt</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Mức độ tham gia của PH</label>
+            <label>Mức độ hỗ trợ của PH</label>
             <select id="parent-involvement">
-              <option value="high" ${familyAspirations.resources?.parentInvolvement === 'high' ? 'selected' : ''}>Cao - Hỗ trợ nhiều</option>
+              <option value="high" ${familyAspirations.resources?.parentInvolvement === 'high' ? 'selected' : ''}>Cao - Đồng hành sát</option>
               <option value="medium" ${familyAspirations.resources?.parentInvolvement === 'medium' ? 'selected' : ''}>Trung bình</option>
-              <option value="low" ${familyAspirations.resources?.parentInvolvement === 'low' ? 'selected' : ''}>Thấp - Con tự học</option>
+              <option value="low" ${familyAspirations.resources?.parentInvolvement === 'low' ? 'selected' : ''}>Thấp - Con tự chủ</option>
             </select>
           </div>
         </div>
@@ -356,24 +660,26 @@ function renderStep2_FamilyAspirations() {
           <label>
             <input type="checkbox" id="tutoring-available"
                    ${familyAspirations.resources?.tutoringAvailable ? 'checked' : ''} />
-            Có thể thuê gia sư / học thêm
+            Có thể thuê gia sư / học thêm / IELTS center
           </label>
         </div>
       </div>
 
       <div class="form-section">
         <h4>⚠️ Ràng buộc (nếu có)</h4>
-        <div class="form-group">
-          <label>Vấn đề sức khỏe cần lưu ý</label>
-          <input type="text" id="health-issues"
-                 value="${(familyAspirations.constraints?.healthIssues || []).join(', ')}"
-                 placeholder="VD: Cận thị, Dị ứng, ADHD..." />
-        </div>
-        <div class="form-group">
-          <label>Cam kết gia đình</label>
-          <input type="text" id="family-commitments"
-                 value="${(familyAspirations.constraints?.familyCommitments || []).join(', ')}"
-                 placeholder="VD: Về quê mỗi tháng, Du lịch hè..." />
+        <div class="form-row">
+          <div class="form-group">
+            <label>Vấn đề sức khỏe</label>
+            <input type="text" id="health-issues"
+                   value="${(familyAspirations.constraints?.healthIssues || []).join(', ')}"
+                   placeholder="VD: Cận thị, Dị ứng..." />
+          </div>
+          <div class="form-group">
+            <label>Cam kết gia đình</label>
+            <input type="text" id="family-commitments"
+                   value="${(familyAspirations.constraints?.familyCommitments || []).join(', ')}"
+                   placeholder="VD: Về quê hè, Du lịch tháng 7..." />
+          </div>
         </div>
       </div>
     </div>
@@ -381,15 +687,15 @@ function renderStep2_FamilyAspirations() {
 
   footer.innerHTML = `
     <button class="btn btn-secondary" onclick="window.planningPrev()">◀ Quay lại</button>
-    <button class="btn btn-primary" onclick="window.planningNext()">Tiếp theo ▶</button>
+    <button class="btn btn-primary" onclick="window.planningNext()">🚀 Phân tích AI ▶</button>
   `;
 }
 
 // ============================================
-// STEP 3: AI ANALYSIS
+// STEP 5: AI ANALYSIS
 // ============================================
 
-function renderStep3_AIAnalysis() {
+function renderStep5_AIAnalysis() {
   const body = document.getElementById('planning-body');
   const footer = document.getElementById('planning-footer');
   const { aiRecommendation } = planningState;
@@ -511,10 +817,10 @@ function renderAIResults(recommendation) {
 }
 
 // ============================================
-// STEP 4: ROADMAP
+// STEP 6: ROADMAP
 // ============================================
 
-function renderStep4_Roadmap() {
+function renderStep6_Roadmap() {
   const body = document.getElementById('planning-body');
   const footer = document.getElementById('planning-footer');
   const { roadmap, studentContext, aiRecommendation } = planningState;
@@ -668,10 +974,132 @@ window.selectPath = function(pathId) {
   });
 };
 
+// English Profile handlers
+window.updateEnglishLevel = function(level) {
+  if (!planningState.studentContext.englishProfile) {
+    planningState.studentContext.englishProfile = {};
+  }
+  planningState.studentContext.englishProfile.currentLevel = level;
+  document.querySelectorAll('[name="englishLevel"]').forEach(el => {
+    el.closest('.radio-card').classList.toggle('selected', el.value === level);
+  });
+};
+
+// Achievement handlers
+window.addAchievement = function() {
+  if (!planningState.studentContext.achievements) {
+    planningState.studentContext.achievements = [];
+  }
+  planningState.studentContext.achievements.push({
+    category: 'academic_olympiad',
+    level: 'school',
+    title: '',
+    year: new Date().getFullYear()
+  });
+  refreshAchievementsList();
+};
+
+window.updateAchievement = function(index, field, value) {
+  if (planningState.studentContext.achievements?.[index]) {
+    planningState.studentContext.achievements[index][field] = value;
+  }
+};
+
+window.removeAchievement = function(index) {
+  planningState.studentContext.achievements?.splice(index, 1);
+  refreshAchievementsList();
+};
+
+function refreshAchievementsList() {
+  const container = document.getElementById('achievements-list');
+  if (!container) return;
+  const achievements = planningState.studentContext.achievements || [];
+  container.innerHTML = achievements.length > 0
+    ? achievements.map((ach, i) => renderAchievementItem(ach, i)).join('')
+    : '<p class="empty-hint">Chưa có thành tích. Nhấn "Thêm" để bổ sung.</p>';
+}
+
+// Activity handlers
+window.addActivity = function() {
+  if (!planningState.studentContext.extracurriculars) {
+    planningState.studentContext.extracurriculars = [];
+  }
+  planningState.studentContext.extracurriculars.push({
+    activity: '',
+    depth: 'explorer',
+    role: ''
+  });
+  refreshActivitiesList();
+};
+
+window.updateActivity = function(index, field, value) {
+  if (planningState.studentContext.extracurriculars?.[index]) {
+    planningState.studentContext.extracurriculars[index][field] = value;
+  }
+};
+
+window.removeActivity = function(index) {
+  planningState.studentContext.extracurriculars?.splice(index, 1);
+  refreshActivitiesList();
+};
+
+function refreshActivitiesList() {
+  const container = document.getElementById('extracurricular-list');
+  if (!container) return;
+  const activities = planningState.studentContext.extracurriculars || [];
+  container.innerHTML = activities.length > 0
+    ? activities.map((act, i) => renderActivityItem(act, i)).join('')
+    : '<p class="empty-hint">Chưa có hoạt động. Nhấn "Thêm" để bổ sung.</p>';
+}
+
+// Leadership handlers
+window.addLeadership = function() {
+  if (!planningState.studentContext.leadershipHistory) {
+    planningState.studentContext.leadershipHistory = [];
+  }
+  planningState.studentContext.leadershipHistory.push({
+    role: '',
+    organization: '',
+    impact: ''
+  });
+  refreshLeadershipList();
+};
+
+window.updateLeadership = function(index, field, value) {
+  if (planningState.studentContext.leadershipHistory?.[index]) {
+    planningState.studentContext.leadershipHistory[index][field] = value;
+  }
+};
+
+window.removeLeadership = function(index) {
+  planningState.studentContext.leadershipHistory?.splice(index, 1);
+  refreshLeadershipList();
+};
+
+function refreshLeadershipList() {
+  const container = document.getElementById('leadership-list');
+  if (!container) return;
+  const leadership = planningState.studentContext.leadershipHistory || [];
+  container.innerHTML = leadership.length > 0
+    ? leadership.map((lead, i) => renderLeadershipItem(lead, i)).join('')
+    : '<p class="empty-hint">Chưa có vai trò lãnh đạo. Nhấn "Thêm" để bổ sung.</p>';
+}
+
+// Scholarship requirement handler
+window.updateScholarshipReq = function(req) {
+  if (!planningState.familyAspirations.academicGoals) {
+    planningState.familyAspirations.academicGoals = {};
+  }
+  planningState.familyAspirations.academicGoals.scholarshipRequirement = req;
+  document.querySelectorAll('[name="scholarshipReq"]').forEach(el => {
+    el.closest('.radio-card').classList.toggle('selected', el.value === req);
+  });
+};
+
 window.planningNext = async function() {
   await saveCurrentStepData();
 
-  if (planningState.step < 4) {
+  if (planningState.step < 6) {
     renderPlanningStep(planningState.step + 1);
   }
 };
@@ -686,33 +1114,70 @@ async function saveCurrentStepData() {
   const { userId, childId, studentContext, familyAspirations } = planningState;
 
   if (planningState.step === 1) {
-    // Save student context
+    // Save basic academic abilities
     studentContext.talents = parseCommaSeparated(document.getElementById('talents-input')?.value);
-    studentContext.achievements = parseCommaSeparated(document.getElementById('achievements-input')?.value);
     studentContext.challenges = parseCommaSeparated(document.getElementById('challenges-input')?.value);
     studentContext.interests = parseCommaSeparated(document.getElementById('interests-input')?.value);
     studentContext.hobbies = parseCommaSeparated(document.getElementById('hobbies-input')?.value);
-
     await saveStudentContext(userId, childId, studentContext);
   }
 
   if (planningState.step === 2) {
-    // Save family aspirations
+    // Save English profile and achievements
+    studentContext.englishProfile = {
+      currentLevel: document.querySelector('[name="englishLevel"]:checked')?.value || 'elementary',
+      ieltsScore: parseFloat(document.getElementById('ielts-score')?.value) || null,
+      yearsLearning: parseInt(document.getElementById('years-learning')?.value) || 0,
+      learningMethod: Array.from(document.querySelectorAll('[name="learningMethod"]:checked')).map(el => el.value),
+      dailyExposure: document.getElementById('daily-exposure')?.value || 'low'
+    };
+    // Keep achievements as they are updated through handlers
+    await saveStudentContext(userId, childId, studentContext);
+  }
+
+  if (planningState.step === 3) {
+    // Save activities, leadership, and spike
+    studentContext.potentialSpike = {
+      area: document.getElementById('spike-area')?.value || '',
+      evidence: parseCommaSeparated(document.getElementById('spike-evidence')?.value.replace(/\n/g, ',')),
+      developmentPlan: document.getElementById('spike-plan')?.value || ''
+    };
+    // Keep extracurriculars and leadership as they are updated through handlers
+    await saveStudentContext(userId, childId, studentContext);
+  }
+
+  if (planningState.step === 4) {
+    // Save goals and context
+    familyAspirations.currentContext = {
+      schoolName: document.getElementById('school-name')?.value || '',
+      schoolType: document.getElementById('school-type')?.value || 'public',
+      currentPerformance: document.getElementById('current-performance')?.value || 'average'
+    };
+
     familyAspirations.academicGoals = {
-      targetHighSchool: document.getElementById('target-highschool')?.value || '',
+      ...familyAspirations.academicGoals,
       targetUniversity: document.getElementById('target-university')?.value || '',
       targetMajor: document.getElementById('target-major')?.value || '',
-      targetCareer: document.getElementById('target-career')?.value || ''
+      targetCareer: document.getElementById('target-career')?.value || '',
+      studyAbroadIntent: true,
+      targetCountry: 'australia',
+      scholarshipRequirement: document.querySelector('[name="scholarshipReq"]:checked')?.value || 'full_scholarship'
     };
-    familyAspirations.developmentFocus.extracurricular = parseCommaSeparated(document.getElementById('extracurricular')?.value);
-    familyAspirations.developmentFocus.softSkills = parseCommaSeparated(document.getElementById('soft-skills')?.value);
+
+    familyAspirations.applicationTimeline = {
+      targetApplyYear: parseInt(document.getElementById('target-apply-year')?.value) || null,
+      gapYearConsidered: document.getElementById('gap-year')?.checked || false,
+      preferredPathway: document.getElementById('preferred-pathway')?.value || 'direct_entry',
+      backupCountries: Array.from(document.querySelectorAll('[name="backupCountry"]:checked')).map(el => el.value)
+    };
+
     familyAspirations.resources = {
       studyTimePerDay: parseInt(document.getElementById('study-time')?.value) || 3,
-      budget: document.getElementById('budget')?.value || 'moderate',
       parentInvolvement: document.getElementById('parent-involvement')?.value || 'medium',
       tutoringAvailable: document.getElementById('tutoring-available')?.checked || false,
       onlineResourcesAccess: true
     };
+
     familyAspirations.constraints = {
       healthIssues: parseCommaSeparated(document.getElementById('health-issues')?.value),
       familyCommitments: parseCommaSeparated(document.getElementById('family-commitments')?.value),
