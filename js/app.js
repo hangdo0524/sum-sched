@@ -218,9 +218,14 @@ window.showStrategicPlanning = function() {
   const childId = getCurrentUser();
   const family = currentFamily;
   const child = family?.children?.[childId];
+
+  // Pass full child info from family data
   const childInfo = {
     name: child?.name || 'Con',
-    grade: child?.grade || 4
+    grade: child?.grade || 4,
+    birthDate: child?.birthDate || null,
+    school: child?.school || '',
+    avatar: child?.avatar || '🧒'
   };
   showStrategicPlanningWizard(authUserId, childId, childInfo);
 };

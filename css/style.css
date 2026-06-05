@@ -4746,13 +4746,40 @@ body {
 }
 
 /* Achievement items */
+.hidden {
+  display: none !important;
+}
+
 .achievement-item,
 .activity-item,
 .leadership-item {
-  padding: var(--spacing-2);
+  padding: var(--spacing-3);
   background: var(--color-gray-50);
   border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-3);
+  border: 1px solid var(--color-gray-200);
+}
+
+.achievement-item .form-row {
   margin-bottom: var(--spacing-2);
+}
+
+.achievement-item .form-row:last-child {
+  margin-bottom: 0;
+}
+
+.ach-competition {
+  width: 100%;
+  margin-bottom: var(--spacing-2);
+}
+
+.ach-result {
+  flex: 1;
+}
+
+.ach-year {
+  width: 80px;
+  flex-shrink: 0;
 }
 
 .achievement-item .form-row,

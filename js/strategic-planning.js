@@ -72,15 +72,31 @@ export const SCHOOL_TYPES = {
   specialized: { name: 'Chuyên', desc: 'Trường THPT chuyên, năng khiếu' }
 };
 
-// Curriculum/Program types
+// Curriculum/Program types - Chi tiết hơn
 export const CURRICULUM_TYPES = {
-  vn_gdpt: { name: 'Chương trình GDPT 2018', desc: 'Chương trình giáo dục phổ thông mới của Bộ GD&ĐT' },
-  vn_gdpt_old: { name: 'Chương trình GDPT cũ', desc: 'Chương trình trước 2018' },
-  cambridge: { name: 'Cambridge', desc: 'Cambridge IGCSE / A-Level' },
-  ib: { name: 'IB', desc: 'International Baccalaureate (PYP/MYP/DP)' },
-  american: { name: 'American', desc: 'Chương trình Mỹ (AP, Common Core)' },
-  bilingual: { name: 'Song ngữ', desc: 'Kết hợp VN + Quốc tế' },
+  vn_gdpt: { name: 'GDPT 2018', desc: 'Chương trình giáo dục phổ thông mới Bộ GD&ĐT' },
+  vn_gdpt_old: { name: 'GDPT cũ', desc: 'Chương trình trước 2018' },
+  // Cambridge system
+  cambridge_primary: { name: 'Cambridge Primary', desc: 'Cambridge Primary (Tiểu học)' },
+  cambridge_igcse: { name: 'Cambridge IGCSE', desc: 'Cambridge IGCSE (THCS-THPT)' },
+  cambridge_alevel: { name: 'Cambridge A-Level', desc: 'Cambridge A-Level (lớp 11-12)' },
+  // Oxford system
+  oxford_primary: { name: 'Oxford Primary', desc: 'Oxford International Primary' },
+  oxford_secondary: { name: 'Oxford Secondary', desc: 'Oxford International Secondary' },
+  // IB system
+  ib_pyp: { name: 'IB PYP', desc: 'IB Primary Years Programme (3-12 tuổi)' },
+  ib_myp: { name: 'IB MYP', desc: 'IB Middle Years Programme (11-16 tuổi)' },
+  ib_dp: { name: 'IB DP', desc: 'IB Diploma Programme (16-19 tuổi)' },
+  // American
+  american_common: { name: 'American', desc: 'Chương trình Mỹ (Common Core)' },
+  american_ap: { name: 'American AP', desc: 'Advanced Placement (lớp 11-12)' },
+  // Bilingual combinations
+  bilingual_cambridge: { name: 'Song ngữ Cambridge', desc: 'VN + Cambridge (VAS, BVIS, AIS...)' },
+  bilingual_oxford: { name: 'Song ngữ Oxford', desc: 'VN + Oxford' },
+  bilingual_ib: { name: 'Song ngữ IB', desc: 'VN + IB elements' },
+  // Others
   montessori: { name: 'Montessori', desc: 'Phương pháp Montessori' },
+  steiner: { name: 'Steiner/Waldorf', desc: 'Phương pháp Waldorf' },
   other: { name: 'Khác', desc: 'Chương trình khác' }
 };
 
@@ -148,11 +164,109 @@ export const ENGLISH_LEVELS = {
 export const ACHIEVEMENT_CATEGORIES = {
   academic_olympiad: { name: 'Olympic/HSG', weight: 5, examples: ['Olympic Toán', 'HSG Quốc gia', 'Khoa học kỹ thuật'] },
   stem_competition: { name: 'STEM', weight: 4, examples: ['Robotics', 'Coding', 'Science Fair'] },
+  english_competition: { name: 'Tiếng Anh', weight: 4, examples: ['IELTS', 'Spelling Bee', 'Debate'] },
   arts_culture: { name: 'Nghệ thuật', weight: 3, examples: ['Âm nhạc', 'Mỹ thuật', 'Viết văn'] },
   sports: { name: 'Thể thao', weight: 3, examples: ['Giải vô địch', 'Đại hội TDTT'] },
   leadership: { name: 'Lãnh đạo', weight: 4, examples: ['MUN', 'Student Council', 'Club President'] },
   community_service: { name: 'Cộng đồng', weight: 4, examples: ['Volunteer', 'Social project', 'Charity'] },
   entrepreneurship: { name: 'Khởi nghiệp', weight: 4, examples: ['Startup', 'Business competition'] }
+};
+
+// Popular International Competitions in Vietnam (valuable for Australia scholarship)
+export const POPULAR_COMPETITIONS = {
+  // === MATH ===
+  math: {
+    name: '🔢 Toán học',
+    competitions: [
+      { id: 'imo', name: 'IMO - International Mathematical Olympiad', level: 'international', grades: '10-12', value: 'highest', desc: 'Olympic Toán Quốc tế - Giải cao nhất' },
+      { id: 'apmo', name: 'APMO - Asian Pacific Math Olympiad', level: 'international', grades: '10-12', value: 'very_high', desc: 'Olympic Toán Châu Á - Thái Bình Dương' },
+      { id: 'amo', name: 'AMO - Australian Math Olympiad', level: 'international', grades: '7-12', value: 'high', desc: 'Olympic Toán Úc - Có giá trị cao cho du học Úc' },
+      { id: 'amc', name: 'AMC - Australian Mathematics Competition', level: 'international', grades: '3-12', value: 'medium', desc: 'Kỳ thi Toán Úc phổ biến nhất VN' },
+      { id: 'kangaroo', name: 'Math Kangaroo / Kangaroo Toán', level: 'international', grades: '1-12', value: 'medium', desc: 'Kỳ thi Toán Kangaroo toàn cầu' },
+      { id: 'sasmo', name: 'SASMO - Singapore Math Olympiad', level: 'international', grades: '2-12', value: 'medium', desc: 'Olympic Toán Singapore' },
+      { id: 'seamo', name: 'SEAMO - Southeast Asian Math Olympiad', level: 'international', grades: '4-12', value: 'medium', desc: 'Olympic Toán Đông Nam Á' },
+      { id: 'wmtc', name: 'WMTC - World Math Team Championship', level: 'international', grades: '5-12', value: 'high', desc: 'Giải Toán đồng đội thế giới' },
+      { id: 'hsg_toan_qg', name: 'HSG Toán Quốc gia', level: 'national', grades: '9-12', value: 'very_high', desc: 'Học sinh giỏi Toán cấp Quốc gia' }
+    ]
+  },
+
+  // === SCIENCE ===
+  science: {
+    name: '🔬 Khoa học',
+    competitions: [
+      { id: 'isef', name: 'ISEF - Intel Science & Engineering Fair', level: 'international', grades: '9-12', value: 'highest', desc: 'Hội thi Khoa học Kỹ thuật Quốc tế lớn nhất' },
+      { id: 'ibo', name: 'IBO - International Biology Olympiad', level: 'international', grades: '10-12', value: 'highest', desc: 'Olympic Sinh học Quốc tế' },
+      { id: 'icho', name: 'IChO - International Chemistry Olympiad', level: 'international', grades: '10-12', value: 'highest', desc: 'Olympic Hóa học Quốc tế' },
+      { id: 'ipho', name: 'IPhO - International Physics Olympiad', level: 'international', grades: '10-12', value: 'highest', desc: 'Olympic Vật lý Quốc tế' },
+      { id: 'ieso', name: 'IESO - Earth Science Olympiad', level: 'international', grades: '10-12', value: 'very_high', desc: 'Olympic Khoa học Trái đất Quốc tế' },
+      { id: 'vsef', name: 'VSEF - Vietnam Science & Engineering Fair', level: 'national', grades: '9-12', value: 'high', desc: 'Cuộc thi KHKT cấp Quốc gia VN' },
+      { id: 'hsg_khtn_qg', name: 'HSG KHTN Quốc gia', level: 'national', grades: '9-12', value: 'very_high', desc: 'HSG Lý/Hóa/Sinh cấp Quốc gia' }
+    ]
+  },
+
+  // === STEM/TECHNOLOGY ===
+  stem: {
+    name: '🤖 STEM & Công nghệ',
+    competitions: [
+      { id: 'frc', name: 'FRC - FIRST Robotics Competition', level: 'international', grades: '9-12', value: 'very_high', desc: 'Robotics lớn nhất thế giới' },
+      { id: 'ftc', name: 'FTC - FIRST Tech Challenge', level: 'international', grades: '7-12', value: 'high', desc: 'FIRST Tech Challenge' },
+      { id: 'fll', name: 'FLL - FIRST LEGO League', level: 'international', grades: '4-8', value: 'medium', desc: 'FIRST LEGO League cho học sinh nhỏ' },
+      { id: 'wro', name: 'WRO - World Robot Olympiad', level: 'international', grades: '6-12', value: 'high', desc: 'Olympic Robot Thế giới' },
+      { id: 'ioi', name: 'IOI - International Olympiad in Informatics', level: 'international', grades: '10-12', value: 'highest', desc: 'Olympic Tin học Quốc tế' },
+      { id: 'usaco', name: 'USACO - USA Computing Olympiad', level: 'international', grades: '9-12', value: 'very_high', desc: 'Kỳ thi lập trình Mỹ (online)' },
+      { id: 'google_code', name: 'Google Code Jam / Kick Start', level: 'international', grades: '10-12', value: 'high', desc: 'Cuộc thi lập trình Google' },
+      { id: 'robocon', name: 'Robocon Vietnam', level: 'national', grades: '10-12', value: 'high', desc: 'Robocon Việt Nam' }
+    ]
+  },
+
+  // === ENGLISH/DEBATE ===
+  english: {
+    name: '🌍 Tiếng Anh & Hùng biện',
+    competitions: [
+      { id: 'wsdc', name: 'WSDC - World Schools Debating', level: 'international', grades: '9-12', value: 'very_high', desc: 'Giải Tranh biện Thế giới' },
+      { id: 'mun', name: 'MUN - Model United Nations', level: 'international', grades: '9-12', value: 'high', desc: 'Mô phỏng Liên Hợp Quốc (THIMUN, HMUN...)' },
+      { id: 'spelling_bee', name: 'Spelling Bee Vietnam', level: 'national', grades: '3-9', value: 'medium', desc: 'Cuộc thi đánh vần tiếng Anh' },
+      { id: 'ielts_prize', name: 'IELTS Prize', level: 'international', grades: '10-12', value: 'high', desc: 'Giải thưởng IELTS của British Council' },
+      { id: 'go_english', name: 'Go English / English Champion', level: 'national', grades: '3-12', value: 'medium', desc: 'Các cuộc thi tiếng Anh trong nước' },
+      { id: 'toefl_junior', name: 'TOEFL Junior Challenge', level: 'international', grades: '6-9', value: 'medium', desc: 'Thử thách TOEFL Junior' }
+    ]
+  },
+
+  // === LEADERSHIP/SERVICE ===
+  leadership: {
+    name: '👑 Lãnh đạo & Cộng đồng',
+    competitions: [
+      { id: 'yseali', name: 'YSEALI - Young Southeast Asian Leaders', level: 'international', grades: '10-12', value: 'very_high', desc: 'Chương trình lãnh đạo trẻ ĐNA của Mỹ' },
+      { id: 'global_citizen', name: 'Global Citizen Scholarship', level: 'international', grades: '10-12', value: 'very_high', desc: 'Học bổng Công dân Toàn cầu' },
+      { id: 'duke_of_edinburgh', name: "Duke of Edinburgh's Award", level: 'international', grades: '9-12', value: 'high', desc: 'Giải thưởng Công tước Edinburgh' },
+      { id: 'student_council', name: 'Student Council / Ban đại diện HS', level: 'school', grades: '6-12', value: 'medium', desc: 'Hội đồng học sinh' },
+      { id: 'volunteer_1000h', name: 'Volunteer 1000+ hours', level: 'any', grades: '6-12', value: 'high', desc: 'Tình nguyện trên 1000 giờ' }
+    ]
+  },
+
+  // === ARTS/CREATIVITY ===
+  arts: {
+    name: '🎨 Nghệ thuật & Sáng tạo',
+    competitions: [
+      { id: 'young_artist', name: 'International Young Artist Competition', level: 'international', grades: '6-12', value: 'high', desc: 'Cuộc thi nghệ thuật quốc tế' },
+      { id: 'uob_painting', name: 'UOB Painting of the Year', level: 'international', grades: '9-12', value: 'high', desc: 'Giải vẽ tranh UOB' },
+      { id: 'steinway', name: 'Steinway Piano Competition', level: 'international', grades: '6-12', value: 'high', desc: 'Cuộc thi Piano Steinway' },
+      { id: 'abrsm', name: 'ABRSM Grade 8 / Diploma', level: 'international', grades: '6-12', value: 'medium', desc: 'Chứng chỉ âm nhạc ABRSM cao cấp' },
+      { id: 'writing_competition', name: 'International Essay/Writing Competition', level: 'international', grades: '9-12', value: 'medium', desc: 'Cuộc thi viết luận quốc tế' }
+    ]
+  },
+
+  // === BUSINESS/ENTREPRENEURSHIP ===
+  business: {
+    name: '💼 Kinh doanh & Khởi nghiệp',
+    competitions: [
+      { id: 'deca', name: 'DECA International', level: 'international', grades: '9-12', value: 'high', desc: 'Cuộc thi kinh doanh DECA' },
+      { id: 'fbla', name: 'FBLA - Future Business Leaders', level: 'international', grades: '9-12', value: 'high', desc: 'Lãnh đạo kinh doanh tương lai' },
+      { id: 'diamond_challenge', name: 'Diamond Challenge', level: 'international', grades: '9-12', value: 'high', desc: 'Cuộc thi khởi nghiệp ĐH Delaware' },
+      { id: 'startup_weekend', name: 'Startup Weekend Youth', level: 'international', grades: '9-12', value: 'medium', desc: 'Startup Weekend cho học sinh' },
+      { id: 'junior_achievement', name: 'Junior Achievement Vietnam', level: 'national', grades: '9-12', value: 'medium', desc: 'Chương trình JA Vietnam' }
+    ]
+  }
 };
 
 export const ACHIEVEMENT_LEVELS = {
@@ -812,6 +926,7 @@ export default {
   ACHIEVEMENT_CATEGORIES,
   ACHIEVEMENT_LEVELS,
   ACTIVITY_DEPTH,
+  POPULAR_COMPETITIONS,
   // Student Context
   createEmptyStudentContext,
   saveStudentContext,

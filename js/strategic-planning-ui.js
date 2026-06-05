@@ -17,6 +17,7 @@ import {
   ACHIEVEMENT_CATEGORIES,
   ACHIEVEMENT_LEVELS,
   ACTIVITY_DEPTH,
+  POPULAR_COMPETITIONS,
   TOP_5_AUSTRALIA_UNIS,
   createEmptyStudentContext,
   saveStudentContext,
@@ -56,12 +57,31 @@ export async function showStrategicPlanningWizard(userId, childId, childInfo) {
   const existingRecommendation = await getAIRecommendation(userId, childId);
   const existingRoadmap = await getRoadmap(userId, childId);
 
+  // Create student context with auto-fill from childInfo
+  let studentContext = existingContext || createEmptyStudentContext(childInfo.grade || 4);
+
+  // Auto-fill basicInfo from childInfo (family data) if not already set
+  if (!existingContext || !existingContext.basicInfo?.name) {
+    studentContext.basicInfo = {
+      ...studentContext.basicInfo,
+      name: childInfo.name || '',
+      birthDate: childInfo.birthDate || null,
+      age: childInfo.birthDate ? calculateAgeFromBirthDate(childInfo.birthDate) : null,
+      currentGrade: childInfo.grade || studentContext.currentGrade,
+      schoolName: childInfo.school || '',
+      schoolType: 'public',
+      curriculum: 'vn_gdpt',
+      academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`
+    };
+    studentContext.currentGrade = childInfo.grade || studentContext.currentGrade;
+  }
+
   planningState = {
     step: 1,
     userId,
     childId,
     childInfo,
-    studentContext: existingContext || createEmptyStudentContext(childInfo.grade || 4),
+    studentContext,
     familyAspirations: existingAspirations || createEmptyFamilyAspirations(),
     aiRecommendation: existingRecommendation,
     roadmap: existingRoadmap
@@ -69,6 +89,17 @@ export async function showStrategicPlanningWizard(userId, childId, childInfo) {
 
   showPlanningModal();
   renderPlanningStep(1);
+}
+
+// Helper to calculate age from birthDate
+function calculateAgeFromBirthDate(birthDate) {
+  if (!birthDate) return null;
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
 }
 
 function showPlanningModal() {
@@ -431,22 +462,50 @@ function renderStep2_EnglishProfile() {
 
 function renderAchievementItem(ach, index) {
   const achObj = typeof ach === 'string' ? { title: ach, category: 'academic_olympiad', level: 'school' } : ach;
+
+  // Build competition options from POPULAR_COMPETITIONS
+  const competitionOptions = Object.entries(POPULAR_COMPETITIONS).map(([catKey, cat]) => `
+    <optgroup label="${cat.name}">
+      ${cat.competitions.map(comp => `
+        <option value="${comp.id}" data-name="${comp.name}" data-level="${comp.level}"
+                ${achObj.competitionId === comp.id ? 'selected' : ''}>
+          ${comp.name}
+        </option>
+      `).join('')}
+    </optgroup>
+  `).join('');
+
   return `
     <div class="achievement-item" data-index="${index}">
       <div class="form-row">
+        <select class="ach-competition" onchange="window.selectCompetition(${index}, this)">
+          <option value="">-- Chọn cuộc thi --</option>
+          ${competitionOptions}
+          <option value="custom">✏️ Nhập thủ công...</option>
+        </select>
+      </div>
+      <div class="form-row ${achObj.competitionId && achObj.competitionId !== 'custom' ? 'hidden' : ''}" id="custom-ach-${index}">
         <select class="ach-category" onchange="window.updateAchievement(${index}, 'category', this.value)">
           ${Object.entries(ACHIEVEMENT_CATEGORIES).map(([key, cat]) => `
             <option value="${key}" ${achObj.category === key ? 'selected' : ''}>${cat.name}</option>
           `).join('')}
         </select>
-        <select class="ach-level" onchange="window.updateAchievement(${index}, 'level', this.value)">
-          ${Object.entries(ACHIEVEMENT_LEVELS).map(([key, lv]) => `
-            <option value="${key}" ${achObj.level === key ? 'selected' : ''}>${lv.name}</option>
-          `).join('')}
-        </select>
         <input type="text" class="ach-title" placeholder="Tên giải thưởng"
                value="${achObj.title || ''}"
                onchange="window.updateAchievement(${index}, 'title', this.value)" />
+      </div>
+      <div class="form-row">
+        <select class="ach-level" onchange="window.updateAchievement(${index}, 'level', this.value)">
+          ${Object.entries(ACHIEVEMENT_LEVELS).map(([key, lv]) => `
+            <option value="${key}" ${achObj.level === key ? 'selected' : ''}>${lv.name} (${lv.points} điểm)</option>
+          `).join('')}
+        </select>
+        <input type="text" class="ach-result" placeholder="Kết quả (VD: Huy chương Vàng)"
+               value="${achObj.result || ''}"
+               onchange="window.updateAchievement(${index}, 'result', this.value)" />
+        <input type="number" class="ach-year" placeholder="Năm" min="2010" max="2030"
+               value="${achObj.year || ''}"
+               onchange="window.updateAchievement(${index}, 'year', this.value)" />
         <button type="button" class="btn-icon" onclick="window.removeAchievement(${index})">🗑️</button>
       </div>
     </div>
@@ -1091,6 +1150,36 @@ window.updateAchievement = function(index, field, value) {
 window.removeAchievement = function(index) {
   planningState.studentContext.achievements?.splice(index, 1);
   refreshAchievementsList();
+};
+
+window.selectCompetition = function(index, selectEl) {
+  const value = selectEl.value;
+  const customRow = document.getElementById(`custom-ach-${index}`);
+
+  if (value === '' || value === 'custom') {
+    // Show custom input
+    if (customRow) customRow.classList.remove('hidden');
+    if (planningState.studentContext.achievements?.[index]) {
+      planningState.studentContext.achievements[index].competitionId = value === 'custom' ? 'custom' : '';
+    }
+  } else {
+    // Hide custom input, use selected competition
+    if (customRow) customRow.classList.add('hidden');
+
+    // Find the competition details
+    const selectedOption = selectEl.options[selectEl.selectedIndex];
+    const compName = selectedOption.dataset.name || selectedOption.text;
+    const compLevel = selectedOption.dataset.level || 'international';
+
+    if (planningState.studentContext.achievements?.[index]) {
+      planningState.studentContext.achievements[index] = {
+        ...planningState.studentContext.achievements[index],
+        competitionId: value,
+        title: compName,
+        level: compLevel === 'international' ? 'international' : compLevel === 'national' ? 'national' : 'regional'
+      };
+    }
+  }
 };
 
 function refreshAchievementsList() {
