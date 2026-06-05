@@ -138,11 +138,16 @@ const reportChart = document.getElementById('report-chart');
 const currentWeekEl = document.getElementById('current-week');
 
 // Initialize - handle case where DOMContentLoaded already fired (ES modules are deferred)
+console.log('🚀 App module loaded, readyState:', document.readyState);
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('📌 DOMContentLoaded fired');
+    init().catch(e => console.error('❌ init() error:', e));
+  });
 } else {
   // DOM already ready, call init immediately
-  init();
+  console.log('📌 DOM already ready, calling init()');
+  init().catch(e => console.error('❌ init() error:', e));
 }
 
 // Expose reset function globally for debugging
@@ -274,21 +279,24 @@ window.addEventListener('navigateToWeek', (e) => {
 });
 
 async function init() {
+  console.log('📌 init() started');
   // Check if we should skip auth (for testing/demo)
   const urlParams = new URLSearchParams(window.location.search);
   const skipAuth = urlParams.get('demo') === 'true';
 
   if (skipAuth) {
     console.log('⚠️ Demo mode - skipping authentication');
-    initApp(null, null);
+    await initApp(null, null);
     return;
   }
 
   // Initialize authentication
+  console.log('📌 Calling initAuth()');
   initAuth(onAuthStateChange);
 }
 
 function onAuthStateChange(authUser, profile) {
+  console.log('📌 onAuthStateChange called, authUser:', !!authUser);
   if (!authUser) {
     // Not logged in - redirect to login page
     console.log('Not authenticated, redirecting to login...');
@@ -298,7 +306,7 @@ function onAuthStateChange(authUser, profile) {
 
   // User is logged in - initialize app
   console.log('✅ Authenticated:', authUser.email);
-  initApp(authUser, profile);
+  initApp(authUser, profile).catch(e => console.error('❌ initApp error:', e));
 }
 
 async function initApp(authUser, profile) {
