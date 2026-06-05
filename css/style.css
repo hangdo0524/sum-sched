@@ -4325,3 +4325,142 @@ body {
   justify-content: center;
   flex-wrap: wrap;
 }
+
+
+/* Strategy Flow Steps */
+.strategy-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  margin-top: var(--spacing-6);
+  flex-wrap: wrap;
+}
+
+.flow-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+.step-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.step-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  text-align: center;
+}
+
+.flow-arrow {
+  color: var(--color-gray-400);
+  font-size: var(--font-size-xl);
+}
+
+@media (max-width: 600px) {
+  .strategy-flow {
+    flex-direction: column;
+  }
+  .flow-arrow {
+    transform: rotate(90deg);
+  }
+}
+
+
+/* Roadmap Summary */
+.roadmap-summary {
+  padding: var(--spacing-4);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.roadmap-summary .roadmap-header {
+  text-align: center;
+  margin-bottom: var(--spacing-6);
+}
+
+.roadmap-summary .roadmap-header h2 {
+  margin: 0 0 var(--spacing-2);
+}
+
+.roadmap-summary .roadmap-header p {
+  color: var(--color-gray-500);
+  margin-bottom: var(--spacing-3);
+}
+
+.phases-overview {
+  display: grid;
+  gap: var(--spacing-4);
+  margin-bottom: var(--spacing-6);
+}
+
+.phase-card {
+  padding: var(--spacing-4);
+  border-radius: var(--radius-lg);
+  border-left: 4px solid;
+}
+
+.phase-card.elementary {
+  background: #ecfdf5;
+  border-left-color: var(--color-success);
+}
+
+.phase-card.middle {
+  background: #eff6ff;
+  border-left-color: var(--color-info);
+}
+
+.phase-card.high {
+  background: #fef3c7;
+  border-left-color: var(--color-warning);
+}
+
+.phase-card h4 {
+  margin: 0 0 var(--spacing-2);
+}
+
+.phase-card p {
+  margin: var(--spacing-1) 0;
+  font-size: var(--font-size-sm);
+}
+
+.immediate-actions-box {
+  background: var(--color-gray-50);
+  padding: var(--spacing-4);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--spacing-4);
+}
+
+.immediate-actions-box h4 {
+  margin: 0 0 var(--spacing-2);
+}
+
+.immediate-actions-box ul {
+  margin: 0;
+  padding-left: var(--spacing-4);
+}
+
+.immediate-actions-box li {
+  margin-bottom: var(--spacing-1);
+}
+
+.next-step {
+  text-align: center;
+  padding: var(--spacing-4);
+  background: var(--color-primary-light);
+  border-radius: var(--radius-lg);
+}
+
+.next-step p {
+  margin: 0;
+}

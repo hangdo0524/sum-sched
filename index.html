@@ -83,7 +83,8 @@
       <nav class="header__nav">
         <button class="nav-btn nav-btn--active" data-view="schedule">Lịch</button>
         <button class="nav-btn" data-view="subjects">Môn học</button>
-        <button class="nav-btn" data-view="academic">Năm học</button>
+        <button class="nav-btn" data-view="strategy">🎯 Định hướng</button>
+        <button class="nav-btn" data-view="academic">📅 Năm học</button>
         <button class="nav-btn" data-view="reports">Báo cáo</button>
         <button class="nav-btn" data-view="settings">⚙️</button>
       </nav>
@@ -232,24 +233,55 @@
         </ul>
       </section>
 
+      <!-- Strategic Planning View -->
+      <section class="view" id="view-strategy">
+        <div id="strategy-view">
+          <!-- Content rendered by JS -->
+          <div class="empty-state">
+            <div class="empty-icon">🎯</div>
+            <h3>Định Hướng Chiến Lược</h3>
+            <p>Xác định năng lực, mục tiêu và để AI đề xuất lộ trình 12 năm học</p>
+            <button class="btn btn-primary btn-lg" onclick="window.showStrategicPlanning()">
+              🚀 Bắt đầu định hướng
+            </button>
+            <div class="strategy-flow">
+              <div class="flow-step">
+                <span class="step-num">1</span>
+                <span class="step-text">Nhập năng lực con</span>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-step">
+                <span class="step-num">2</span>
+                <span class="step-text">Đặt mục tiêu</span>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-step">
+                <span class="step-num">3</span>
+                <span class="step-text">AI phân tích</span>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-step">
+                <span class="step-num">4</span>
+                <span class="step-text">Lộ trình 12 năm</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Academic Calendar View -->
       <section class="view" id="view-academic">
         <div id="academic-calendar-view">
           <!-- Content rendered by JS -->
           <div class="empty-state">
-            <div class="empty-icon">🎯</div>
-            <h3>Định Hướng & Kế Hoạch</h3>
-            <p>Bắt đầu bằng việc xác định năng lực, mục tiêu và để AI đề xuất lộ trình 12 năm</p>
-            <div class="button-group">
-              <button class="btn btn-primary" onclick="window.showStrategicPlanning()">
-                🎯 Định hướng chiến lược
-              </button>
-              <button class="btn btn-secondary" onclick="window.showAcademicWizard()">
-                📅 Thiết lập năm học
-              </button>
-            </div>
-            <p class="hint" style="margin-top: 1rem; font-size: 0.875rem; color: #71717a;">
-              Bước 1: Định hướng chiến lược → Bước 2: Thiết lập năm học
+            <div class="empty-icon">📅</div>
+            <h3>Kế Hoạch Năm Học</h3>
+            <p>Thiết lập năm học, kỳ học và tuần học chi tiết</p>
+            <button class="btn btn-primary" onclick="window.showAcademicWizard()">
+              + Thiết lập năm học
+            </button>
+            <p class="hint" style="margin-top: 1rem;">
+              💡 Đã có lộ trình từ "Định hướng"? Dữ liệu sẽ được tự động điền.
             </p>
           </div>
         </div>

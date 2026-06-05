@@ -876,6 +876,10 @@ function setupNavigation() {
       if (btn.dataset.view === 'academic') {
         refreshAcademicCalendar();
       }
+
+      if (btn.dataset.view === 'strategy') {
+        refreshStrategyView();
+      }
     });
   });
 }
@@ -887,6 +891,76 @@ async function refreshAcademicCalendar() {
   if (container && authUserId) {
     await renderCalendarOverview(authUserId, childId, container);
   }
+}
+
+// Refresh Strategy View
+async function refreshStrategyView() {
+  const childId = getCurrentUser();
+  const container = document.getElementById('strategy-view');
+  if (container && authUserId) {
+    // Check if roadmap exists
+    const roadmap = await getRoadmap(authUserId, childId);
+    if (roadmap) {
+      renderRoadmapSummary(roadmap, container);
+    }
+    // Otherwise show empty state (already in HTML)
+  }
+}
+
+// Render roadmap summary in strategy view
+function renderRoadmapSummary(roadmap, container) {
+  const { phases, selectedPathName, ultimateGoal, immediateActions } = roadmap;
+
+  container.innerHTML = `
+    <div class="roadmap-summary">
+      <div class="roadmap-header">
+        <h2>🎯 Lộ Trình: ${selectedPathName}</h2>
+        <p>${ultimateGoal}</p>
+        <button class="btn btn-outline btn-sm" onclick="window.showStrategicPlanning()">
+          ✏️ Chỉnh sửa
+        </button>
+      </div>
+
+      <div class="phases-overview">
+        ${phases?.elementary?.grades?.length > 0 ? `
+          <div class="phase-card elementary">
+            <h4>🏫 Tiểu học (Lớp ${phases.elementary.grades.join(', ')})</h4>
+            <p><strong>Trọng tâm:</strong> ${phases.elementary.focus || 'Chưa xác định'}</p>
+            <p><strong>Môn:</strong> ${phases.elementary.subjects?.join(', ') || '-'}</p>
+          </div>
+        ` : ''}
+
+        ${phases?.middle ? `
+          <div class="phase-card middle">
+            <h4>🎓 THCS (Lớp ${phases.middle.grades?.join(', ') || '6-9'})</h4>
+            <p><strong>Trọng tâm:</strong> ${phases.middle.focus || 'Chưa xác định'}</p>
+            <p><strong>Môn:</strong> ${phases.middle.subjects?.join(', ') || '-'}</p>
+          </div>
+        ` : ''}
+
+        ${phases?.high ? `
+          <div class="phase-card high">
+            <h4>🎯 THPT (Lớp ${phases.high.grades?.join(', ') || '10-12'})</h4>
+            <p><strong>Trọng tâm:</strong> ${phases.high.focus || 'Chưa xác định'}</p>
+            <p><strong>Môn:</strong> ${phases.high.subjects?.join(', ') || '-'}</p>
+          </div>
+        ` : ''}
+      </div>
+
+      ${immediateActions?.length > 0 ? `
+        <div class="immediate-actions-box">
+          <h4>📌 Hành động 3 tháng tới</h4>
+          <ul>
+            ${immediateActions.map(a => `<li>${a}</li>`).join('')}
+          </ul>
+        </div>
+      ` : ''}
+
+      <div class="next-step">
+        <p>👉 Tiếp theo: Vào tab <strong>📅 Năm học</strong> để thiết lập kế hoạch chi tiết</p>
+      </div>
+    </div>
+  `;
 }
 
 // Schedule Controls
