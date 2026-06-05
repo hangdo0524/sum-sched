@@ -3,7 +3,7 @@
  * Single Google account with multiple children profiles
  */
 
-import { ref, get, set, push, remove, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+import { ref, get, set, push, remove, onValue } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
 let db = null;
 let currentChildId = null;
