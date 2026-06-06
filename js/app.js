@@ -597,8 +597,9 @@ async function initFamilyData(authUser, profile) {
     // Initialize Curriculum Engine
     initCurriculum(db);
 
-    // Store db reference for tutor initialization
+    // Store db reference for tutor initialization and export
     window._appDb = db;
+    window.tutorDatabase = db;
 
     // Load family from Firebase
     currentFamily = await getFamily(authUserId);

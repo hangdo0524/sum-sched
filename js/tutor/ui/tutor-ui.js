@@ -16,6 +16,8 @@ import {
 
 import { NOTE_TYPES, getNotes, getNotesForReview, getStatsByType } from '../kidbrain.js';
 import { TUTOR_PERSONAS, getPersonaForGrade } from '../persona.js';
+import { exportKidBrain } from '../export-kidbrain.js';
+import { initProfileEditor, showProfileEditor } from './profile-editor.js';
 
 let currentChildId = null;
 let currentChildName = null;
@@ -30,6 +32,7 @@ let sessionStartTime = null;
 
 export function initTutorUI(database, userId, childId, childName, grade) {
   initTutor(database);
+  initProfileEditor(database, userId, childId);
   currentUserId = userId;
   currentChildId = childId;
   currentChildName = childName;
@@ -63,6 +66,9 @@ function renderTutorView() {
           </div>
         </div>
         <div class="tutor-header__actions">
+          <button class="btn btn--sm btn--outline" id="btn-edit-profile" title="Sửa hồ sơ con">
+            👤 Hồ sơ
+          </button>
           <button class="btn btn--sm btn--outline" id="btn-kidbrain" title="Xem kiến thức đã học">
             🧠 KidBrain
           </button>
@@ -116,6 +122,9 @@ function renderTutorView() {
           <div class="kidbrain-header">
             <button class="btn btn--sm btn--ghost" id="btn-back-chat">← Quay lại</button>
             <h3>🧠 KidBrain của ${currentChildName || 'con'}</h3>
+            <button class="btn btn--sm btn--outline" id="btn-export-kidbrain" title="Export to Obsidian">
+              📥 Export
+            </button>
           </div>
           <div class="kidbrain-stats" id="kidbrain-stats">
             <!-- Stats rendered by JS -->
@@ -142,6 +151,9 @@ function renderTutorView() {
           </div>
         </div>
       </div>
+
+      <!-- Profile Editor Container (fullscreen overlay) -->
+      <div id="profile-editor-container" style="display:none;"></div>
     </div>
   `;
 }
@@ -184,6 +196,18 @@ function bindTutorEvents(container) {
   container.querySelector('#btn-tutor-history')?.addEventListener('click', () => showPanel('history'));
   container.querySelector('#btn-back-chat')?.addEventListener('click', () => showPanel('chat'));
   container.querySelector('#btn-back-chat-2')?.addEventListener('click', () => showPanel('chat'));
+
+  // Profile Editor
+  container.querySelector('#btn-edit-profile')?.addEventListener('click', () => {
+    const editorContainer = container.querySelector('#profile-editor-container');
+    if (editorContainer) {
+      editorContainer.style.display = 'block';
+      showProfileEditor(editorContainer);
+    }
+  });
+
+  // Export KidBrain
+  container.querySelector('#btn-export-kidbrain')?.addEventListener('click', handleExportKidBrain);
 
   // KidBrain tabs
   container.querySelectorAll('.kb-tab').forEach(tab => {
@@ -410,6 +434,39 @@ async function loadKidBrainNotes(type = 'all') {
       </div>
     </div>
   `).join('');
+}
+
+async function handleExportKidBrain() {
+  const btn = document.getElementById('btn-export-kidbrain');
+  if (!btn || !currentUserId || !currentChildId) return;
+
+  btn.disabled = true;
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '⏳ Đang export...';
+
+  try {
+    // Get database reference from window (set in app.js)
+    const db = window.tutorDatabase;
+    if (!db) {
+      throw new Error('Database not available');
+    }
+
+    const result = await exportKidBrain(db, currentUserId, currentChildId, currentChildName);
+
+    if (result.success) {
+      btn.innerHTML = `✅ Đã export ${result.fileCount} files`;
+    } else {
+      btn.innerHTML = `❌ ${result.error}`;
+    }
+  } catch (error) {
+    console.error('Export error:', error);
+    btn.innerHTML = '❌ Lỗi export';
+  }
+
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }, 3000);
 }
 
 // ============================================
