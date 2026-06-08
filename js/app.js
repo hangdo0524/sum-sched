@@ -1035,7 +1035,8 @@ async function refreshCurriculumView() {
 
 // Refresh Tutor View
 function refreshTutorView() {
-  const childId = getCurrentUser();
+  const currentChild = getCurrentUser();
+  const childId = currentChild?.id || sessionStorage.getItem('sumSched_childId');
   const child = currentFamily?.children?.[childId];
   const childName = child?.name || 'Con';
   const childGrade = child?.grade || 4;
@@ -1056,7 +1057,8 @@ function refreshTutorView() {
 
 // Expose curriculum view to window
 window.showCurriculumPanel = async function() {
-  const childId = getCurrentUser();
+  const currentChild = getCurrentUser();
+  const childId = currentChild?.id || sessionStorage.getItem('sumSched_childId');
   const roadmap = await getRoadmap(authUserId, childId);
   const container = document.getElementById('curriculum-view');
   if (container) {
@@ -1066,7 +1068,8 @@ window.showCurriculumPanel = async function() {
 
 // Expose tutor view to window
 window.showTutorPanel = function() {
-  const childId = getCurrentUser();
+  const currentChild = getCurrentUser();
+  const childId = currentChild?.id || sessionStorage.getItem('sumSched_childId');
   const child = currentFamily?.children?.[childId];
   const childName = child?.name || 'Con';
   const childGrade = child?.grade || 4;
