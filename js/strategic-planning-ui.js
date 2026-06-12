@@ -95,6 +95,8 @@ export async function showStrategicPlanningWizard(userId, childId, childInfo) {
   };
 
   showPlanningModal();
+  setupStepNavigation();
+  updateStepCompletionStatus();
   renderPlanningStep(1);
 }
 
@@ -160,6 +162,51 @@ function renderPlanningStep(step) {
     case 5: renderStep5_AIAnalysis(); break;
     case 6: renderStep6_Roadmap(); break;
   }
+}
+
+// Allow direct navigation to any step by clicking
+function setupStepNavigation() {
+  document.querySelectorAll('#planning-steps .step').forEach(el => {
+    el.style.cursor = 'pointer';
+    el.onclick = async () => {
+      const targetStep = parseInt(el.dataset.step);
+      if (targetStep !== planningState.step) {
+        // Save current step data before navigating (if on step 1-4)
+        if (planningState.step <= 4) {
+          await saveCurrentStepData();
+        }
+        renderPlanningStep(targetStep);
+        updateStepCompletionStatus();
+      }
+    };
+  });
+}
+
+// Check which steps have data and mark them as completed
+function updateStepCompletionStatus() {
+  const { studentContext, familyAspirations, roadmap } = planningState;
+
+  const stepHasData = {
+    1: !!(studentContext?.basicInfo?.name || studentContext?.currentGrade),
+    2: !!(studentContext?.englishProfile?.currentLevel),
+    3: !!(studentContext?.extracurriculars?.length > 0 || studentContext?.leadershipExperiences?.length > 0),
+    4: !!(familyAspirations?.academicGoals?.targetUniversity || familyAspirations?.academicGoals?.targetMajor),
+    5: !!(roadmap?.phases?.length > 0),
+    6: !!(roadmap?.selectedPathName)
+  };
+
+  document.querySelectorAll('#planning-steps .step').forEach(el => {
+    const step = parseInt(el.dataset.step);
+    if (stepHasData[step]) {
+      el.classList.add('has-data');
+      if (!el.querySelector('.check-icon')) {
+        el.innerHTML = el.textContent + ' <span class="check-icon">✓</span>';
+      }
+    } else {
+      el.classList.remove('has-data');
+      el.innerHTML = el.textContent.replace(/ <span class="check-icon">✓<\/span>/g, '');
+    }
+  });
 }
 
 function updateStepIndicator(currentStep) {
@@ -370,6 +417,7 @@ function renderStep1_AcademicAbilities() {
 
   footer.innerHTML = `
     <button class="btn btn-secondary" onclick="window.closeStrategicPlanning()">Hủy</button>
+    <button class="btn btn-outline" onclick="window.saveCurrentStep()">💾 Lưu</button>
     <button class="btn btn-primary" onclick="window.planningNext()">Tiếp theo ▶</button>
   `;
 }
@@ -468,6 +516,7 @@ function renderStep2_EnglishProfile() {
 
   footer.innerHTML = `
     <button class="btn btn-secondary" onclick="window.planningPrev()">◀ Quay lại</button>
+    <button class="btn btn-outline" onclick="window.saveCurrentStep()">💾 Lưu</button>
     <button class="btn btn-primary" onclick="window.planningNext()">Tiếp theo ▶</button>
   `;
 }
@@ -599,6 +648,7 @@ function renderStep3_Activities() {
 
   footer.innerHTML = `
     <button class="btn btn-secondary" onclick="window.planningPrev()">◀ Quay lại</button>
+    <button class="btn btn-outline" onclick="window.saveCurrentStep()">💾 Lưu</button>
     <button class="btn btn-primary" onclick="window.planningNext()">Tiếp theo ▶</button>
   `;
 }
@@ -1358,6 +1408,37 @@ window.planningNext = async function() {
 window.planningPrev = function() {
   if (planningState.step > 1) {
     renderPlanningStep(planningState.step - 1);
+  }
+};
+
+// Save current step with user feedback
+window.saveCurrentStep = async function() {
+  const saveBtn = document.querySelector('#planning-footer .btn-outline');
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '⏳ Đang lưu...';
+  }
+
+  try {
+    await saveCurrentStepData();
+    updateStepCompletionStatus();
+
+    if (saveBtn) {
+      saveBtn.innerHTML = '✅ Đã lưu!';
+      setTimeout(() => {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '💾 Lưu';
+      }, 2000);
+    }
+  } catch (error) {
+    console.error('Save error:', error);
+    if (saveBtn) {
+      saveBtn.innerHTML = '❌ Lỗi';
+      setTimeout(() => {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '💾 Lưu';
+      }, 2000);
+    }
   }
 };
 

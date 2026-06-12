@@ -3974,6 +3974,21 @@ body {
   color: var(--color-success);
 }
 
+.planning-steps .step.has-data {
+  color: var(--color-success);
+}
+
+.planning-steps .step.has-data .check-icon {
+  font-size: 10px;
+  margin-left: 2px;
+}
+
+.planning-steps .step:hover {
+  color: var(--color-primary);
+  background: var(--color-gray-100);
+  border-radius: var(--radius-sm);
+}
+
 /* Planning Form */
 .planning-form {
   padding: var(--spacing-2);
